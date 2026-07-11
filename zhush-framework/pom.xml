@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.zhush</groupId>
+        <artifactId>zhush-boot4-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>zhush-framework</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>zhush-common</module>
+        <module>zhush-spring-boot-starter-biz-data-permission</module>
+        <module>zhush-spring-boot-starter-biz-ip</module>
+        <module>zhush-spring-boot-starter-excel</module>
+        <module>zhush-spring-boot-starter-job</module>
+        <module>zhush-spring-boot-starter-monitor</module>
+        <module>zhush-spring-boot-starter-mq</module>
+        <module>zhush-spring-boot-starter-mybatis</module>
+        <module>zhush-spring-boot-starter-protection</module>
+        <module>zhush-spring-boot-starter-redis</module>
+        <module>zhush-spring-boot-starter-satoken</module>
+        <module>zhush-spring-boot-starter-web</module>
+        <module>zhush-spring-boot-starter-websocket</module>
+        <module>zhush-spring-boot-starter-file</module>
+    </modules>
+
+</project>

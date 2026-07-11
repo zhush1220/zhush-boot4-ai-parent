@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.zhush</groupId>
+        <artifactId>zhush-framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>zhush-spring-boot-starter-file</artifactId>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-common</artifactId>
+        </dependency>
+
+        <!--文件存储 需引入使用到的平台的SDK 例如：阿里云SDK-->
+        <dependency>
+            <groupId>org.dromara.x-file-storage</groupId>
+            <artifactId>x-file-storage-spring</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aliyun.oss</groupId>
+            <artifactId>aliyun-sdk-oss</artifactId>
+        </dependency>
+    </dependencies>
+
+
+</project>
