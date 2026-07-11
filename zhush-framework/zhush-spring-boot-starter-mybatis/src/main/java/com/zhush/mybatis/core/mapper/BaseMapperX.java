@@ -21,6 +21,11 @@ import java.util.List;
 public interface BaseMapperX<T> extends BaseMapper<T> {
 
     /**
+     * 默认批量操作大小
+     */
+    int DEFAULT_BATCH_SIZE = 1000;
+
+    /**
      * 分页查询
      * @param baseQuery 分页查询参数
      * @param queryWrapper 查询条件
@@ -66,10 +71,33 @@ public interface BaseMapperX<T> extends BaseMapper<T> {
     // ===================== 批量操作 =====================
 
     /**
-     * 插入批量数据，返回结果
+     * 获取当前 Mapper 的 Class（解决泛型擦除导致的转型问题）
+     * <p>
+     * this.getClass() 返回 Class&lt;? extends BaseMapperX&gt;，
+     * 无法直接转型为 Class&lt;BaseMapper&lt;T&gt;&gt;，通过 Class&lt;?&gt; 中间转型绕过。
+     *
+     * @return 当前 Mapper 接口 Class
+     */
+    @SuppressWarnings("unchecked")
+    private Class<BaseMapper<T>> selfMapperClass() {
+        return (Class<BaseMapper<T>>) (Class<?>) this.getClass();
+    }
+
+    /**
+     * 批量插入（使用默认批量大小）
      *
      * @param entities 实体集合
-     * @param batchSize 批量大小
+     * @return 是否成功
+     */
+    default boolean insertBatchWithDb(Collection<T> entities) {
+        return insertBatchWithDb(entities, DEFAULT_BATCH_SIZE);
+    }
+
+    /**
+     * 批量插入（指定批量大小）
+     *
+     * @param entities  实体集合
+     * @param batchSize 批量大小（&le; 0 时使用默认值）
      * @return 是否成功
      */
     default boolean insertBatchWithDb(Collection<T> entities, int batchSize) {
@@ -77,22 +105,23 @@ public interface BaseMapperX<T> extends BaseMapper<T> {
             return false;
         }
         if (batchSize <= 0) {
-            batchSize = 1000;
+            batchSize = DEFAULT_BATCH_SIZE;
         }
-        int[] results = Db.executeBatch(entities, batchSize,
-                (Class<BaseMapper<T>>) this.getClass(), BaseMapper::insert);
+        int[] results = Db.executeBatch(entities, batchSize, selfMapperClass(), BaseMapper::insert);
         return SqlUtil.toBool(results);
     }
 
     /**
      * 批量插入（忽略 null 字段）
+     *
+     * @param entities 实体集合
+     * @return 是否成功
      */
     default boolean insertBatchSelectiveWithDb(Collection<T> entities) {
         if (CollUtil.isEmpty(entities)) {
             return false;
         }
-        int[] results = Db.executeBatch(entities, 1000,
-                (Class<BaseMapper<T>>) this.getClass(), BaseMapper::insertSelective);
+        int[] results = Db.executeBatch(entities, DEFAULT_BATCH_SIZE, selfMapperClass(), BaseMapper::insertSelective);
         return SqlUtil.toBool(results);
     }
 
@@ -134,24 +163,37 @@ public interface BaseMapperX<T> extends BaseMapper<T> {
     }
 
     /**
-     * 批量更新数据，返回结果
+     * 批量更新（使用默认批量大小）
      *
      * @param entities 实体集合
-     * @param batchSize 批量大小 默认 1000
-     * @return 是否成功
+     * @return 受影响行数
+     */
+    default int updateBatchWithDb(Collection<T> entities) {
+        return updateBatchWithDb(entities, DEFAULT_BATCH_SIZE);
+    }
+
+    /**
+     * 批量更新（指定批量大小）
+     *
+     * @param entities  实体集合
+     * @param batchSize 批量大小（&le; 0 时使用默认值）
+     * @return 受影响行数
      */
     default int updateBatchWithDb(Collection<T> entities, int batchSize) {
         if (CollUtil.isEmpty(entities)) {
             return 0;
         }
         if (batchSize <= 0) {
-            batchSize = 1000;
+            batchSize = DEFAULT_BATCH_SIZE;
         }
         return Db.updateEntitiesBatch(entities, batchSize);
     }
 
     /**
      * 批量更新（忽略 null 字段）
+     *
+     * @param entities 实体集合
+     * @return 受影响行数
      */
     default int updateBatchSelectiveWithDb(Collection<T> entities) {
         if (CollUtil.isEmpty(entities)) {

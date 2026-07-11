@@ -74,6 +74,11 @@ public class SmUtils {
      */
     private static final String DEFAULT_SM4_KEY;
 
+    /**
+     * SM4 密钥覆盖值（由 Spring 配置注入，优先级高于 DEFAULT_SM4_KEY）
+     */
+    private static volatile String sm4KeyOverride;
+
     static {
         // SM2 密钥对 —— 优先读取系统属性，其次环境变量，最后使用内置默认值
         DEFAULT_SM2_PRIVATE_KEY = getConfig("zhush.crypto.sm2.privateKey",
@@ -302,7 +307,7 @@ public class SmUtils {
      * @return Hex 编码的密文
      */
     public static String sm4EncryptEcb(String data) {
-        return sm4EncryptEcb(data, DEFAULT_SM4_KEY);
+        return sm4EncryptEcb(data, getEffectiveSm4Key());
     }
 
     /**
@@ -312,7 +317,7 @@ public class SmUtils {
      * @return 解密后的明文
      */
     public static String sm4DecryptEcb(String encryptedHex) {
-        return sm4DecryptEcb(encryptedHex, DEFAULT_SM4_KEY);
+        return sm4DecryptEcb(encryptedHex, getEffectiveSm4Key());
     }
 
     // ---------- 动态密钥（ECB 模式） ----------
@@ -352,7 +357,7 @@ public class SmUtils {
      * @return Hex 编码的密文
      */
     public static String sm4EncryptCbc(String data) {
-        return sm4EncryptCbc(data, DEFAULT_SM4_KEY, DEFAULT_SM4_KEY);
+        return sm4EncryptCbc(data, getEffectiveSm4Key(), getEffectiveSm4Key());
     }
 
     /**
@@ -362,7 +367,7 @@ public class SmUtils {
      * @return 解密后的明文
      */
     public static String sm4DecryptCbc(String encryptedHex) {
-        return sm4DecryptCbc(encryptedHex, DEFAULT_SM4_KEY, DEFAULT_SM4_KEY);
+        return sm4DecryptCbc(encryptedHex, getEffectiveSm4Key(), getEffectiveSm4Key());
     }
 
     // ---------- 动态密钥（CBC 模式） ----------
@@ -437,6 +442,29 @@ public class SmUtils {
      */
     public static String getDefaultSm4Key() {
         return DEFAULT_SM4_KEY;
+    }
+
+    /**
+     * 覆盖 SM4 密钥（由 Spring 配置注入调用）
+     * <p>
+     * 调用后，所有使用默认密钥的 SM4 加解密方法将使用此密钥，
+     * 优先级：override 值 > 系统属性/环境变量 > 硬编码默认值。
+     *
+     * @param key 新的 SM4 密钥（16 字节）
+     */
+    public static void overrideSm4Key(String key) {
+        sm4KeyOverride = key;
+    }
+
+    /**
+     * 获取当前生效的 SM4 密钥
+     * <p>
+     * 优先级：Spring 配置覆盖值 > 系统属性/环境变量默认值
+     *
+     * @return 当前生效的密钥
+     */
+    private static String getEffectiveSm4Key() {
+        return StrUtil.isNotBlank(sm4KeyOverride) ? sm4KeyOverride : DEFAULT_SM4_KEY;
     }
 
     // ======================================================================

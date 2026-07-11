@@ -1,1 +1,2 @@
 com.zhush.mybatis.config.GlobalFlexAutoConfiguration
+com.zhush.mybatis.config.EncryptAutoConfiguration

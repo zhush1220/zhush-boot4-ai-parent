@@ -33,4 +33,5 @@ public class BaseQuery implements Serializable {
      * 每页大小，默认10条
      */
     private int pageSize = 10;
+
 }

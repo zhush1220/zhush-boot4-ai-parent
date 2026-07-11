@@ -6,3 +6,9 @@ mybatis-flex:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# 启用加解密（默认 true）
+zhush:
+  encrypt:
+    enabled: true
+    sm4-key: your-16-char-key!   # 可选，不配则走 SmUtils 默认密钥策略
