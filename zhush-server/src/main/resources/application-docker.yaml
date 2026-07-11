@@ -1,0 +1,8 @@
+server:
+  port: 9166
+
+mybatis-flex:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl

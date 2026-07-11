@@ -13,6 +13,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <revision>1.0.0</revision>
         <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
+        <spring.boot.version>4.1.0</spring.boot.version>
         <mapstruct-plus.version>1.5.1</mapstruct-plus.version>
         <lombok.version>1.18.46</lombok.version>
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
@@ -108,7 +109,19 @@
         </plugins>
     </build>
 
+    <!-- maven源 提升下载速度-->
     <repositories>
+        <repository>
+            <id>huaweicloud</id>
+            <name>huawei</name>
+            <url>https://mirrors.huaweicloud.com/repository/maven/</url>
+        </repository>
+        <repository>
+            <id>aliyunmaven</id>
+            <name>aliyun</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </repository>
+
         <repository>
             <id>kingbase</id>
             <name>Kingbase Maven Repository</name>
