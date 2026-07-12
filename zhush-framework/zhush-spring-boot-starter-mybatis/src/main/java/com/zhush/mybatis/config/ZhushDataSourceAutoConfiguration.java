@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @AutoConfiguration
 @EnableConfigurationProperties(DruidStatProperties.class)
 @EnableTransactionManagement(proxyTargetClass = true)
-public class DataSourceAutoConfigguration {
+public class ZhushDataSourceAutoConfiguration {
 
     /**
      * 创建 DruidAdRemoveFilter 过滤器，过滤 common.js 的广告

@@ -1,11 +1,64 @@
 server:
   port: 9166
 
+spring:
+  datasource:
+    druid:
+      initial-size: 5
+      max-active: 20
+      min-idle: 5
+      max-wait: 60000
+      validation-query: SELECT 1
+      test-while-idle: true
+      filter:
+        stat:
+          enabled: true
+          log-slow-sql: true # 慢 SQL 记录
+          slow-sql-millis: 100
+          merge-sql: true
+        wall:
+          enabled: true
+          config:
+            multi-statement-allow: true
+      stat-view-servlet:
+        enabled: true
+        allow: # 设置白名单，不填则允许所有访问
+        url-pattern: /druid/*
+        login-username: admin
+        login-password: your_password
+
 mybatis-flex:
   mapper-locations: classpath*:mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  datasource: # 多数据源
+    # --- 主库（默认数据源）---
+    master:
+      type: com.alibaba.druid.pool.DruidDataSource
+      url: jdbc:mysql://localhost:3306/zhush_main?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: password
+      # Druid 连接池属性（直接写 setter 对应的 key）
+      initialSize: 5
+      maxActive: 20
+      minIdle: 5
+      maxWait: 60000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+
+    # --- 从库（只读/报表库）---
+    slave:
+      type: com.alibaba.druid.pool.DruidDataSource
+      url: jdbc:mysql://localhost:3306/zhush_slave?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      username: readonly
+      password: readonly_pass
+      initialSize: 3
+      maxActive: 10
+      minIdle: 3
+      maxWait: 60000
+      validationQuery: SELECT 1
+      testWhileIdle: true
 
 # 启用加解密（默认 true）
 zhush:
