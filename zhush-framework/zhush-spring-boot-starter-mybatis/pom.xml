@@ -28,6 +28,11 @@
             <artifactId>mybatis-flex-spring-boot4-starter</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-4-starter</artifactId>
+        </dependency>
+
         <!-- MySQL数据库 -->
         <dependency>
             <groupId>com.mysql</groupId>

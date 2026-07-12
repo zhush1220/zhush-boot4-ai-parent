@@ -18,6 +18,7 @@
         <spring.boot.version>4.1.0</spring.boot.version>
         <tika.version>3.3.1</tika.version>
         <mybatis.flex.version>1.11.8</mybatis.flex.version>
+        <druid.version>1.2.28</druid.version>
         <mysql.connector.version>9.7.0</mysql.connector.version>
         <postgresql.version>42.7.13</postgresql.version>
         <dameng.version>8.1.5.45</dameng.version>
@@ -148,6 +149,12 @@
                 <groupId>com.mybatis-flex</groupId>
                 <artifactId>mybatis-flex-core</artifactId>
                 <version>${mybatis.flex.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid-spring-boot-4-starter</artifactId>
+                <version>${druid.version}</version>
             </dependency>
 
             <!-- MySQL数据库 -->
