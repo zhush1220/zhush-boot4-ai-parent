@@ -39,6 +39,8 @@
         <knife4j.version>4.5.0</knife4j.version>
         <springdoc.version>3.0.3</springdoc.version>
         <ip2region.version>3.3.7</ip2region.version>
+        <jasypt-spring-boot-starter.version>4.0.4</jasypt-spring-boot-starter.version>
+        <elasticsearch.version>9.4.3</elasticsearch.version>
     </properties>
 
     <dependencyManagement>
@@ -304,6 +306,19 @@
                 <groupId>org.lionsoul</groupId>
                 <artifactId>ip2region</artifactId>
                 <version>${ip2region.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.ulisesbocchio</groupId>
+                <artifactId>jasypt-spring-boot-starter</artifactId>
+                <version>${jasypt-spring-boot-starter.version}</version>
+            </dependency>
+
+            <!-- 全文检索引擎  -->
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>${elasticsearch.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

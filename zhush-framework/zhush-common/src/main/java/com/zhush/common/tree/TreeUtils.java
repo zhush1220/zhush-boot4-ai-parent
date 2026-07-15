@@ -51,6 +51,7 @@ public class TreeUtils {
         List<T> tree = new ArrayList<>();
         for (T node : nodes) {
             if (parentId.equals(node.getParentId())) {
+                node.setChildren(buildTrees(nodes, node.getId()));
                 tree.add(node);
             }
         }

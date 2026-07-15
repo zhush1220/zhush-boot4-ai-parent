@@ -27,6 +27,7 @@
         <module>zhush-framework</module>
         <module>zhush-module-system</module>
         <module>zhush-module-member</module>
+        <module>zhush-module-ai</module>
         <module>zhush-server</module>
 
         <!--业务模块-->

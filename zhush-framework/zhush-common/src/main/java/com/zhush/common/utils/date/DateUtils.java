@@ -9,7 +9,6 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
 
 /**
  *
@@ -164,7 +163,8 @@ public class DateUtils {
         if (dateStr == null) {
             return 0L;
         }
-        return dateToTimestamp(parseStrToDate(DateFormatConstant.FORMAT_DATE, dateStr));
+        Date date = parseStrToDate(DateFormatConstant.FORMAT_DATE, dateStr);
+        return date != null ? date.getTime() : 0L;
     }
 
     /**
@@ -183,7 +183,8 @@ public class DateUtils {
         if (dateStr == null) {
             return null;
         }
-        return String.valueOf(dateToTimestamp(parseStrToDate(DateFormatConstant.FORMAT_DATE, dateStr)));
+        Date date = parseStrToDate(DateFormatConstant.FORMAT_DATE, dateStr);
+        return date != null ? String.valueOf(date.getTime()) : null;
     }
 
 
@@ -221,7 +222,7 @@ public class DateUtils {
      * @return 日期
      */
     public static String timestampToDateStr(final String dateStr, final String format) {
-        if (dateStr == null && format == null) {
+        if (dateStr == null || format == null) {
             return null;
         }
         return new SimpleDateFormat(format).format(new Date(Long.parseLong(dateStr)));

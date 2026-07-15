@@ -22,7 +22,7 @@ public class DruidAdRemoveFilter extends OncePerRequestFilter {
     /**
      * common.js 的路径
      */
-    private static final String COMMON_JS_ILE_PATH = "support/http/resources/js/common.js";
+    private static final String COMMON_JS_FILE_PATH = "support/http/resources/js/common.js";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -31,7 +31,7 @@ public class DruidAdRemoveFilter extends OncePerRequestFilter {
         // 重置缓冲区，响应头不会被重置
         response.resetBuffer();
         // 获取 common.js
-        String text = Utils.readFromResource(COMMON_JS_ILE_PATH);
+        String text = Utils.readFromResource(COMMON_JS_FILE_PATH);
         // 正则替换 banner, 除去底部的广告信息
         text = text.replaceAll("<a.*?banner\"></a><br/>", "");
         text = text.replaceAll("powered.*?shrek.wang</a>", "");

@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  *
- * @ClassName DataSourceAutoConfigguration
- * @Description TODO
+ * @ClassName ZhushDataSourceAutoConfiguration
+ * @Description 数据源自动配置：Druid连接池、事务管理、监控广告过滤器
  * @Author zhush
  * @Date 2026/7/12 星期日 14:16
  *

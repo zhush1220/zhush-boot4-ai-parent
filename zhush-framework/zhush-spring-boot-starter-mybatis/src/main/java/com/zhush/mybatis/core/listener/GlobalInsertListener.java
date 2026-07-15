@@ -2,6 +2,7 @@ package com.zhush.mybatis.core.listener;
 
 import com.mybatisflex.annotation.InsertListener;
 import com.zhush.common.entity.BaseEntity;
+import com.zhush.mybatis.core.handler.LoginUserContextHolder;
 
 import java.time.LocalDateTime;
 
@@ -20,15 +21,7 @@ public class GlobalInsertListener implements InsertListener {
             return;
         }
 
-        baseEntity.setCreateBy(getUserId());
+        baseEntity.setCreateBy(LoginUserContextHolder.getUserId());
         baseEntity.setCreateTime(LocalDateTime.now());
-    }
-
-    /**
-     * 缓存中获取当前用户ID
-     * @return
-     */
-    private Long getUserId() {
-        return 1L;
     }
 }

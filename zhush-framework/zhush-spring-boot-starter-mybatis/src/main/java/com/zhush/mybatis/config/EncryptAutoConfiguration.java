@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Bean;
  * @author zhush
  * @since 2026/7/11
  */
-@AutoConfiguration
+@AutoConfiguration(after = ZhushDataSourceAutoConfiguration.class)
 @EnableConfigurationProperties(EncryptProperties.class)
 public class EncryptAutoConfiguration {
 

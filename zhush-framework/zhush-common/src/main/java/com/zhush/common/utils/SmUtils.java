@@ -90,7 +90,7 @@ public class SmUtils {
                 "zhush_sm3_default_key");
         DEFAULT_SM4_KEY = getConfig("zhush.crypto.sm4.key",
                 "ZHUSH_CRYPTO_SM4_KEY",
-                "zhush12345678901");
+                "zhush123456789012");
     }
 
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
