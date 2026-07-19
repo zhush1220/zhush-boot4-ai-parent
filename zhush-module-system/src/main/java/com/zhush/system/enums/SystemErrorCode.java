@@ -35,6 +35,7 @@ public enum SystemErrorCode implements IErrorCode {
     MENU_NOT_FOUND(1001201, "菜单不存在：{0}"),
     MENU_HAS_CHILDREN(1001202, "存在子菜单，无法删除"),
     PERMISSION_DENIED(1001203, "无权限操作"),
+    MENU_PARENT_ERROR(1001204, "父菜单不能为自身"),
 
     // ================ 部门 1001 3xx ================
     DEPT_NOT_FOUND(1001301, "部门不存在：{0}"),

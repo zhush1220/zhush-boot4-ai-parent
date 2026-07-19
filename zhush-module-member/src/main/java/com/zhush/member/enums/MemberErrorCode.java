@@ -31,6 +31,7 @@ public enum MemberErrorCode implements IErrorCode {
     LOGIN_PASSWORD_INCORRECT(1002101, "账号或密码错误"),
     LOGIN_LOCKED(1002102, "账号已锁定，请稍后再试"),
     REGISTER_CLOSED(1002103, "当前不允许注册"),
+    WX_MINI_LOGIN_FAIL(1002104, "微信登录失败：{0}"),
 
     // ================ 积分 / 等级 1002 2xx ================
     POINT_NOT_ENOUGH(1002201, "积分不足"),

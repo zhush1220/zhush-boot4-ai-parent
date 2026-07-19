@@ -1,11 +1,12 @@
 package com.zhush.mybatis.config;
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.mybatisflex.core.FlexGlobalConfig;
 import com.zhush.common.entity.BaseEntity;
 import com.zhush.mybatis.core.handler.LoginUserContextHolder;
 import com.zhush.mybatis.core.listener.GlobalInsertListener;
 import com.zhush.mybatis.core.listener.GlobalUpdateListener;
+import com.zhush.satoken.core.StpAdminUtil;
+import com.zhush.satoken.core.StpMemberUtil;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
@@ -22,13 +23,13 @@ public class GlobalFlexAutoConfiguration {
 
     @Bean
     public GlobalInsertListener globalInsertListener() {
-        // 注入 Sa-Token 用户ID获取逻辑到 LoginUserContextHolder
+        // 注入 Sa-Token 用户ID获取逻辑到 LoginUserContextHolder：管理端优先，其次会员端
         LoginUserContextHolder.setUserIdSupplier(() -> {
-            try {
-                return StpUtil.getLoginIdAsLong();
-            } catch (Exception e) {
-                return null;
+            Long adminId = StpAdminUtil.getLoginIdDefaultNull();
+            if (adminId != null) {
+                return adminId;
             }
+            return StpMemberUtil.getLoginIdDefaultNull();
         });
 
         GlobalInsertListener globalInsertListener = new GlobalInsertListener();
