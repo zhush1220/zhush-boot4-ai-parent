@@ -65,6 +65,17 @@ logging:
     com.zhush: debug
     com.mybatisflex: debug
 
+# 接口文档（Knife4j + SpringDoc）
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
 # 启用加解密（默认 true）
 zhush:
   encrypt:

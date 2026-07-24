@@ -40,5 +40,16 @@
             <artifactId>spring-tx</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- 接口文档：Knife4j（基于 SpringDoc OpenAPI3）-->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+        </dependency>
+        <!-- knife4j 已排除其传递的 springdoc，这里显式引入 Boot4 适配版 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
     </dependencies>
 </project>

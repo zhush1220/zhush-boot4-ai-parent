@@ -36,7 +36,6 @@ public class WebAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(name = "cn.dev33.satoken.exception.NotLoginException")
     static class SaTokenAdviceConfiguration {
-
         @Bean
         @ConditionalOnMissingBean
         public SaTokenExceptionAdvice saTokenExceptionAdvice() {
