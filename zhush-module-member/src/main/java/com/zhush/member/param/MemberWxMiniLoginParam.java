@@ -1,4 +1,4 @@
-package com.zhush.member.controller.app.vo;
+package com.zhush.member.param;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -9,7 +9,7 @@ import lombok.Data;
  * @author zhush
  */
 @Data
-public class MemberWxMiniLoginReqVO {
+public class MemberWxMiniLoginParam {
 
     /** 微信小程序登录 code（wx.login 获取） */
     @NotBlank(message = "登录 code 不能为空")

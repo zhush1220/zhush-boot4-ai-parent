@@ -49,6 +49,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- 显式声明注解包：@Column/@Id/@Table 等在此 jar，直接依赖以便 IDE 正确索引 -->
+        <dependency>
+            <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-annotation</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Web 相关 -->
         <dependency>
             <groupId>org.springframework</groupId>

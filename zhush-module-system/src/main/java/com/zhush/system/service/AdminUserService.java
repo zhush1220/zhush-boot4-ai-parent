@@ -1,20 +1,20 @@
 package com.zhush.system.service;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.response.PageResult;
 import com.zhush.mybatis.core.query.QueryWrapperX;
-import com.zhush.system.controller.admin.vo.user.AdminUserPageReqVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserRespVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserSaveReqVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserUpdateReqVO;
 import com.zhush.system.entity.SysAdminUser;
 import com.zhush.system.entity.SysAdminUserRole;
 import com.zhush.system.enums.SystemErrorCode;
 import com.zhush.system.mapper.SysAdminUserMapper;
 import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysRoleMapper;
+import com.zhush.system.param.AdminUserParam;
+import com.zhush.system.query.AdminUserQuery;
+import com.zhush.system.vo.AdminUserVO;
 import io.github.linpeilie.Converter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,15 +56,16 @@ public class AdminUserService {
      * 新增管理员
      */
     @Transactional(rollbackFor = Exception.class)
-    public Long createUser(AdminUserSaveReqVO reqVO) {
-        validateUsernameUnique(null, reqVO.getUsername());
-        SysAdminUser user = converter.convert(reqVO, SysAdminUser.class);
-        user.setPassword(BCrypt.hashpw(reqVO.getPassword()));
+    public Long createUser(AdminUserParam param) {
+        validateUsernameUnique(null, param.getUsername());
+        assertTrue(StrUtil.isNotBlank(param.getPassword()), SystemErrorCode.USER_PASSWORD_REQUIRED);
+        SysAdminUser user = converter.convert(param, SysAdminUser.class);
+        user.setPassword(BCrypt.hashpw(param.getPassword()));
         if (user.getStatus() == null) {
             user.setStatus(STATUS_ENABLED);
         }
         adminUserMapper.insert(user);
-        saveUserRoles(user.getId(), reqVO.getRoleIds());
+        saveUserRoles(user.getId(), param.getRoleIds());
         return user.getId();
     }
 
@@ -72,20 +73,20 @@ public class AdminUserService {
      * 修改管理员
      */
     @Transactional(rollbackFor = Exception.class)
-    public void updateUser(AdminUserUpdateReqVO reqVO) {
-        SysAdminUser existing = adminUserMapper.selectOneById(reqVO.getId());
-        assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, reqVO.getId());
+    public void updateUser(AdminUserParam param) {
+        SysAdminUser existing = adminUserMapper.selectOneById(param.getId());
+        assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, param.getId());
 
-        SysAdminUser update = converter.convert(reqVO, SysAdminUser.class);
+        SysAdminUser update = converter.convert(param, SysAdminUser.class);
         // 账号与密码不在此更新
         update.setUsername(null);
         update.setPassword(null);
         adminUserMapper.update(update);
 
         // roleIds 非 null 时覆盖更新用户角色
-        if (reqVO.getRoleIds() != null) {
-            adminUserRoleMapper.deleteByUserId(reqVO.getId());
-            saveUserRoles(reqVO.getId(), reqVO.getRoleIds());
+        if (param.getRoleIds() != null) {
+            adminUserRoleMapper.deleteByUserId(param.getId());
+            saveUserRoles(param.getId(), param.getRoleIds());
         }
     }
 
@@ -103,10 +104,10 @@ public class AdminUserService {
     /**
      * 管理员详情
      */
-    public AdminUserRespVO getUser(Long id) {
+    public AdminUserVO getUser(Long id) {
         SysAdminUser user = adminUserMapper.selectOneById(id);
         assertNotNull(user, SystemErrorCode.USER_NOT_FOUND, id);
-        AdminUserRespVO vo = converter.convert(user, AdminUserRespVO.class);
+        AdminUserVO vo = converter.convert(user, AdminUserVO.class);
         vo.setRoleIds(listRoleIdsByUserId(id));
         return vo;
     }
@@ -114,14 +115,14 @@ public class AdminUserService {
     /**
      * 管理员分页
      */
-    public PageResult<AdminUserRespVO> getUserPage(AdminUserPageReqVO reqVO) {
+    public PageResult<AdminUserVO> getUserPage(AdminUserQuery query) {
         QueryWrapperX queryWrapper = QueryWrapperX.create()
-                .like(SysAdminUser::getUsername, reqVO.getUsername())
-                .eq(SysAdminUser::getMobile, reqVO.getMobile())
-                .eq(SysAdminUser::getStatus, reqVO.getStatus());
+                .like(SysAdminUser::getUsername, query.getUsername())
+                .eq(SysAdminUser::getMobile, query.getMobile())
+                .eq(SysAdminUser::getStatus, query.getStatus());
         queryWrapper.orderBy("id", false);
-        Page<SysAdminUser> page = adminUserMapper.selectPageX(reqVO, queryWrapper);
-        List<AdminUserRespVO> list = converter.convert(page.getRecords(), AdminUserRespVO.class);
+        Page<SysAdminUser> page = adminUserMapper.selectPageX(query, queryWrapper);
+        List<AdminUserVO> list = converter.convert(page.getRecords(), AdminUserVO.class);
         fillRoleIds(list);
         return PageResult.of(list, page.getTotalRow());
     }
@@ -184,11 +185,11 @@ public class AdminUserService {
                 .toList();
     }
 
-    private void fillRoleIds(List<AdminUserRespVO> list) {
+    private void fillRoleIds(List<AdminUserVO> list) {
         if (CollUtil.isEmpty(list)) {
             return;
         }
-        Collection<Long> userIds = list.stream().map(AdminUserRespVO::getId).toList();
+        Collection<Long> userIds = list.stream().map(AdminUserVO::getId).toList();
         Map<Long, List<Long>> userRoleMap = adminUserRoleMapper.selectListByUserIds(userIds).stream()
                 .collect(Collectors.groupingBy(SysAdminUserRole::getUserId,
                         Collectors.mapping(SysAdminUserRole::getRoleId, Collectors.toList())));

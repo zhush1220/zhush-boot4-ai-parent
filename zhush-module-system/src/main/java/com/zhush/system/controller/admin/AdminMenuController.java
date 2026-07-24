@@ -2,11 +2,10 @@ package com.zhush.system.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.response.Result;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuListReqVO;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuRespVO;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuSaveReqVO;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuUpdateReqVO;
+import com.zhush.system.param.AdminMenuParam;
+import com.zhush.system.query.AdminMenuQuery;
 import com.zhush.system.service.AdminMenuService;
+import com.zhush.system.vo.AdminMenuVO;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,8 +40,8 @@ public class AdminMenuController {
      */
     @PostMapping
     @SaCheckPermission(type = TYPE, value = "system:menu:create")
-    public Result<Long> create(@RequestBody @Valid AdminMenuSaveReqVO reqVO) {
-        return Result.success(menuService.createMenu(reqVO));
+    public Result<Long> create(@RequestBody @Valid AdminMenuParam param) {
+        return Result.success(menuService.createMenu(param));
     }
 
     /**
@@ -50,8 +49,8 @@ public class AdminMenuController {
      */
     @PutMapping
     @SaCheckPermission(type = TYPE, value = "system:menu:update")
-    public Result<Void> update(@RequestBody @Valid AdminMenuUpdateReqVO reqVO) {
-        menuService.updateMenu(reqVO);
+    public Result<Void> update(@RequestBody @Valid AdminMenuParam param) {
+        menuService.updateMenu(param);
         return Result.success();
     }
 
@@ -70,7 +69,7 @@ public class AdminMenuController {
      */
     @GetMapping("/{id}")
     @SaCheckPermission(type = TYPE, value = "system:menu:query")
-    public Result<AdminMenuRespVO> get(@PathVariable Long id) {
+    public Result<AdminMenuVO> get(@PathVariable Long id) {
         return Result.success(menuService.getMenu(id));
     }
 
@@ -79,8 +78,8 @@ public class AdminMenuController {
      */
     @GetMapping("/list")
     @SaCheckPermission(type = TYPE, value = "system:menu:query")
-    public Result<List<AdminMenuRespVO>> list(AdminMenuListReqVO reqVO) {
-        return Result.success(menuService.listMenus(reqVO));
+    public Result<List<AdminMenuVO>> list(AdminMenuQuery query) {
+        return Result.success(menuService.listMenus(query));
     }
 
     /**
@@ -88,8 +87,8 @@ public class AdminMenuController {
      */
     @GetMapping("/tree")
     @SaCheckPermission(type = TYPE, value = "system:menu:query")
-    public Result<List<AdminMenuRespVO>> tree(AdminMenuListReqVO reqVO) {
-        return Result.success(menuService.treeMenus(reqVO));
+    public Result<List<AdminMenuVO>> tree(AdminMenuQuery query) {
+        return Result.success(menuService.treeMenus(query));
     }
 
 }

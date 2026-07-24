@@ -2,11 +2,11 @@ package com.zhush.system.controller.admin;
 
 import com.zhush.common.response.Result;
 import com.zhush.satoken.annotation.IgnoreAuth;
-import com.zhush.system.controller.admin.vo.AdminLoginReqVO;
-import com.zhush.system.controller.admin.vo.AdminLoginRespVO;
-import com.zhush.system.controller.admin.vo.AdminSocialLoginReqVO;
-import com.zhush.system.controller.admin.vo.AdminUserInfoRespVO;
+import com.zhush.system.param.AdminLoginParam;
+import com.zhush.system.param.AdminSocialLoginParam;
 import com.zhush.system.service.AdminAuthService;
+import com.zhush.system.vo.AdminLoginVO;
+import com.zhush.system.vo.AdminUserInfoVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,9 +35,9 @@ public class AdminAuthController {
      */
     @IgnoreAuth
     @PostMapping("/login")
-    public Result<AdminLoginRespVO> login(@RequestBody @Valid AdminLoginReqVO reqVO,
-                                          HttpServletRequest request) {
-        return Result.success(authService.login(reqVO, request.getRemoteAddr()));
+    public Result<AdminLoginVO> login(@RequestBody @Valid AdminLoginParam param,
+                                      HttpServletRequest request) {
+        return Result.success(authService.login(param, request.getRemoteAddr()));
     }
 
     /**
@@ -45,9 +45,9 @@ public class AdminAuthController {
      */
     @IgnoreAuth
     @PostMapping("/social-login")
-    public Result<AdminLoginRespVO> socialLogin(@RequestBody @Valid AdminSocialLoginReqVO reqVO,
+    public Result<AdminLoginVO> socialLogin(@RequestBody @Valid AdminSocialLoginParam loginParam,
                                                 HttpServletRequest request) {
-        return Result.success(authService.socialLogin(reqVO, request.getRemoteAddr()));
+        return Result.success(authService.socialLogin(loginParam, request.getRemoteAddr()));
     }
 
     /**
@@ -63,7 +63,7 @@ public class AdminAuthController {
      * 当前登录用户信息
      */
     @GetMapping("/user-info")
-    public Result<AdminUserInfoRespVO> userInfo() {
+    public Result<AdminUserInfoVO> userInfo() {
         return Result.success(authService.getUserInfo());
     }
 

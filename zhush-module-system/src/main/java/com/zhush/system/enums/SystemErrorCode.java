@@ -25,6 +25,7 @@ public enum SystemErrorCode implements IErrorCode {
     USER_ALREADY_EXISTS(1001003, "用户已存在：{0}"),
     PASSWORD_INCORRECT(1001004, "账号或密码错误"),
     CAPTCHA_INVALID(1001005, "验证码错误或已过期"),
+    USER_PASSWORD_REQUIRED(1001006, "新增用户时密码不能为空"),
 
     // ================ 角色 1001 1xx ================
     ROLE_NOT_FOUND(1001101, "角色不存在：{0}"),

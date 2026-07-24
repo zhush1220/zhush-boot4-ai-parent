@@ -1,18 +1,19 @@
 package com.zhush.system.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
-import com.zhush.system.controller.admin.vo.user.AdminUserAssignRoleReqVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserPageReqVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserRespVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserResetPwdReqVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserSaveReqVO;
-import com.zhush.system.controller.admin.vo.user.AdminUserUpdateReqVO;
+import com.zhush.system.param.AdminUserAssignRoleParam;
+import com.zhush.system.param.AdminUserParam;
+import com.zhush.system.param.AdminUserResetPwdParam;
+import com.zhush.system.query.AdminUserQuery;
 import com.zhush.system.service.AdminUserService;
+import com.zhush.system.vo.AdminUserVO;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,8 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin/system/user")
 public class AdminUserController {
 
-    private static final String TYPE = "admin";
-
     private final AdminUserService userService;
 
     public AdminUserController(AdminUserService userService) {
@@ -41,18 +40,18 @@ public class AdminUserController {
      * 新增管理员
      */
     @PostMapping
-    @SaCheckPermission(type = TYPE, value = "system:user:create")
-    public Result<Long> create(@RequestBody @Valid AdminUserSaveReqVO reqVO) {
-        return Result.success(userService.createUser(reqVO));
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:create")
+    public Result<Long> create(@RequestBody @Valid AdminUserParam param) {
+        return Result.success(userService.createUser(param));
     }
 
     /**
      * 修改管理员
      */
     @PutMapping
-    @SaCheckPermission(type = TYPE, value = "system:user:update")
-    public Result<Void> update(@RequestBody @Valid AdminUserUpdateReqVO reqVO) {
-        userService.updateUser(reqVO);
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
+    public Result<Void> update(@RequestBody @Valid AdminUserParam param) {
+        userService.updateUser(param);
         return Result.success();
     }
 
@@ -60,8 +59,8 @@ public class AdminUserController {
      * 删除管理员
      */
     @DeleteMapping("/{id}")
-    @SaCheckPermission(type = TYPE, value = "system:user:delete")
-    public Result<Void> delete(@org.springframework.web.bind.annotation.PathVariable Long id) {
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:delete")
+    public Result<Void> delete(@PathVariable Long id) {
         userService.deleteUser(id);
         return Result.success();
     }
@@ -70,8 +69,8 @@ public class AdminUserController {
      * 管理员详情
      */
     @GetMapping("/{id}")
-    @SaCheckPermission(type = TYPE, value = "system:user:query")
-    public Result<AdminUserRespVO> get(@org.springframework.web.bind.annotation.PathVariable Long id) {
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:query")
+    public Result<AdminUserVO> get(@PathVariable Long id) {
         return Result.success(userService.getUser(id));
     }
 
@@ -79,18 +78,18 @@ public class AdminUserController {
      * 管理员分页
      */
     @GetMapping("/page")
-    @SaCheckPermission(type = TYPE, value = "system:user:query")
-    public Result<PageResult<AdminUserRespVO>> page(@Valid AdminUserPageReqVO reqVO) {
-        return Result.success(userService.getUserPage(reqVO));
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:query")
+    public Result<PageResult<AdminUserVO>> page(@Valid AdminUserQuery query) {
+        return Result.success(userService.getUserPage(query));
     }
 
     /**
      * 分配角色
      */
     @PutMapping("/assign-role")
-    @SaCheckPermission(type = TYPE, value = "system:user:assign-role")
-    public Result<Void> assignRole(@RequestBody @Valid AdminUserAssignRoleReqVO reqVO) {
-        userService.assignRoles(reqVO.getUserId(), reqVO.getRoleIds());
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:assign-role")
+    public Result<Void> assignRole(@RequestBody @Valid AdminUserAssignRoleParam param) {
+        userService.assignRoles(param.getUserId(), param.getRoleIds());
         return Result.success();
     }
 
@@ -98,9 +97,9 @@ public class AdminUserController {
      * 重置密码
      */
     @PutMapping("/reset-password")
-    @SaCheckPermission(type = TYPE, value = "system:user:reset-password")
-    public Result<Void> resetPassword(@RequestBody @Valid AdminUserResetPwdReqVO reqVO) {
-        userService.resetPassword(reqVO.getId(), reqVO.getPassword());
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:reset-password")
+    public Result<Void> resetPassword(@RequestBody @Valid AdminUserResetPwdParam param) {
+        userService.resetPassword(param.getId(), param.getPassword());
         return Result.success();
     }
 
@@ -108,12 +107,12 @@ public class AdminUserController {
      * 修改状态（0-禁用 1-启用）
      */
     @PutMapping("/update-status")
-    @SaCheckPermission(type = TYPE, value = "system:user:update")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
     public Result<Void> updateStatus(@RequestParam Long id, @RequestParam Integer status) {
-        AdminUserUpdateReqVO reqVO = new AdminUserUpdateReqVO();
-        reqVO.setId(id);
-        reqVO.setStatus(status);
-        userService.updateUser(reqVO);
+        AdminUserParam param = new AdminUserParam();
+        param.setId(id);
+        param.setStatus(status);
+        userService.updateUser(param);
         return Result.success();
     }
 

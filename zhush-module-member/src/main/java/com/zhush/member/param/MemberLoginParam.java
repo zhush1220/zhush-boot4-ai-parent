@@ -1,4 +1,4 @@
-package com.zhush.member.controller.app.vo;
+package com.zhush.member.param;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -9,7 +9,7 @@ import lombok.Data;
  * @author zhush
  */
 @Data
-public class MemberLoginReqVO {
+public class MemberLoginParam {
 
     /** 手机号 */
     @NotBlank(message = "手机号不能为空")

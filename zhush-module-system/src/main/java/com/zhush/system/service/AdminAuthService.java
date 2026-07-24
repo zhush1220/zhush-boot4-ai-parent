@@ -3,13 +3,13 @@ package com.zhush.system.service;
 import cn.hutool.crypto.digest.BCrypt;
 import com.zhush.satoken.core.DeviceTypeConstants;
 import com.zhush.satoken.core.StpAdminUtil;
-import com.zhush.system.controller.admin.vo.AdminLoginReqVO;
-import com.zhush.system.controller.admin.vo.AdminLoginRespVO;
-import com.zhush.system.controller.admin.vo.AdminSocialLoginReqVO;
-import com.zhush.system.controller.admin.vo.AdminUserInfoRespVO;
 import com.zhush.system.entity.SysAdminUser;
 import com.zhush.system.enums.SystemErrorCode;
 import com.zhush.system.mapper.SysAdminUserMapper;
+import com.zhush.system.param.AdminLoginParam;
+import com.zhush.system.param.AdminSocialLoginParam;
+import com.zhush.system.vo.AdminLoginVO;
+import com.zhush.system.vo.AdminUserInfoVO;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -43,16 +43,16 @@ public class AdminAuthService {
     /**
      * 账号密码登录
      */
-    public AdminLoginRespVO login(AdminLoginReqVO reqVO, String clientIp) {
-        SysAdminUser user = adminUserMapper.selectByUsername(reqVO.getUsername());
+    public AdminLoginVO login(AdminLoginParam param, String clientIp) {
+        SysAdminUser user = adminUserMapper.selectByUsername(param.getUsername());
         // 账号不存在与密码错误统一提示，避免账号探测
         assertNotNull(user, SystemErrorCode.PASSWORD_INCORRECT);
-        assertTrue(BCrypt.checkpw(reqVO.getPassword(), user.getPassword()),
+        assertTrue(BCrypt.checkpw(param.getPassword(), user.getPassword()),
                 SystemErrorCode.PASSWORD_INCORRECT);
         assertTrue(user.getStatus() != null && user.getStatus() == STATUS_ENABLED,
                 SystemErrorCode.USER_DISABLED);
 
-        return doLogin(user, resolveDevice(reqVO.getDevice()), clientIp);
+        return doLogin(user, resolveDevice(param.getDevice()), clientIp);
     }
 
     /**
@@ -61,9 +61,9 @@ public class AdminAuthService {
      * <p>完整流程：{@code code} → 调用第三方接口换取 openId → 匹配 sys_social_user 绑定 →
      * 命中则登录对应管理员。此处三方 SDK 调用尚未接入，作为扩展点抛出提示。
      */
-    public AdminLoginRespVO socialLogin(AdminSocialLoginReqVO reqVO, String clientIp) {
+    public AdminLoginVO socialLogin(AdminSocialLoginParam loginParam, String clientIp) {
         throw exception(SystemErrorCode.SYSTEM_CONFIG_MISSING,
-                "第三方登录[" + reqVO.getSocialType() + "]");
+                "第三方登录[" + loginParam.getSocialType() + "]");
     }
 
     /**
@@ -76,12 +76,12 @@ public class AdminAuthService {
     /**
      * 当前登录用户信息（含角色与权限）
      */
-    public AdminUserInfoRespVO getUserInfo() {
+    public AdminUserInfoVO getUserInfo() {
         Long userId = StpAdminUtil.getLoginIdAsLong();
         SysAdminUser user = adminUserMapper.selectOneById(userId);
         assertNotNull(user, SystemErrorCode.USER_NOT_FOUND, userId);
 
-        AdminUserInfoRespVO vo = new AdminUserInfoRespVO();
+        AdminUserInfoVO vo = new AdminUserInfoVO();
         vo.setUserId(user.getId());
         vo.setUsername(user.getUsername());
         vo.setNickname(user.getNickname());
@@ -93,7 +93,7 @@ public class AdminAuthService {
 
     // ================ 内部方法 ================
 
-    private AdminLoginRespVO doLogin(SysAdminUser user, String device, String clientIp) {
+    private AdminLoginVO doLogin(SysAdminUser user, String device, String clientIp) {
         // 同端互踢：先注销该账号在同一设备类型的旧会话，再登录
         StpAdminUtil.logout(user.getId(), device);
         StpAdminUtil.login(user.getId(), device);
@@ -105,12 +105,12 @@ public class AdminAuthService {
         update.setLoginDate(LocalDateTime.now());
         adminUserMapper.update(update);
 
-        AdminLoginRespVO respVO = new AdminLoginRespVO();
-        respVO.setUserId(user.getId());
-        respVO.setTokenName(StpAdminUtil.getTokenInfo().getTokenName());
-        respVO.setTokenValue(StpAdminUtil.getTokenValue());
-        respVO.setNickname(user.getNickname());
-        return respVO;
+        AdminLoginVO loginVO = new AdminLoginVO();
+        loginVO.setUserId(user.getId());
+        loginVO.setTokenName(StpAdminUtil.getTokenInfo().getTokenName());
+        loginVO.setTokenValue(StpAdminUtil.getTokenValue());
+        loginVO.setNickname(user.getNickname());
+        return loginVO;
     }
 
     private String resolveDevice(String device) {

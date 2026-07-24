@@ -2,14 +2,13 @@ package com.zhush.system.service;
 
 import com.zhush.common.tree.TreeUtils;
 import com.zhush.mybatis.core.query.QueryWrapperX;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuListReqVO;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuRespVO;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuSaveReqVO;
-import com.zhush.system.controller.admin.vo.menu.AdminMenuUpdateReqVO;
 import com.zhush.system.entity.SysMenu;
 import com.zhush.system.enums.SystemErrorCode;
 import com.zhush.system.mapper.SysMenuMapper;
 import com.zhush.system.mapper.SysRoleMenuMapper;
+import com.zhush.system.param.AdminMenuParam;
+import com.zhush.system.query.AdminMenuQuery;
+import com.zhush.system.vo.AdminMenuVO;
 import io.github.linpeilie.Converter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,8 +45,8 @@ public class AdminMenuService {
     /**
      * 新增菜单
      */
-    public Long createMenu(AdminMenuSaveReqVO reqVO) {
-        SysMenu menu = converter.convert(reqVO, SysMenu.class);
+    public Long createMenu(AdminMenuParam param) {
+        SysMenu menu = converter.convert(param, SysMenu.class);
         if (menu.getParentId() == null) {
             menu.setParentId(ROOT_PARENT_ID);
         }
@@ -64,14 +63,14 @@ public class AdminMenuService {
     /**
      * 修改菜单
      */
-    public void updateMenu(AdminMenuUpdateReqVO reqVO) {
-        SysMenu existing = menuMapper.selectOneById(reqVO.getId());
-        assertNotNull(existing, SystemErrorCode.MENU_NOT_FOUND, reqVO.getId());
+    public void updateMenu(AdminMenuParam param) {
+        SysMenu existing = menuMapper.selectOneById(param.getId());
+        assertNotNull(existing, SystemErrorCode.MENU_NOT_FOUND, param.getId());
         // 父级不能设置为自身
-        assertTrue(!reqVO.getId().equals(reqVO.getParentId()),
+        assertTrue(!param.getId().equals(param.getParentId()),
                 SystemErrorCode.MENU_PARENT_ERROR);
 
-        SysMenu update = converter.convert(reqVO, SysMenu.class);
+        SysMenu update = converter.convert(param, SysMenu.class);
         menuMapper.update(update);
     }
 
@@ -93,33 +92,33 @@ public class AdminMenuService {
     /**
      * 菜单详情
      */
-    public AdminMenuRespVO getMenu(Long id) {
+    public AdminMenuVO getMenu(Long id) {
         SysMenu menu = menuMapper.selectOneById(id);
         assertNotNull(menu, SystemErrorCode.MENU_NOT_FOUND, id);
-        return converter.convert(menu, AdminMenuRespVO.class);
+        return converter.convert(menu, AdminMenuVO.class);
     }
 
     /**
      * 菜单列表（扁平，按过滤条件）
      */
-    public List<AdminMenuRespVO> listMenus(AdminMenuListReqVO reqVO) {
-        return converter.convert(queryMenus(reqVO), AdminMenuRespVO.class);
+    public List<AdminMenuVO> listMenus(AdminMenuQuery query) {
+        return converter.convert(queryMenus(query), AdminMenuVO.class);
     }
 
     /**
      * 菜单树
      */
-    public List<AdminMenuRespVO> treeMenus(AdminMenuListReqVO reqVO) {
-        List<AdminMenuRespVO> list = converter.convert(queryMenus(reqVO), AdminMenuRespVO.class);
+    public List<AdminMenuVO> treeMenus(AdminMenuQuery query) {
+        List<AdminMenuVO> list = converter.convert(queryMenus(query), AdminMenuVO.class);
         return TreeUtils.buildTrees(list);
     }
 
     // ================ 内部方法 ================
 
-    private List<SysMenu> queryMenus(AdminMenuListReqVO reqVO) {
+    private List<SysMenu> queryMenus(AdminMenuQuery query) {
         QueryWrapperX queryWrapper = QueryWrapperX.create()
-                .like(SysMenu::getName, reqVO.getName())
-                .eq(SysMenu::getStatus, reqVO.getStatus());
+                .like(SysMenu::getName, query.getName())
+                .eq(SysMenu::getStatus, query.getStatus());
         queryWrapper.orderBy("sort", true);
         return menuMapper.selectListByQuery(queryWrapper);
     }

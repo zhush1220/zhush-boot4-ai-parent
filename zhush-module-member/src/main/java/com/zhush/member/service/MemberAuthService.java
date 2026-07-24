@@ -2,18 +2,18 @@ package com.zhush.member.service;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
-import com.zhush.member.controller.app.vo.MemberInfoRespVO;
-import com.zhush.member.controller.app.vo.MemberLoginReqVO;
-import com.zhush.member.controller.app.vo.MemberLoginRespVO;
-import com.zhush.member.controller.app.vo.MemberWxMiniLoginReqVO;
 import com.zhush.member.entity.MemberSocialUser;
 import com.zhush.member.entity.MemberUser;
 import com.zhush.member.enums.MemberErrorCode;
 import com.zhush.member.mapper.MemberSocialUserMapper;
 import com.zhush.member.mapper.MemberUserMapper;
+import com.zhush.member.param.MemberLoginParam;
+import com.zhush.member.param.MemberWxMiniLoginParam;
 import com.zhush.member.social.MemberSocialTypeConstants;
 import com.zhush.member.social.WxMaSession;
 import com.zhush.member.social.WxMiniClient;
+import com.zhush.member.vo.MemberInfoVO;
+import com.zhush.member.vo.MemberLoginVO;
 import com.zhush.satoken.core.DeviceTypeConstants;
 import com.zhush.satoken.core.StpMemberUtil;
 import org.springframework.stereotype.Service;
@@ -53,8 +53,8 @@ public class MemberAuthService {
      * 微信小程序登录：openid 不存在则静默注册
      */
     @Transactional(rollbackFor = Exception.class)
-    public MemberLoginRespVO wxMiniLogin(MemberWxMiniLoginReqVO reqVO, String clientIp) {
-        WxMaSession session = wxMiniClient.code2Session(reqVO.getCode());
+    public MemberLoginVO wxMiniLogin(MemberWxMiniLoginParam param, String clientIp) {
+        WxMaSession session = wxMiniClient.code2Session(param.getCode());
 
         MemberSocialUser social = memberSocialUserMapper
                 .selectByTypeAndOpenId(MemberSocialTypeConstants.WECHAT_MINI, session.getOpenId());
@@ -84,7 +84,7 @@ public class MemberAuthService {
         assertTrue(user.getStatus() != null && user.getStatus() == STATUS_ENABLED,
                 MemberErrorCode.MEMBER_DISABLED);
 
-        MemberLoginRespVO respVO = doLogin(user, resolveDevice(reqVO.getDevice()), clientIp);
+        MemberLoginVO respVO = doLogin(user, resolveDevice(param.getDevice()), clientIp);
         respVO.setNewRegister(newRegister);
         return respVO;
     }
@@ -92,16 +92,16 @@ public class MemberAuthService {
     /**
      * 账号密码登录
      */
-    public MemberLoginRespVO passwordLogin(MemberLoginReqVO reqVO, String clientIp) {
-        MemberUser user = memberUserMapper.selectByMobile(reqVO.getMobile());
+    public MemberLoginVO passwordLogin(MemberLoginParam param, String clientIp) {
+        MemberUser user = memberUserMapper.selectByMobile(param.getMobile());
         assertNotNull(user, MemberErrorCode.LOGIN_PASSWORD_INCORRECT);
         assertTrue(StrUtil.isNotBlank(user.getPassword())
-                        && BCrypt.checkpw(reqVO.getPassword(), user.getPassword()),
+                        && BCrypt.checkpw(param.getPassword(), user.getPassword()),
                 MemberErrorCode.LOGIN_PASSWORD_INCORRECT);
         assertTrue(user.getStatus() != null && user.getStatus() == STATUS_ENABLED,
                 MemberErrorCode.MEMBER_DISABLED);
 
-        MemberLoginRespVO respVO = doLogin(user, resolveDevice(reqVO.getDevice()), clientIp);
+        MemberLoginVO respVO = doLogin(user, resolveDevice(param.getDevice()), clientIp);
         respVO.setNewRegister(false);
         return respVO;
     }
@@ -116,12 +116,12 @@ public class MemberAuthService {
     /**
      * 当前登录会员信息
      */
-    public MemberInfoRespVO getUserInfo() {
+    public MemberInfoVO getUserInfo() {
         Long userId = StpMemberUtil.getLoginIdAsLong();
         MemberUser user = memberUserMapper.selectOneById(userId);
         assertNotNull(user, MemberErrorCode.MEMBER_NOT_FOUND, userId);
 
-        MemberInfoRespVO vo = new MemberInfoRespVO();
+        MemberInfoVO vo = new MemberInfoVO();
         vo.setUserId(user.getId());
         vo.setMobile(user.getMobile());
         vo.setNickname(user.getNickname());
@@ -160,7 +160,7 @@ public class MemberAuthService {
         return social;
     }
 
-    private MemberLoginRespVO doLogin(MemberUser user, String device, String clientIp) {
+    private MemberLoginVO doLogin(MemberUser user, String device, String clientIp) {
         // 同端互踢
         StpMemberUtil.logout(user.getId(), device);
         StpMemberUtil.login(user.getId(), device);
@@ -171,7 +171,7 @@ public class MemberAuthService {
         update.setLoginDate(LocalDateTime.now());
         memberUserMapper.update(update);
 
-        MemberLoginRespVO respVO = new MemberLoginRespVO();
+        MemberLoginVO respVO = new MemberLoginVO();
         respVO.setUserId(user.getId());
         respVO.setTokenName(StpMemberUtil.getTokenInfo().getTokenName());
         respVO.setTokenValue(StpMemberUtil.getTokenValue());

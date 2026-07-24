@@ -4,10 +4,6 @@ import cn.hutool.core.collection.CollUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.response.PageResult;
 import com.zhush.mybatis.core.query.QueryWrapperX;
-import com.zhush.system.controller.admin.vo.role.AdminRolePageReqVO;
-import com.zhush.system.controller.admin.vo.role.AdminRoleRespVO;
-import com.zhush.system.controller.admin.vo.role.AdminRoleSaveReqVO;
-import com.zhush.system.controller.admin.vo.role.AdminRoleUpdateReqVO;
 import com.zhush.system.entity.SysRole;
 import com.zhush.system.entity.SysRoleMenu;
 import com.zhush.system.enums.SystemErrorCode;
@@ -15,6 +11,9 @@ import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysMenuMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.mapper.SysRoleMenuMapper;
+import com.zhush.system.param.AdminRoleParam;
+import com.zhush.system.query.AdminRoleQuery;
+import com.zhush.system.vo.AdminRoleVO;
 import io.github.linpeilie.Converter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,14 +56,14 @@ public class AdminRoleService {
      * 新增角色
      */
     @Transactional(rollbackFor = Exception.class)
-    public Long createRole(AdminRoleSaveReqVO reqVO) {
-        validateCodeUnique(null, reqVO.getCode());
-        SysRole role = converter.convert(reqVO, SysRole.class);
+    public Long createRole(AdminRoleParam param) {
+        validateCodeUnique(null, param.getCode());
+        SysRole role = converter.convert(param, SysRole.class);
         if (role.getStatus() == null) {
             role.setStatus(STATUS_ENABLED);
         }
         roleMapper.insert(role);
-        saveRoleMenus(role.getId(), reqVO.getMenuIds());
+        saveRoleMenus(role.getId(), param.getMenuIds());
         return role.getId();
     }
 
@@ -72,18 +71,18 @@ public class AdminRoleService {
      * 修改角色
      */
     @Transactional(rollbackFor = Exception.class)
-    public void updateRole(AdminRoleUpdateReqVO reqVO) {
-        SysRole existing = roleMapper.selectOneById(reqVO.getId());
-        assertNotNull(existing, SystemErrorCode.ROLE_NOT_FOUND, reqVO.getId());
+    public void updateRole(AdminRoleParam param) {
+        SysRole existing = roleMapper.selectOneById(param.getId());
+        assertNotNull(existing, SystemErrorCode.ROLE_NOT_FOUND, param.getId());
 
-        SysRole update = converter.convert(reqVO, SysRole.class);
+        SysRole update = converter.convert(param, SysRole.class);
         // 编码不可修改
         update.setCode(null);
         roleMapper.update(update);
 
-        if (reqVO.getMenuIds() != null) {
-            roleMenuMapper.deleteByRoleId(reqVO.getId());
-            saveRoleMenus(reqVO.getId(), reqVO.getMenuIds());
+        if (param.getMenuIds() != null) {
+            roleMenuMapper.deleteByRoleId(param.getId());
+            saveRoleMenus(param.getId(), param.getMenuIds());
         }
     }
 
@@ -104,10 +103,10 @@ public class AdminRoleService {
     /**
      * 角色详情
      */
-    public AdminRoleRespVO getRole(Long id) {
+    public AdminRoleVO getRole(Long id) {
         SysRole role = roleMapper.selectOneById(id);
         assertNotNull(role, SystemErrorCode.ROLE_NOT_FOUND, id);
-        AdminRoleRespVO vo = converter.convert(role, AdminRoleRespVO.class);
+        AdminRoleVO vo = converter.convert(role, AdminRoleVO.class);
         vo.setMenuIds(listMenuIdsByRoleId(id));
         return vo;
     }
@@ -115,25 +114,25 @@ public class AdminRoleService {
     /**
      * 角色分页
      */
-    public PageResult<AdminRoleRespVO> getRolePage(AdminRolePageReqVO reqVO) {
+    public PageResult<AdminRoleVO> getRolePage(AdminRoleQuery query) {
         QueryWrapperX queryWrapper = QueryWrapperX.create()
-                .like(SysRole::getName, reqVO.getName())
-                .like(SysRole::getCode, reqVO.getCode())
-                .eq(SysRole::getStatus, reqVO.getStatus());
+                .like(SysRole::getName, query.getName())
+                .like(SysRole::getCode, query.getCode())
+                .eq(SysRole::getStatus, query.getStatus());
         queryWrapper.orderBy("sort", true);
-        Page<SysRole> page = roleMapper.selectPageX(reqVO, queryWrapper);
-        List<AdminRoleRespVO> list = converter.convert(page.getRecords(), AdminRoleRespVO.class);
+        Page<SysRole> page = roleMapper.selectPageX(query, queryWrapper);
+        List<AdminRoleVO> list = converter.convert(page.getRecords(), AdminRoleVO.class);
         return PageResult.of(list, page.getTotalRow());
     }
 
     /**
      * 全部启用角色（下拉选择）
      */
-    public List<AdminRoleRespVO> listAllEnabled() {
+    public List<AdminRoleVO> listAllEnabled() {
         QueryWrapperX queryWrapper = QueryWrapperX.create()
                 .eq(SysRole::getStatus, STATUS_ENABLED);
         queryWrapper.orderBy("sort", true);
-        return converter.convert(roleMapper.selectListByQuery(queryWrapper), AdminRoleRespVO.class);
+        return converter.convert(roleMapper.selectListByQuery(queryWrapper), AdminRoleVO.class);
     }
 
     /**

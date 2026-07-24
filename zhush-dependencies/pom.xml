@@ -155,6 +155,12 @@
             </dependency>
 
             <dependency>
+                <groupId>com.mybatis-flex</groupId>
+                <artifactId>mybatis-flex-annotation</artifactId>
+                <version>${mybatis.flex.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>druid-spring-boot-4-starter</artifactId>
                 <version>${druid.version}</version>

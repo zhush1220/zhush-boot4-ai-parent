@@ -1,11 +1,11 @@
 package com.zhush.member.controller.app;
 
 import com.zhush.common.response.Result;
-import com.zhush.member.controller.app.vo.MemberInfoRespVO;
-import com.zhush.member.controller.app.vo.MemberLoginReqVO;
-import com.zhush.member.controller.app.vo.MemberLoginRespVO;
-import com.zhush.member.controller.app.vo.MemberWxMiniLoginReqVO;
+import com.zhush.member.param.MemberLoginParam;
+import com.zhush.member.param.MemberWxMiniLoginParam;
 import com.zhush.member.service.MemberAuthService;
+import com.zhush.member.vo.MemberInfoVO;
+import com.zhush.member.vo.MemberLoginVO;
 import com.zhush.satoken.annotation.IgnoreAuth;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -35,9 +35,9 @@ public class MemberAuthController {
      */
     @IgnoreAuth
     @PostMapping("/wx-mini-login")
-    public Result<MemberLoginRespVO> wxMiniLogin(@RequestBody @Valid MemberWxMiniLoginReqVO reqVO,
-                                                 HttpServletRequest request) {
-        return Result.success(authService.wxMiniLogin(reqVO, request.getRemoteAddr()));
+    public Result<MemberLoginVO> wxMiniLogin(@RequestBody @Valid MemberWxMiniLoginParam param,
+                                             HttpServletRequest request) {
+        return Result.success(authService.wxMiniLogin(param, request.getRemoteAddr()));
     }
 
     /**
@@ -45,9 +45,9 @@ public class MemberAuthController {
      */
     @IgnoreAuth
     @PostMapping("/login")
-    public Result<MemberLoginRespVO> login(@RequestBody @Valid MemberLoginReqVO reqVO,
-                                           HttpServletRequest request) {
-        return Result.success(authService.passwordLogin(reqVO, request.getRemoteAddr()));
+    public Result<MemberLoginVO> login(@RequestBody @Valid MemberLoginParam param,
+                                       HttpServletRequest request) {
+        return Result.success(authService.passwordLogin(param, request.getRemoteAddr()));
     }
 
     /**
@@ -63,7 +63,7 @@ public class MemberAuthController {
      * 当前登录会员信息
      */
     @GetMapping("/user-info")
-    public Result<MemberInfoRespVO> userInfo() {
+    public Result<MemberInfoVO> userInfo() {
         return Result.success(authService.getUserInfo());
     }
 

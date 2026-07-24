@@ -1,4 +1,4 @@
-package com.zhush.member.controller.app.vo;
+package com.zhush.member.vo;
 
 import lombok.Data;
 
@@ -8,7 +8,7 @@ import lombok.Data;
  * @author zhush
  */
 @Data
-public class MemberInfoRespVO {
+public class MemberInfoVO {
 
     /** 会员用户ID */
     private Long userId;
