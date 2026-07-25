@@ -2,6 +2,7 @@ package com.zhush.system.param;
 
 import com.zhush.system.entity.SysRole;
 import io.github.linpeilie.annotations.AutoMapper;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -15,48 +16,33 @@ import java.util.List;
  **/
 @Data
 @AutoMapper(target = SysRole.class)
+@Schema(description = "角色新增/修改请求参数")
 public class AdminRoleParam {
 
-    /**
-     * 角色ID
-     */
+    @Schema(description = "角色ID（新增时不需要传）")
     private Long id;
 
-    /**
-     * 角色名称
-     */
+    @Schema(description = "角色名称", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "角色名称不能为空")
     private String name;
 
-    /**
-     * 角色编码（如 admin、ops）
-     */
+    @Schema(description = "角色编码（如 admin、ops）", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "角色编码不能为空")
     private String code;
 
-    /**
-     * 显示顺序
-     */
+    @Schema(description = "显示顺序")
     private Integer sort;
 
-    /**
-     * 数据权限：1-全部 2-本部门 3-本部门及以下 4-仅本人 5-自定义
-     */
+    @Schema(description = "数据权限：1-全部 2-本部门 3-本部门及以下 4-仅本人 5-自定义")
     private Integer dataScope;
 
-    /**
-     * 状态：0-禁用 1-启用（不传默认启用）
-     */
+    @Schema(description = "状态：0-禁用 1-启用（不传默认启用）")
     private Integer status;
 
-    /**
-     * 备注
-     */
+    @Schema(description = "备注")
     private String remark;
 
-    /**
-     * 菜单ID列表（授予的权限）
-     */
+    @Schema(description = "菜单ID列表（授予的权限）")
     private List<Long> menuIds;
 
 }

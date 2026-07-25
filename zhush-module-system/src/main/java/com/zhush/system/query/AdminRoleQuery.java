@@ -1,6 +1,7 @@
 package com.zhush.system.query;
 
 import com.zhush.common.query.BaseQuery;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,21 +13,16 @@ import lombok.EqualsAndHashCode;
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data
+@Schema(description = "角色分页查询请求")
 public class AdminRoleQuery extends BaseQuery {
 
-    /**
-     * 角色名称（模糊匹配）
-     */
+    @Schema(description = "角色名称（模糊匹配）")
     private String name;
 
-    /**
-     * 角色编码（模糊匹配）
-     */
+    @Schema(description = "角色编码（模糊匹配）")
     private String code;
 
-    /**
-     * 状态：0-禁用 1-启用
-     */
+    @Schema(description = "状态：0-禁用 1-启用")
     private Integer status;
 
 }

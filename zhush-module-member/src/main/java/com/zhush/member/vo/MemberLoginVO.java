@@ -1,5 +1,6 @@
 package com.zhush.member.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -8,20 +9,21 @@ import lombok.Data;
  * @author zhush
  */
 @Data
+@Schema(description = "会员登录结果")
 public class MemberLoginVO {
 
-    /** 会员用户ID */
+    @Schema(description = "会员用户ID")
     private Long userId;
 
-    /** token 名称 */
+    @Schema(description = "token 名称")
     private String tokenName;
 
-    /** token 值 */
+    @Schema(description = "token 值")
     private String tokenValue;
 
-    /** 昵称 */
+    @Schema(description = "昵称")
     private String nickname;
 
-    /** 是否新注册用户（静默注册） */
+    @Schema(description = "是否新注册用户（静默注册）")
     private Boolean newRegister;
 }

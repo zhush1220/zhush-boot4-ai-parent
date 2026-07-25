@@ -10,6 +10,9 @@ import com.zhush.system.param.AdminUserResetPwdParam;
 import com.zhush.system.query.AdminUserQuery;
 import com.zhush.system.service.AdminUserService;
 import com.zhush.system.vo.AdminUserVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author zhush
  */
 @RestController
+@Tag(name = "管理端-用户管理", description = "管理员用户的增删改查、分配角色、重置密码等")
 @RequestMapping("/admin/system/user")
 public class AdminUserController {
 
@@ -41,6 +45,7 @@ public class AdminUserController {
      */
     @PostMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:create")
+    @Operation(summary = "新增管理员")
     public Result<Long> create(@RequestBody @Valid AdminUserParam param) {
         return Result.success(userService.createUser(param));
     }
@@ -50,6 +55,7 @@ public class AdminUserController {
      */
     @PutMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
+    @Operation(summary = "修改管理员")
     public Result<Void> update(@RequestBody @Valid AdminUserParam param) {
         userService.updateUser(param);
         return Result.success();
@@ -60,7 +66,8 @@ public class AdminUserController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:delete")
-    public Result<Void> delete(@PathVariable Long id) {
+    @Operation(summary = "删除管理员")
+    public Result<Void> delete(@Parameter(description = "用户ID") @PathVariable Long id) {
         userService.deleteUser(id);
         return Result.success();
     }
@@ -70,7 +77,8 @@ public class AdminUserController {
      */
     @GetMapping("/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:query")
-    public Result<AdminUserVO> get(@PathVariable Long id) {
+    @Operation(summary = "管理员详情")
+    public Result<AdminUserVO> get(@Parameter(description = "用户ID") @PathVariable Long id) {
         return Result.success(userService.getUser(id));
     }
 
@@ -79,6 +87,7 @@ public class AdminUserController {
      */
     @GetMapping("/page")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:query")
+    @Operation(summary = "管理员分页")
     public Result<PageResult<AdminUserVO>> page(@Valid AdminUserQuery query) {
         return Result.success(userService.getUserPage(query));
     }
@@ -88,6 +97,7 @@ public class AdminUserController {
      */
     @PutMapping("/assign-role")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:assign-role")
+    @Operation(summary = "分配角色")
     public Result<Void> assignRole(@RequestBody @Valid AdminUserAssignRoleParam param) {
         userService.assignRoles(param.getUserId(), param.getRoleIds());
         return Result.success();
@@ -98,6 +108,7 @@ public class AdminUserController {
      */
     @PutMapping("/reset-password")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:reset-password")
+    @Operation(summary = "重置密码")
     public Result<Void> resetPassword(@RequestBody @Valid AdminUserResetPwdParam param) {
         userService.resetPassword(param.getId(), param.getPassword());
         return Result.success();
@@ -108,7 +119,9 @@ public class AdminUserController {
      */
     @PutMapping("/update-status")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
-    public Result<Void> updateStatus(@RequestParam Long id, @RequestParam Integer status) {
+    @Operation(summary = "修改状态（0-禁用 1-启用）")
+    public Result<Void> updateStatus(@Parameter(description = "用户ID") @RequestParam Long id,
+                                     @Parameter(description = "状态：0-禁用 1-启用") @RequestParam Integer status) {
         AdminUserParam param = new AdminUserParam();
         param.setId(id);
         param.setStatus(status);

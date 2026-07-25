@@ -2,6 +2,7 @@ package com.zhush.system.param;
 
 import com.zhush.system.entity.SysAdminUser;
 import io.github.linpeilie.annotations.AutoMapper;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -15,67 +16,44 @@ import java.util.List;
  **/
 @Data
 @AutoMapper(target = SysAdminUser.class)
+@Schema(description = "管理员新增/修改请求参数（新增时无需传 id，密码仅新增时生效）")
 public class AdminUserParam {
 
-    /**
-     * 用户ID（新增时不需要传）
-     */
+    @Schema(description = "用户ID（新增时不需要传）")
     private Long id;
 
-    /**
-     * 登录账号
-     */
+    @Schema(description = "登录账号", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "登录账号不能为空")
     private String username;
 
-    /**
-     * 登录密码（明文，服务端 BCrypt 加密存储，仅新增时生效）
-     */
+    @Schema(description = "登录密码（明文，服务端 BCrypt 加密存储，仅新增时生效）")
     private String password;
 
-    /**
-     * 昵称
-     */
+    @Schema(description = "昵称")
     private String nickname;
 
-    /**
-     * 真实姓名
-     */
+    @Schema(description = "真实姓名")
     private String realName;
 
-    /**
-     * 头像地址
-     */
+    @Schema(description = "头像地址")
     private String avatar;
 
-    /**
-     * 手机号
-     */
+    @Schema(description = "手机号")
     private String mobile;
 
-    /**
-     * 邮箱
-     */
+    @Schema(description = "邮箱")
     private String email;
 
-    /**
-     * 部门ID
-     */
+    @Schema(description = "部门ID")
     private Long deptId;
 
-    /**
-     * 状态：0-禁用 1-启用（不传默认启用）
-     */
+    @Schema(description = "状态：0-禁用 1-启用（不传默认启用）")
     private Integer status;
 
-    /**
-     * 备注
-     */
+    @Schema(description = "备注")
     private String remark;
 
-    /**
-     * 角色ID列表（非 null 时覆盖更新）
-     */
+    @Schema(description = "角色ID列表（非 null 时覆盖更新）")
     private List<Long> roleIds;
 
 }

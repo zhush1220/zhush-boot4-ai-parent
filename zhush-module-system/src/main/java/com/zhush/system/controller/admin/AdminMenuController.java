@@ -6,6 +6,9 @@ import com.zhush.system.param.AdminMenuParam;
 import com.zhush.system.query.AdminMenuQuery;
 import com.zhush.system.service.AdminMenuService;
 import com.zhush.system.vo.AdminMenuVO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +27,7 @@ import java.util.List;
  * @author zhush
  */
 @RestController
+@Tag(name = "管理端-菜单管理", description = "菜单（权限）的增删改查、列表与树形结构")
 @RequestMapping("/admin/system/menu")
 public class AdminMenuController {
 
@@ -40,6 +44,7 @@ public class AdminMenuController {
      */
     @PostMapping
     @SaCheckPermission(type = TYPE, value = "system:menu:create")
+    @Operation(summary = "新增菜单")
     public Result<Long> create(@RequestBody @Valid AdminMenuParam param) {
         return Result.success(menuService.createMenu(param));
     }
@@ -49,6 +54,7 @@ public class AdminMenuController {
      */
     @PutMapping
     @SaCheckPermission(type = TYPE, value = "system:menu:update")
+    @Operation(summary = "修改菜单")
     public Result<Void> update(@RequestBody @Valid AdminMenuParam param) {
         menuService.updateMenu(param);
         return Result.success();
@@ -59,7 +65,8 @@ public class AdminMenuController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = TYPE, value = "system:menu:delete")
-    public Result<Void> delete(@PathVariable Long id) {
+    @Operation(summary = "删除菜单")
+    public Result<Void> delete(@Parameter(description = "菜单ID") @PathVariable Long id) {
         menuService.deleteMenu(id);
         return Result.success();
     }
@@ -69,7 +76,8 @@ public class AdminMenuController {
      */
     @GetMapping("/{id}")
     @SaCheckPermission(type = TYPE, value = "system:menu:query")
-    public Result<AdminMenuVO> get(@PathVariable Long id) {
+    @Operation(summary = "菜单详情")
+    public Result<AdminMenuVO> get(@Parameter(description = "菜单ID") @PathVariable Long id) {
         return Result.success(menuService.getMenu(id));
     }
 
@@ -78,6 +86,7 @@ public class AdminMenuController {
      */
     @GetMapping("/list")
     @SaCheckPermission(type = TYPE, value = "system:menu:query")
+    @Operation(summary = "菜单列表（扁平）")
     public Result<List<AdminMenuVO>> list(AdminMenuQuery query) {
         return Result.success(menuService.listMenus(query));
     }
@@ -87,6 +96,7 @@ public class AdminMenuController {
      */
     @GetMapping("/tree")
     @SaCheckPermission(type = TYPE, value = "system:menu:query")
+    @Operation(summary = "菜单树")
     public Result<List<AdminMenuVO>> tree(AdminMenuQuery query) {
         return Result.success(menuService.treeMenus(query));
     }

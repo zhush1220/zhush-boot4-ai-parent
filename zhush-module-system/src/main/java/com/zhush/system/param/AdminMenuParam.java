@@ -2,6 +2,7 @@ package com.zhush.system.param;
 
 import com.zhush.system.entity.SysMenu;
 import io.github.linpeilie.annotations.AutoMapper;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -14,63 +15,42 @@ import lombok.Data;
  **/
 @Data
 @AutoMapper(target = SysMenu.class)
+@Schema(description = "菜单新增/修改请求参数")
 public class AdminMenuParam {
 
-    /**
-     * 菜单ID（新增时不需要传）
-     */
+    @Schema(description = "菜单ID（新增时不需要传）")
     private Long id;
 
-    /**
-     * 父菜单ID（根为0，不传默认0）
-     */
+    @Schema(description = "父菜单ID（根为0，不传默认0）")
     private Long parentId;
 
-    /**
-     * 菜单名称
-     */
+    @Schema(description = "菜单名称", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "菜单名称不能为空")
     private String name;
 
-    /**
-     * 类型：1-目录 2-菜单 3-按钮
-     */
+    @Schema(description = "类型：1-目录 2-菜单 3-按钮", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "菜单类型不能为空")
     private Integer type;
 
-    /**
-     * 权限标识（如 system:user:add）
-     */
+    @Schema(description = "权限标识（如 system:user:add）")
     private String permission;
 
-    /**
-     * 路由地址
-     */
+    @Schema(description = "路由地址")
     private String path;
 
-    /**
-     * 前端组件路径
-     */
+    @Schema(description = "前端组件路径")
     private String component;
 
-    /**
-     * 菜单图标
-     */
+    @Schema(description = "菜单图标")
     private String icon;
 
-    /**
-     * 显示顺序
-     */
+    @Schema(description = "显示顺序")
     private Integer sort;
 
-    /**
-     * 是否可见：0-隐藏 1-显示（不传默认显示）
-     */
+    @Schema(description = "是否可见：0-隐藏 1-显示（不传默认显示）")
     private Integer visible;
 
-    /**
-     * 状态：0-禁用 1-启用（不传默认启用）
-     */
+    @Schema(description = "状态：0-禁用 1-启用（不传默认启用）")
     private Integer status;
 
 }

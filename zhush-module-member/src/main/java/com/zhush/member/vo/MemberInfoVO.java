@@ -1,5 +1,6 @@
 package com.zhush.member.vo;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -8,20 +9,21 @@ import lombok.Data;
  * @author zhush
  */
 @Data
+@Schema(description = "会员用户信息")
 public class MemberInfoVO {
 
-    /** 会员用户ID */
+    @Schema(description = "会员用户ID")
     private Long userId;
 
-    /** 手机号 */
+    @Schema(description = "手机号")
     private String mobile;
 
-    /** 昵称 */
+    @Schema(description = "昵称")
     private String nickname;
 
-    /** 头像 */
+    @Schema(description = "头像")
     private String avatar;
 
-    /** 性别：0-未知 1-男 2-女 */
+    @Schema(description = "性别：0-未知 1-男 2-女")
     private Integer gender;
 }
