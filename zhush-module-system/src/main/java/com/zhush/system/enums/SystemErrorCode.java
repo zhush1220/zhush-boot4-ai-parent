@@ -47,6 +47,9 @@ public enum SystemErrorCode implements IErrorCode {
     DATASOURCE_NOT_FOUND(1001401, "数据源不存在：{0}"),
     DATASOURCE_CONNECT_FAIL(1001402, "数据源连接失败：{0}"),
 
+    // ================ 操作日志 1001 5xx ================
+    OPERATE_LOG_NOT_FOUND(1001501, "操作日志不存在：{0}"),
+
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
     ;

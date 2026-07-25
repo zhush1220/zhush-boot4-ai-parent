@@ -10,6 +10,8 @@ import com.zhush.system.param.AdminUserResetPwdParam;
 import com.zhush.system.query.AdminUserQuery;
 import com.zhush.system.service.AdminUserService;
 import com.zhush.system.vo.AdminUserVO;
+import com.zhush.web.operatelog.annotation.OperateLog;
+import com.zhush.web.operatelog.enums.OperateTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,6 +47,7 @@ public class AdminUserController {
      */
     @PostMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:create")
+    @OperateLog(module = "用户管理", type = OperateTypeEnum.CREATE, recordParams = false)
     @Operation(summary = "新增管理员")
     public Result<Long> create(@RequestBody @Valid AdminUserParam param) {
         return Result.success(userService.createUser(param));
@@ -55,6 +58,7 @@ public class AdminUserController {
      */
     @PutMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
+    @OperateLog(module = "用户管理", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改管理员")
     public Result<Void> update(@RequestBody @Valid AdminUserParam param) {
         userService.updateUser(param);
@@ -66,6 +70,7 @@ public class AdminUserController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:delete")
+    @OperateLog(module = "用户管理", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除管理员")
     public Result<Void> delete(@Parameter(description = "用户ID") @PathVariable Long id) {
         userService.deleteUser(id);
@@ -97,6 +102,7 @@ public class AdminUserController {
      */
     @PutMapping("/assign-role")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:assign-role")
+    @OperateLog(module = "用户管理", type = OperateTypeEnum.GRANT)
     @Operation(summary = "分配角色")
     public Result<Void> assignRole(@RequestBody @Valid AdminUserAssignRoleParam param) {
         userService.assignRoles(param.getUserId(), param.getRoleIds());
@@ -108,6 +114,7 @@ public class AdminUserController {
      */
     @PutMapping("/reset-password")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:reset-password")
+    @OperateLog(module = "用户管理", type = OperateTypeEnum.GRANT, recordParams = false)
     @Operation(summary = "重置密码")
     public Result<Void> resetPassword(@RequestBody @Valid AdminUserResetPwdParam param) {
         userService.resetPassword(param.getId(), param.getPassword());
@@ -119,6 +126,7 @@ public class AdminUserController {
      */
     @PutMapping("/update-status")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
+    @OperateLog(module = "用户管理", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改状态（0-禁用 1-启用）")
     public Result<Void> updateStatus(@Parameter(description = "用户ID") @RequestParam Long id,
                                      @Parameter(description = "状态：0-禁用 1-启用") @RequestParam Integer status) {
