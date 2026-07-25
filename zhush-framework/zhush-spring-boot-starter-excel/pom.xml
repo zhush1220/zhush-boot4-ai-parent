@@ -20,5 +20,19 @@
             <groupId>org.apache.fesod</groupId>
             <artifactId>fesod-sheet</artifactId>
         </dependency>
+
+        <!-- Web 相关（provided：由引入方的 Web 环境提供）-->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- 日志相关 -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>
