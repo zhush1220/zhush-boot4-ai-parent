@@ -60,8 +60,10 @@ mybatis-flex:
       validationQuery: SELECT 1
       testWhileIdle: true
 
-# 启用加解密（默认 true）
+
 zhush:
+  ip:
+    enabled: false # 启用 IP 归属地查询（默认 false）
   encrypt:
-    enabled: true
+    enabled: true # 启用加解密（默认 true）
     sm4-key: your-16-char-key    # 可选，不配则走 SmUtils 默认密钥策略（必须16字节）
