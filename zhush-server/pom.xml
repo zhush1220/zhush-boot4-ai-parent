@@ -23,6 +23,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 全文搜索（默认关闭，zhush.search.enabled=true 时启用）-->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-search</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!-- spring boot 配置所需依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

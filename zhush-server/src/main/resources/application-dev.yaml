@@ -2,6 +2,11 @@ server:
   port: 9166
 
 spring:
+  # 全文搜索连接（仅 zhush.search.enabled=true 时实际使用）
+  elasticsearch:
+    uris: http://localhost:9200
+    connection-timeout: 5s
+    socket-timeout: 30s
   datasource:
     druid:
       initial-size: 5
@@ -81,3 +86,12 @@ zhush:
   encrypt:
     enabled: true
     sm4-key: your-16-char-key    # 可选，不配则走 SmUtils 默认密钥策略（必须16字节）
+  # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
+  search:
+    enabled: false
+
+# ES 健康检查随搜索开关同步启停（启用搜索后改为 true）
+management:
+  health:
+    elasticsearch:
+      enabled: false
