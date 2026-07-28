@@ -89,6 +89,21 @@ zhush:
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false
+  # 数据权限：默认关闭；启用后可通过 row-enabled / field-enabled 单独控制行级、字段级
+  data-permission:
+    enabled: false
+    # row-enabled: true    # 行级权限（@DataPermission 自动拼接 SQL 过滤）
+    # field-enabled: true  # 字段级权限（@FieldPermission 响应置空/脱敏）
+  web:
+    cors:
+      enabled: true                  # 默认开启,false 整体关闭
+      path-pattern: /**
+      allowed-origin-patterns: "*"   # 生产建议收敛,如 https://*.zhush.com
+      allowed-methods: "*"
+      allowed-headers: "*"
+      exposed-headers: Content-Disposition   # 需要前端读取的响应头(如文件下载)
+      allow-credentials: true
+      max-age: 3600
 
 # ES 健康检查随搜索开关同步启停（启用搜索后改为 true）
 management:

@@ -11,6 +11,7 @@ import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysMenuMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.mapper.SysRoleMenuMapper;
+import com.zhush.system.param.AdminRoleAssignDataScopeParam;
 import com.zhush.system.param.AdminRoleParam;
 import com.zhush.system.query.AdminRoleQuery;
 import com.zhush.system.vo.AdminRoleVO;
@@ -144,6 +145,25 @@ public class AdminRoleService {
         assertNotNull(existing, SystemErrorCode.ROLE_NOT_FOUND, roleId);
         roleMenuMapper.deleteByRoleId(roleId);
         saveRoleMenus(roleId, menuIds);
+    }
+
+    /**
+     * 分配数据范围
+     */
+    public void assignDataScope(AdminRoleAssignDataScopeParam param) {
+        SysRole existing = roleMapper.selectOneById(param.getRoleId());
+        assertNotNull(existing, SystemErrorCode.ROLE_NOT_FOUND, param.getRoleId());
+        SysRole update = new SysRole();
+        update.setId(param.getRoleId());
+        update.setDataScope(param.getDataScope());
+        // 仅自定义（5）时保存部门ID集合，其余类型清空
+        if (param.getDataScope() == 5) {
+            update.setDataScopeDeptIds(CollUtil.isEmpty(param.getDataScopeDeptIds())
+                    ? "" : CollUtil.join(param.getDataScopeDeptIds(), ","));
+        } else {
+            update.setDataScopeDeptIds("");
+        }
+        roleMapper.update(update);
     }
 
     // ================ 内部方法 ================

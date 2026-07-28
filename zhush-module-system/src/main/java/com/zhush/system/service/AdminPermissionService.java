@@ -86,9 +86,9 @@ public class AdminPermissionService {
     }
 
     /**
-     * 查询用户启用状态的角色列表
+     * 查询用户启用状态的角色列表（供权限/数据权限解析使用）
      */
-    private List<SysRole> listEnabledRoles(Long userId) {
+    public List<SysRole> listEnabledRoles(Long userId) {
         List<SysAdminUserRole> relations = adminUserRoleMapper.selectListByUserId(userId);
         if (CollectionUtils.isEmpty(relations)) {
             return Collections.emptyList();

@@ -33,6 +33,9 @@ public class SysRole extends BaseEntity implements Serializable {
     /** 数据权限：1-全部 2-本部门 3-本部门及以下 4-仅本人 5-自定义 */
     private Integer dataScope;
 
+    /** 自定义数据范围的部门ID集合（逗号分隔，dataScope=5 时生效） */
+    private String dataScopeDeptIds;
+
     /** 状态：0-禁用 1-启用 */
     private Integer status;
 

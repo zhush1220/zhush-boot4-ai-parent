@@ -30,6 +30,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 数据权限（默认关闭，zhush.data-permission.enabled=true 时启用）-->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-biz-data-permission</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!-- spring boot 配置所需依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

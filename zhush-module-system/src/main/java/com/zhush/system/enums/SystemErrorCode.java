@@ -42,6 +42,7 @@ public enum SystemErrorCode implements IErrorCode {
     DEPT_NOT_FOUND(1001301, "部门不存在：{0}"),
     DEPT_HAS_CHILDREN(1001302, "存在子部门，无法删除"),
     DEPT_HAS_USER(1001303, "部门下仍有用户，无法删除"),
+    DEPT_PARENT_ERROR(1001304, "父部门不能为自身或其子部门"),
 
     // ================ 数据源 1001 4xx ================
     DATASOURCE_NOT_FOUND(1001401, "数据源不存在：{0}"),

@@ -31,8 +31,11 @@ public class AdminRoleVO {
     @Schema(description = "显示顺序")
     private Integer sort;
 
-    @Schema(description = "数据权限")
+    @Schema(description = "数据权限：1-全部 2-本部门 3-本部门及以下 4-仅本人 5-自定义")
     private Integer dataScope;
+
+    @Schema(description = "自定义数据范围的部门ID集合（逗号分隔，dataScope=5 时生效）")
+    private String dataScopeDeptIds;
 
     @Schema(description = "状态：0-禁用 1-启用")
     private Integer status;

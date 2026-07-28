@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
+import com.zhush.system.param.AdminRoleAssignDataScopeParam;
 import com.zhush.system.param.AdminRoleAssignMenuParam;
 import com.zhush.system.param.AdminRoleParam;
 import com.zhush.system.query.AdminRoleQuery;
@@ -110,6 +111,17 @@ public class AdminRoleController {
     @Operation(summary = "分配菜单（权限）")
     public Result<Void> assignMenu(@RequestBody @Valid AdminRoleAssignMenuParam param) {
         roleService.assignMenus(param.getRoleId(), param.getMenuIds());
+        return Result.success();
+    }
+
+    /**
+     * 分配数据范围
+     */
+    @PutMapping("/assign-data-scope")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:assign-data-scope")
+    @Operation(summary = "分配数据范围")
+    public Result<Void> assignDataScope(@RequestBody @Valid AdminRoleAssignDataScopeParam param) {
+        roleService.assignDataScope(param);
         return Result.success();
     }
 

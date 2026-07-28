@@ -27,6 +27,10 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-satoken</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-biz-data-permission</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>cloud.tianai.captcha</groupId>

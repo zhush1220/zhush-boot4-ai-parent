@@ -21,4 +21,13 @@ public interface SysAdminUserMapper extends BaseMapperX<SysAdminUser> {
         queryWrapper.where(SysAdminUser::getUsername).eq(username);
         return selectOneByQuery(queryWrapper);
     }
+
+    /**
+     * 统计部门下的用户数
+     */
+    default long selectCountByDeptId(Long deptId) {
+        QueryWrapper queryWrapper = QueryWrapper.create();
+        queryWrapper.where(SysAdminUser::getDeptId).eq(deptId);
+        return selectCountByQuery(queryWrapper);
+    }
 }

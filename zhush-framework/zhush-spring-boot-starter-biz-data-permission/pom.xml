@@ -11,5 +11,28 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-common</artifactId>
+        </dependency>
+
+        <!-- AOP：@DataPermission 切面（Boot4 已移除 starter-aop，直接引入 aspectjweaver） -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+        </dependency>
+
+        <!-- 行级权限基于 MyBatis-Flex 方言 prepareAuth 钩子 -->
+        <dependency>
+            <groupId>com.mybatis-flex</groupId>
+            <artifactId>mybatis-flex-core</artifactId>
+        </dependency>
+
+        <!-- 字段级权限基于 ResponseBodyAdvice，仅 Web 环境生效 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

@@ -1,3 +1,4 @@
 com.zhush.web.config.WebAutoConfiguration
+com.zhush.web.config.CorsAutoConfiguration
 com.zhush.web.config.Knife4jAutoConfiguration
 com.zhush.web.operatelog.config.OperateLogAutoConfiguration
