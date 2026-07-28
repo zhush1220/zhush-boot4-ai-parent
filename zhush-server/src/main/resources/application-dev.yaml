@@ -94,6 +94,10 @@ zhush:
     enabled: false
     # row-enabled: true    # 行级权限（@DataPermission 自动拼接 SQL 过滤）
     # field-enabled: true  # 字段级权限（@FieldPermission 响应置空/脱敏）
+  # 监控（Spring Boot Admin）：默认关闭；启用时改为 true 并放开下方 spring.boot.admin 与 management 配置
+  monitor:
+    enabled: false
+    # server-enabled: true   # 内嵌 Admin 服务端；已有独立 Admin Server 时设为 false 仅作客户端注册
   web:
     cors:
       enabled: true                  # 默认开启,false 整体关闭
@@ -110,3 +114,21 @@ management:
   health:
     elasticsearch:
       enabled: false
+  # --- 启用监控（zhush.monitor.enabled=true）时同步放开：SBA 需读取全部 actuator 端点 ---
+  # endpoints:
+  #   web:
+  #     exposure:
+  #       include: "*"
+  # endpoint:
+  #   health:
+  #     show-details: always
+
+# --- 启用监控时同步放开：内嵌 SBA 服务端 UI 路径 + 客户端自注册 ---
+# spring:
+#   boot:
+#     admin:
+#       context-path: /monitor            # 监控 UI：http://localhost:9166/monitor
+#       client:
+#         url: http://localhost:9166/monitor   # 注册到内嵌服务端（独立部署时改为对应地址）
+#         instance:
+#           service-url: http://localhost:9166

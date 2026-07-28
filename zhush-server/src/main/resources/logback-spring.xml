@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    日志配置（含 SkyWalking 链路 TID）
+
+    %tid 由 apm-toolkit-logback-1.x 提供：
+    - 挂载 skywalking-agent 时输出真实链路ID（TID:xxx），可在 SkyWalking UI 按 TID 反查整条链路
+    - 未挂载 agent 时输出 TID: N/A，不影响正常运行
+
+    logging.level.* 等 yaml 配置仍然生效
+-->
+<configuration>
+
+    <!-- 注册 SkyWalking TID 转换符 -->
+    <conversionRule conversionWord="tid"
+                    converterClass="org.apache.skywalking.apm.toolkit.log.logback.v1.x.LogbackPatternConverter"/>
+
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%tid] --- [%15.15t] %-40.40logger{39} : %m%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

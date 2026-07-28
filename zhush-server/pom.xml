@@ -37,6 +37,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 监控（Spring Boot Admin，默认关闭，zhush.monitor.enabled=true 时启用）+ SkyWalking 应用侧工具包 -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-monitor</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!-- spring boot 配置所需依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

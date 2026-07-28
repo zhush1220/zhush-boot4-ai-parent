@@ -32,6 +32,7 @@
         <hutool.version>5.8.46</hutool.version>
         <bcpkix-jdk18on.version>1.84</bcpkix-jdk18on.version>
         <skywalking.version>9.6.0</skywalking.version>
+        <spring-boot-admin.version>4.1.2</spring-boot-admin.version>
         <x-file-storage.version>2.3.0</x-file-storage.version>
         <aliyun-sdk-oss.version>3.18.5</aliyun-sdk-oss.version>
         <fesod-sheet.version>2.0.2-incubating</fesod-sheet.version>
@@ -263,10 +264,25 @@
                 <version>${bcpkix-jdk18on.version}</version>
             </dependency>
 
-            <!-- 监控 -->
+            <!-- 监控：Spring Boot Admin（与 Boot 4 配套的 4.x） -->
+            <dependency>
+                <groupId>de.codecentric</groupId>
+                <artifactId>spring-boot-admin-dependencies</artifactId>
+                <version>${spring-boot-admin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 链路追踪：SkyWalking 应用侧工具包（自定义追踪 + 日志 TID） -->
             <dependency>
                 <groupId>org.apache.skywalking</groupId>
                 <artifactId>apm-toolkit-trace</artifactId>
+                <version>${skywalking.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.skywalking</groupId>
+                <artifactId>apm-toolkit-logback-1.x</artifactId>
                 <version>${skywalking.version}</version>
             </dependency>
 

@@ -15,5 +15,35 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-common</artifactId>
         </dependency>
+
+        <!-- Actuator：暴露健康检查 / 指标等监控端点 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Admin：内嵌监控服务端（zhush.monitor.enabled=true 时装配） -->
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-server</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Admin 客户端：向服务端注册自身（配置 spring.boot.admin.client.url 时生效） -->
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-client</artifactId>
+        </dependency>
+
+        <!-- SkyWalking 应用侧工具包：@Trace / TraceContext 自定义追踪（无 agent 时为空实现，零开销） -->
+        <dependency>
+            <groupId>org.apache.skywalking</groupId>
+            <artifactId>apm-toolkit-trace</artifactId>
+        </dependency>
+
+        <!-- SkyWalking logback 工具包：日志输出链路 TID（无 agent 时输出 TID: N/A） -->
+        <dependency>
+            <groupId>org.apache.skywalking</groupId>
+            <artifactId>apm-toolkit-logback-1.x</artifactId>
+        </dependency>
     </dependencies>
 </project>
