@@ -2,6 +2,14 @@ server:
   port: 9166
 
 spring:
+  # Redis 连接（starter-redis / Redisson / Sa-Token 共用）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      # password: your_redis_password
+      timeout: 5s
   # 全文搜索连接（仅 zhush.search.enabled=true 时实际使用）
   elasticsearch:
     uris: http://localhost:9200
