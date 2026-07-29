@@ -4,6 +4,9 @@
 >
 > 本文为**方案设计文档**，仅做分析与设计，不包含代码实现。落地时以本文为蓝本分阶段实施。
 >
+> **落地状态**：阶段一（角色 B 授权服务器 + 角色 C 开放 API）已实现并编译通过，见 §8 阶段一各条目标注；阶段二（角色 A 三方登录）未开始。
+> **实现修正**：sa-token-oauth2 1.45.0 实际未内置 PKCE（`CodeModel` 无 `code_challenge` 字段），授权码模式按标准机密客户端实现，公开客户端（移动端/SPA）直连接入需待升级版本或自行扩展，现阶段建议经自有服务端中转；另 sa-token-oauth2 默认按明文比对 client_secret，为落地 BCrypt 存储策略，新增 `BCryptSecretOAuth2Template` 覆写密钥比对。
+>
 > 关联文档：`docs/登录与权限设计.md`
 
 ---
@@ -52,7 +55,7 @@ OAuth2.0 涉及三个不同的场景，需分开设计：
 
 | 方案 | 优点 | 缺点 | 结论 |
 | --- | --- | --- | --- |
-| **sa-token-oauth2**（推荐） | 与现有 Sa-Token 1.45.0 同版本同生态；复用现有 Redis 存储与多账号体系；轻量，仅需实现 `SaOAuth2DataLoader` 等少量接口；支持授权码（含 PKCE）、隐藏式、密码式、客户端凭证及 RefreshToken | 社区生态小于 Spring 官方；标准细节（如 OIDC）支持不如专业实现 | ✅ **选用** |
+| **sa-token-oauth2**（推荐） | 与现有 Sa-Token 1.45.0 同版本同生态；复用现有 Redis 存储与多账号体系；轻量，仅需实现 `SaOAuth2DataLoader` 等少量接口；支持授权码、隐藏式、密码式、客户端凭证及 RefreshToken（注：1.45.0 未内置 PKCE，见文首实现修正） | 社区生态小于 Spring 官方；标准细节（如 OIDC、PKCE）支持不如专业实现 | ✅ **选用** |
 | Spring Authorization Server | OAuth2.1/OIDC 标准最完整 | 强依赖 Spring Security，与现有 Sa-Token 拦截器体系冲突，需双安全框架并存，改造成本与心智负担大 | ❌ 排除 |
 | 自研协议端点 | 完全可控 | 重复造轮子，安全细节（PKCE、防重放、token 撤销）易出漏洞 | ❌ 排除 |
 
@@ -194,7 +197,7 @@ zhush:
 
 | 模式 | grant_type | 是否开启 | 适用场景 |
 | --- | --- | --- | --- |
-| 授权码 + PKCE | `authorization_code` | ✅ 默认开启 | 第三方 Web 应用、移动端接入（**主推**） |
+| 授权码 | `authorization_code` | ✅ 默认开启 | 第三方 Web 应用、服务端接入（**主推**；1.45.0 无内置 PKCE，公开客户端需经自有服务端中转） |
 | 刷新令牌 | `refresh_token` | ✅ 开启 | 续期 access_token |
 | 客户端凭证 | `client_credentials` | ✅ 开启 | 服务端对服务端（无用户上下文的 API 调用） |
 | 隐藏式 | `implicit` | ❌ 关闭 | OAuth2.1 已废弃，不开放 |
@@ -208,7 +211,7 @@ zhush:
 | --- | --- | --- |
 | `/oauth2/authorize` | GET | 授权入口：未登录 → 重定向到统一登录页；已登录且客户端非白名单 → 返回授权确认页数据（应用名、申请的 scope） |
 | `/oauth2/doConfirm` | POST | 用户点击"同意授权"，签发授权码（授权码 TTL 5 分钟，一次性） |
-| `/oauth2/token` | POST | code + client_id + client_secret（或 PKCE code_verifier）换 access_token / refresh_token |
+| `/oauth2/token` | POST | code + client_id + client_secret 换 access_token / refresh_token |
 | `/oauth2/refresh` | POST | refresh_token 换新 access_token |
 | `/oauth2/revoke` | POST | 撤销 access_token |
 | `/oauth2/userinfo` | GET | 资源端点：凭 access_token 返回用户基础信息（受 scope 控制） |
@@ -258,7 +261,7 @@ scope 与返回字段的映射在 `starter-oauth2-server` 内集中定义，第�
 | access_token TTL | 2 小时 | 短有效期，降低泄露风险 |
 | refresh_token TTL | 30 天 | 与现有 `sa-token.timeout` 对齐 |
 | token 撤销 | 支持 | 客户端停用/用户解除授权时批量撤销 |
-| PKCE | 公开客户端强制 | 移动端/SPA 无法保密 secret，必须走 `code_challenge`(S256) |
+| PKCE | 1.45.0 未内置，本期不启用 | 移动端/SPA 等公开客户端暂经自有服务端中转，后续升级版本或自行扩展 `code_challenge`(S256) |
 
 ---
 
@@ -335,7 +338,7 @@ scope 与返回字段的映射在 `starter-oauth2-server` 内集中定义，第�
 | 风险 | 对策 |
 | --- | --- |
 | CSRF（三方登录回调伪造） | state 服务端生成 + Redis 一次性核销 |
-| 授权码劫持 | 授权码一次性 + 5 分钟 TTL；公开客户端强制 PKCE |
+| 授权码劫持 | 授权码一次性 + 5 分钟 TTL；PKCE 待后续版本支持，现阶段不向公开客户端直接开放授权码模式 |
 | 回调地址篡改 | `redirect_uris` 白名单精确匹配，不支持通配 |
 | client_secret 泄露 | BCrypt 落库、仅创建时回显一次；支持重置并自动撤销存量 token |
 | scope 越权 | 申请 scope ⊆ 注册 scope，userinfo 按 scope 裁剪字段 |
@@ -353,13 +356,15 @@ scope 与返回字段的映射在 `starter-oauth2-server` 内集中定义，第�
 
 ### 阶段一：授权服务器 + 开放 API（角色 B + C，本次核心需求，建议先行）
 
-1. `zhush-dependencies` 增加 `sa-token-oauth2`（复用 `${sa.token.version}`）；
-2. 新建 `zhush-spring-boot-starter-oauth2-server`：自动配置、授权端点注册、scope 定义、令牌策略配置项（`zhush.oauth2.*`）；资源侧 `OpenApiInterceptor`、`@OpenApiScope`、`OpenApiContext`；
-3. 新增 `sql/05_oauth2.sql`：`sys_oauth2_client`（含限流/配额/notify_url 字段）、`sys_open_api_log`；
-4. `zhush-module-system`：实现 `SaOAuth2DataLoader`；客户端管理 CRUD + RBAC 权限项；调用日志查询接口；
-5. 按业务需求在各模块新增首批 `OpenXxxController`（`/open/v1/**`）与独立 DTO，springdoc 增加 `open` 分组；
-6. `SaTokenConfigure` 白名单增加 `/oauth2/**`、`/open/**`；前端配套统一登录页与授权确认页；
-7. 联调验证：授权码 + PKCE 全流程、client_credentials、refresh、revoke、scope 裁剪、回调白名单拒绝、开放 API 鉴权与限流。
+1. ✅ `zhush-dependencies` 增加 `sa-token-oauth2`（复用 `${sa.token.version}`）与新 starter 版本管理；
+2. ✅ 新建 `zhush-spring-boot-starter-oauth2-server`：自动配置（`OAuth2ServerAutoConfiguration`）、协议端点（`OAuth2ServerEndpoint` 统一分发 `/oauth2/*`）、scope 定义（`OAuth2Scopes`）、令牌策略配置项（`zhush.oauth2.*`）；资源侧 `OpenApiInterceptor`、`@OpenApiScope`、`OpenApiContext`；额外新增 `BCryptSecretOAuth2Template`（BCrypt 密钥比对）与三个自定义 SPI（`OAuth2DoLoginHandler`、`OpenApiLogRecorder`、`OpenApiRateLimiter`，另 `SaOAuth2DataLoader` 由业务模块实现）；
+3. ✅ 新增 `sql/05_oauth2.sql`：`sys_oauth2_client`（含限流/配额/notify_url 字段）、`sys_open_api_log`；
+4. ✅ `zhush-module-system`：`Oauth2DataLoaderImpl` 实现 `SaOAuth2DataLoader`（停用/删除返回 null，存量令牌立即失效）；客户端管理 CRUD + 密钥重置（`/admin/system/oauth2-client/**`，权限码 `system:oauth2-client:*`，密钥明文仅回显一次）；`OpenApiLogService` 异步落库 + 查询接口（`/admin/system/open-api-log/**`）；`Oauth2DoLoginHandlerImpl` 授权页登录；
+5. ✅ 首批开放 API 示例 `OpenUserController`（`GET /open/v1/user/me`，`@OpenApiScope(value="userinfo", requireUser=true)`）；springdoc 增加“开放平台”分组（`/oauth2/**`、`/open/**`）；
+6. ✅ `SaTokenConfigure` 白名单增加 `/oauth2/**`、`/open/**`；⬜ 前端配套统一登录页与授权确认页（后端已以 JSON 形式返回 notLoginView/confirmView 数据，待前端实现）；
+7. ⬜ 联调验证：授权码全流程（无 PKCE，见文首修正）、client_credentials、refresh、revoke、scope 裁剪、回调白名单拒绝、开放 API 鉴权与限流（需先执行 `sql/05_oauth2.sql` 并注册测试客户端）。
+
+> 阶段一代码已全部落地，`mvn -pl zhush-server -am compile` BUILD SUCCESS（JDK 21）。限流 SPI（`OpenApiRateLimiter`）未提供默认实现，接入时可基于 Redis 按 `qps_limit`/`daily_quota` 实现并注册为 Bean。
 
 ### 阶段二：三方登录（角色 A，可并行或延后）
 
@@ -384,7 +389,7 @@ scope 与返回字段的映射在 `starter-oauth2-server` 内集中定义，第�
 | --- | --- |
 | 授权服务器实现 | sa-token-oauth2（同生态复用，排除 Spring Authorization Server） |
 | 三方登录实现 | JustAuth 统一封装为新 starter |
-| 开放的授权模式 | 授权码+PKCE、refresh_token、client_credentials；关闭 password/implicit |
+| 开放的授权模式 | 授权码、refresh_token、client_credentials；关闭 password/implicit；PKCE 待版本升级后启用 |
 | 第三方调用接口 | 新增 `/open/v1/**` 独立端，`OpenApiInterceptor` 校验 Bearer token + scope，接口与内部端物理隔离 |
 | 开放 API 治理 | 按 client_id 限流/日配额，`sys_open_api_log` 异步审计，springdoc 独立 `open` 文档分组 |
 | 存储 | 令牌/授权码/state 全走现有 Redis；客户端、绑定关系、调用日志走 MySQL |

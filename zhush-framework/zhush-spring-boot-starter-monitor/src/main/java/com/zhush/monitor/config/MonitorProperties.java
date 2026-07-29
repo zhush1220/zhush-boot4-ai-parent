@@ -24,4 +24,5 @@ public class MonitorProperties {
      * 已有独立部署的 Admin Server 时可设为 false，仅作为客户端注册上报）
      */
     private Boolean serverEnabled = true;
+
 }

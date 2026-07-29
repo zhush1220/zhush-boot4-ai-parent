@@ -22,6 +22,7 @@
         <module>zhush-spring-boot-starter-protection</module>
         <module>zhush-spring-boot-starter-redis</module>
         <module>zhush-spring-boot-starter-satoken</module>
+        <module>zhush-spring-boot-starter-oauth2-server</module>
         <module>zhush-spring-boot-starter-search</module>
         <module>zhush-spring-boot-starter-web</module>
         <module>zhush-spring-boot-starter-websocket</module>

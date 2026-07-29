@@ -27,13 +27,18 @@ import java.util.List;
 public class SaTokenConfigure implements WebMvcConfigurer {
 
     /**
-     * 内置免登录白名单（登录/注册/错误页/静态资源/接口文档）
+     * 内置免登录白名单（登录/注册/错误页/静态资源/接口文档/OAuth2协议与开放API）
+     *
+     * <p>/oauth2/**、/open/** 本就不在 admin/member 前缀的登录校验范围内，
+     * 列入白名单作双保险：开放 API 由 OpenApiInterceptor 按 OAuth2 令牌鉴权。
      */
     private static final List<String> DEFAULT_IGNORE_PATHS = List.of(
             "/admin/auth/login",
             "/admin/auth/social-login",
             "/member/auth/login",
             "/member/auth/wx-mini-login",
+            "/oauth2/**",
+            "/open/**",
             "/error",
             "/favicon.ico",
             "/doc.html",

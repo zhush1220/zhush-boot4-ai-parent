@@ -72,4 +72,15 @@ public class Knife4jAutoConfiguration {
                 .build();
     }
 
+    /**
+     * 开放平台接口分组（OAuth2 协议端点 + 第三方开放 API）
+     */
+    @Bean
+    public GroupedOpenApi openApi() {
+        return GroupedOpenApi.builder()
+                .group("开放平台")
+                .pathsToMatch("/oauth2/**", "/open/**")
+                .build();
+    }
+
 }

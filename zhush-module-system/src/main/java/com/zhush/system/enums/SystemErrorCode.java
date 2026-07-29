@@ -51,6 +51,11 @@ public enum SystemErrorCode implements IErrorCode {
     // ================ 操作日志 1001 5xx ================
     OPERATE_LOG_NOT_FOUND(1001501, "操作日志不存在：{0}"),
 
+    // ================ OAuth2 客户端 / 开放 API 1001 6xx ================
+    OAUTH2_CLIENT_NOT_FOUND(1001601, "OAuth2 客户端不存在：{0}"),
+    OAUTH2_CLIENT_ID_DUPLICATE(1001602, "客户端标识已存在：{0}"),
+    OPEN_API_LOG_NOT_FOUND(1001603, "开放 API 调用日志不存在：{0}"),
+
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
     ;

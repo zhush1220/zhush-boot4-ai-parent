@@ -110,6 +110,11 @@
             </dependency>
             <dependency>
                 <groupId>com.zhush</groupId>
+                <artifactId>zhush-spring-boot-starter-oauth2-server</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zhush</groupId>
                 <artifactId>zhush-spring-boot-starter-web</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -217,6 +222,12 @@
             <dependency>
                 <groupId>cn.dev33</groupId>
                 <artifactId>sa-token-redis-template</artifactId>
+                <version>${sa.token.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-oauth2</artifactId>
                 <version>${sa.token.version}</version>
             </dependency>
 
