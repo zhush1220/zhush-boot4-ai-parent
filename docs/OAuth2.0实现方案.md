@@ -322,7 +322,7 @@ scope 与返回字段的映射在 `starter-oauth2-server` 内集中定义，第�
 
 | 机制 | 方案 |
 | --- | --- |
-| 限流 | 按 `client_id` 维度限流（复用 `zhush-spring-boot-starter-protection` + Redis 滑动窗口），默认 QPS 与日配额存 `sys_oauth2_client` 扩展字段（`qps_limit`、`daily_quota`，空则用全局默认） |
+| 限流 | 按 `client_id` 维度双重限制（`OpenApiRateLimiterImpl`，Redisson 固定窗口计数）：秒级 QPS + 自然日配额，阈值存 `sys_oauth2_client` 扩展字段（`qps_limit`、`daily_quota`，空则用 `zhush.oauth2.default-qps-limit`/`default-daily-quota` 全局默认，0 或负数不限制）；阈值本地缓存 60s，Redis 异常时放行（fail-open） |
 | 超限响应 | `429 Too Many Requests`，携带 `Retry-After` |
 | 调用日志 | 新增 `sys_open_api_log`（clientId、接口、耗时、状态码、请求 IP、traceId），异步写入，参照现有 `sys_operate_log` 的实现模式；管理端提供查询页 |
 | 监控 | 按 clientId 统计调用量/错误率，接入现有 monitor 体系（SBA） |
@@ -359,12 +359,12 @@ scope 与返回字段的映射在 `starter-oauth2-server` 内集中定义，第�
 1. ✅ `zhush-dependencies` 增加 `sa-token-oauth2`（复用 `${sa.token.version}`）与新 starter 版本管理；
 2. ✅ 新建 `zhush-spring-boot-starter-oauth2-server`：自动配置（`OAuth2ServerAutoConfiguration`）、协议端点（`OAuth2ServerEndpoint` 统一分发 `/oauth2/*`）、scope 定义（`OAuth2Scopes`）、令牌策略配置项（`zhush.oauth2.*`）；资源侧 `OpenApiInterceptor`、`@OpenApiScope`、`OpenApiContext`；额外新增 `BCryptSecretOAuth2Template`（BCrypt 密钥比对）与三个自定义 SPI（`OAuth2DoLoginHandler`、`OpenApiLogRecorder`、`OpenApiRateLimiter`，另 `SaOAuth2DataLoader` 由业务模块实现）；
 3. ✅ 新增 `sql/05_oauth2.sql`：`sys_oauth2_client`（含限流/配额/notify_url 字段）、`sys_open_api_log`；
-4. ✅ `zhush-module-system`：`Oauth2DataLoaderImpl` 实现 `SaOAuth2DataLoader`（停用/删除返回 null，存量令牌立即失效）；客户端管理 CRUD + 密钥重置（`/admin/system/oauth2-client/**`，权限码 `system:oauth2-client:*`，密钥明文仅回显一次）；`OpenApiLogService` 异步落库 + 查询接口（`/admin/system/open-api-log/**`）；`Oauth2DoLoginHandlerImpl` 授权页登录；
+4. ✅ `zhush-module-system`：`Oauth2DataLoaderImpl` 实现 `SaOAuth2DataLoader`（停用/删除返回 null，存量令牌立即失效）；客户端管理 CRUD + 密钥重置（`/admin/system/oauth2-client/**`，权限码 `system:oauth2-client:*`，密钥明文仅回显一次）；`OpenApiLogService` 异步落库 + 查询接口（`/admin/system/open-api-log/**`）；`Oauth2DoLoginHandlerImpl` 授权页登录；`OpenApiRateLimiterImpl` 限流器（Redisson 秒级 QPS + 日配额，见 §6.5）；
 5. ✅ 首批开放 API 示例 `OpenUserController`（`GET /open/v1/user/me`，`@OpenApiScope(value="userinfo", requireUser=true)`）；springdoc 增加“开放平台”分组（`/oauth2/**`、`/open/**`）；
 6. ✅ `SaTokenConfigure` 白名单增加 `/oauth2/**`、`/open/**`；⬜ 前端配套统一登录页与授权确认页（后端已以 JSON 形式返回 notLoginView/confirmView 数据，待前端实现）；
 7. ⬜ 联调验证：授权码全流程（无 PKCE，见文首修正）、client_credentials、refresh、revoke、scope 裁剪、回调白名单拒绝、开放 API 鉴权与限流（需先执行 `sql/05_oauth2.sql` 并注册测试客户端）。
 
-> 阶段一代码已全部落地，`mvn -pl zhush-server -am compile` BUILD SUCCESS（JDK 21）。限流 SPI（`OpenApiRateLimiter`）未提供默认实现，接入时可基于 Redis 按 `qps_limit`/`daily_quota` 实现并注册为 Bean。
+> 阶段一代码已全部落地，`mvn -pl zhush-server -am compile` BUILD SUCCESS（JDK 21）。限流 SPI（`OpenApiRateLimiter`）已由 `zhush-module-system` 的 `OpenApiRateLimiterImpl` 实现（Redisson 固定窗口：秒级 QPS + 自然日配额，全局默认值可通过 `zhush.oauth2.default-qps-limit`/`default-daily-quota` 调整）。
 
 ### 阶段二：三方登录（角色 A，可并行或延后）
 

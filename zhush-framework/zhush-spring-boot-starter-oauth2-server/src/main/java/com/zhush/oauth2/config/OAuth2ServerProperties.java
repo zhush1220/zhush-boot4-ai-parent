@@ -42,6 +42,16 @@ public class OAuth2ServerProperties {
      */
     private String openApiPrefix = "/open/**";
 
+    /**
+     * 开放 API 全局默认限流 QPS（客户端 qps_limit 为空时生效，0 或负数表示不限流）
+     */
+    private int defaultQpsLimit = 50;
+
+    /**
+     * 开放 API 全局默认日调用配额（客户端 daily_quota 为空时生效，0 或负数表示不限额）
+     */
+    private int defaultDailyQuota = 100000;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -88,6 +98,22 @@ public class OAuth2ServerProperties {
 
     public void setOpenApiPrefix(String openApiPrefix) {
         this.openApiPrefix = openApiPrefix;
+    }
+
+    public int getDefaultQpsLimit() {
+        return defaultQpsLimit;
+    }
+
+    public void setDefaultQpsLimit(int defaultQpsLimit) {
+        this.defaultQpsLimit = defaultQpsLimit;
+    }
+
+    public int getDefaultDailyQuota() {
+        return defaultDailyQuota;
+    }
+
+    public void setDefaultDailyQuota(int defaultDailyQuota) {
+        this.defaultDailyQuota = defaultDailyQuota;
     }
 
 }
