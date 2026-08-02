@@ -23,6 +23,19 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Boot 4 中 DataSourceProperties 位于 spring-boot-jdbc 模块，druid/mybatis-flex starter 仅 optional 依赖，需显式引入 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <exclusions>
+                <!-- 连接池使用 Druid，排除默认的 HikariCP -->
+                <exclusion>
+                    <groupId>com.zaxxer</groupId>
+                    <artifactId>HikariCP</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency>
             <groupId>com.mybatis-flex</groupId>
             <artifactId>mybatis-flex-spring-boot4-starter</artifactId>

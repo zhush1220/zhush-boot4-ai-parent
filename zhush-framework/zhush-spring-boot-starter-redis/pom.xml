@@ -16,6 +16,13 @@
             <artifactId>zhush-common</artifactId>
         </dependency>
 
+        <!-- Spring Data Redis（RedisTemplate 封装基础） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Redisson（分布式锁等高级能力，同时提供 Redis 连接实现） -->
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson-spring-boot-starter</artifactId>

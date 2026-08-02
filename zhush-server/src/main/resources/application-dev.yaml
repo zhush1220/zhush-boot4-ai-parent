@@ -2,6 +2,14 @@ server:
   port: 9166
 
 spring:
+  # Redis 连接（starter-redis / Redisson / Sa-Token 共用）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password: 123456
+      timeout: 5s
   # 全文搜索连接（仅 zhush.search.enabled=true 时实际使用）
   elasticsearch:
     uris: http://localhost:9200
@@ -41,26 +49,13 @@ mybatis-flex:
     # --- 主库（默认数据源）---
     master:
       type: com.alibaba.druid.pool.DruidDataSource
-      url: jdbc:mysql://localhost:3306/zhush_main?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      url: jdbc:mysql://localhost:3306/zhush?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
       username: root
-      password: password
+      password: topfus@123
       # Druid 连接池属性（直接写 setter 对应的 key）
       initialSize: 5
       maxActive: 20
       minIdle: 5
-      maxWait: 60000
-      validationQuery: SELECT 1
-      testWhileIdle: true
-
-    # --- 从库（只读/报表库）---
-    slave:
-      type: com.alibaba.druid.pool.DruidDataSource
-      url: jdbc:mysql://localhost:3306/zhush_slave?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-      username: readonly
-      password: readonly_pass
-      initialSize: 3
-      maxActive: 10
-      minIdle: 3
       maxWait: 60000
       validationQuery: SELECT 1
       testWhileIdle: true
