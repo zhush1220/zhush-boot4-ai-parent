@@ -48,6 +48,7 @@ CREATE TABLE `member_social_user` (
     KEY `idx_union_id` (`union_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '会员第三方授权表';
 
+DROP TABLE IF EXISTS `union_product`;
 CREATE TABLE `union_product` (
      `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
      `platform` tinyint(4) NOT NULL COMMENT '平台：1-淘宝 2-京东 3-拼多多 4-抖音',
@@ -84,7 +85,7 @@ CREATE TABLE `union_product` (
      KEY `idx_update_time` (`update_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联盟商品主表';
 
-
+DROP TABLE IF EXISTS `union_product_extra`;
 CREATE TABLE `union_product_extra` (
    `id` bigint(20) NOT NULL AUTO_INCREMENT,
    `product_id` bigint(20) NOT NULL COMMENT '关联union_product.id',
@@ -102,7 +103,7 @@ CREATE TABLE `union_product_extra` (
    UNIQUE KEY `uk_product_id` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品扩展信息表';
 
-
+DROP TABLE IF EXISTS `union_product_category`;
 CREATE TABLE `union_product_category` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `product_id` bigint(20) NOT NULL,
@@ -114,7 +115,7 @@ CREATE TABLE `union_product_category` (
   KEY `idx_category` (`category_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类关联表';
 
-
+DROP TABLE IF EXISTS `union_category`;
 CREATE TABLE `union_category` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `parent_id` bigint(20) DEFAULT '0' COMMENT '父级ID（0表示顶级）',
@@ -128,6 +129,7 @@ CREATE TABLE `union_category` (
   KEY `idx_parent` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类表';
 
+DROP TABLE IF EXISTS `union_product_sync_log`;
 CREATE TABLE `union_product_sync_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `platform` tinyint(4) NOT NULL COMMENT '平台',
@@ -144,7 +146,7 @@ CREATE TABLE `union_product_sync_log` (
   KEY `idx_platform_status` (`platform`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品同步日志表';
 
-
+DROP TABLE IF EXISTS `union_order`;
 CREATE TABLE `union_order` (
    `id` bigint(20) NOT NULL AUTO_INCREMENT,
    `platform` tinyint(4) NOT NULL COMMENT '平台：1-淘宝 2-京东 3-拼多多',
@@ -197,7 +199,7 @@ CREATE TABLE `union_order` (
    KEY `idx_settle_status` (`settle_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联盟订单主表';
 
-
+DROP TABLE IF EXISTS `union_commission_record`;
 CREATE TABLE `union_commission_record` (
    `id` bigint(20) NOT NULL AUTO_INCREMENT,
    `order_id` bigint(20) NOT NULL COMMENT '关联union_order.id',
@@ -235,7 +237,7 @@ CREATE TABLE `union_commission_record` (
    KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='佣金记录表';
 
-
+DROP TABLE IF EXISTS `union_settle_batch`;
 CREATE TABLE `union_settle_batch` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `batch_no` varchar(64) NOT NULL COMMENT '批次号（业务唯一）',
@@ -253,7 +255,7 @@ CREATE TABLE `union_settle_batch` (
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='结算批次表';
 
-
+DROP TABLE IF EXISTS `union_order_attribution_log`;
 CREATE TABLE `union_order_attribution_log` (
    `id` bigint(20) NOT NULL AUTO_INCREMENT,
    `order_id` bigint(20) NOT NULL COMMENT '订单ID',
@@ -270,7 +272,7 @@ CREATE TABLE `union_order_attribution_log` (
    KEY `idx_outer_order` (`platform`, `outer_order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单归因日志表';
 
-
+DROP TABLE IF EXISTS `union_member_relation`;
 CREATE TABLE `union_member_relation` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `member_id` bigint(20) NOT NULL COMMENT '推广者ID（本人）',
@@ -305,7 +307,7 @@ CREATE TABLE `union_member_relation` (
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='推广者关系表';
 
-
+DROP TABLE IF EXISTS `union_member_team_snapshot`;
 CREATE TABLE `union_member_team_snapshot` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
@@ -331,7 +333,7 @@ CREATE TABLE `union_member_team_snapshot` (
     KEY `idx_snapshot_date` (`snapshot_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='推广者团队快照表';
 
-
+DROP TABLE IF EXISTS `union_level_config`;
 CREATE TABLE `union_level_config` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `level` int(11) NOT NULL COMMENT '层级（1/2/3/...）',
@@ -348,7 +350,7 @@ CREATE TABLE `union_level_config` (
     UNIQUE KEY `uk_level` (`level`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='层级佣金配置表';
 
-
+DROP TABLE IF EXISTS `union_commission_rule`;
 CREATE TABLE `union_commission_rule` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `rule_name` varchar(128) NOT NULL COMMENT '规则名称',
@@ -391,7 +393,7 @@ CREATE TABLE `union_commission_rule` (
     KEY `idx_status_time` (`status`, `start_time`, `end_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='佣金分配规则配置表';
 
-
+DROP TABLE IF EXISTS `union_member_level`;
 CREATE TABLE `union_member_level` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
     `level_code` varchar(32) NOT NULL COMMENT '等级编码：L1/L2/L3',
@@ -407,6 +409,7 @@ CREATE TABLE `union_member_level` (
     UNIQUE KEY `uk_level_code` (`level_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='推广者等级配置表';
 
+DROP TABLE IF EXISTS `union_commission_distribution`;
 CREATE TABLE `union_commission_distribution` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `order_id` bigint(20) NOT NULL COMMENT '订单ID',
@@ -435,6 +438,7 @@ CREATE TABLE `union_commission_distribution` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='佣金分配明细表';
 
 -- 推广者账户表
+DROP TABLE IF EXISTS `union_member_account`;
 CREATE TABLE `union_member_account` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
@@ -450,6 +454,7 @@ CREATE TABLE `union_member_account` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='推广者账户表';
 
 -- 资金流水表（记录所有余额变动）
+DROP TABLE IF EXISTS `union_account_transaction`;
 CREATE TABLE `union_account_transaction` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
@@ -469,6 +474,7 @@ CREATE TABLE `union_account_transaction` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账户资金流水表';
 
 -- 推广者账户表
+DROP TABLE IF EXISTS `union_member_account`;
 CREATE TABLE `union_member_account` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
@@ -484,6 +490,7 @@ CREATE TABLE `union_member_account` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='推广者账户表';
 
 -- 资金流水表（记录所有余额变动）
+DROP TABLE IF EXISTS `union_account_transaction`;
 CREATE TABLE `union_account_transaction` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
@@ -503,6 +510,7 @@ CREATE TABLE `union_account_transaction` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账户资金流水表';
 
 -- 推广链接表
+DROP TABLE IF EXISTS `union_promotion_link`;
 CREATE TABLE `union_promotion_link` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
@@ -984,3 +992,328 @@ CREATE TABLE `union_withdraw_whitelist` (
     UNIQUE KEY `uk_member_type` (`member_id`, `whitelist_type`),
     KEY `idx_status_expire` (`status`, `expire_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='提现白名单表';
+
+-- ------------------------------------------------------------
+-- 消息通知表
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_notification`;
+CREATE TABLE `union_notification` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `member_id` bigint(20) NOT NULL COMMENT '接收人ID',
+    `notify_type` tinyint(4) NOT NULL COMMENT '类型：1-提现审核结果 2-佣金到账 3-订单归因 4-系统公告 5-活动推送',
+    `title` varchar(128) NOT NULL COMMENT '通知标题',
+    `content` varchar(1024) NOT NULL COMMENT '通知内容',
+    `link_url` varchar(512) DEFAULT NULL COMMENT '跳转链接',
+    `extra_data` json DEFAULT NULL COMMENT '扩展数据（如订单ID、提现ID）',
+    `is_read` tinyint(1) DEFAULT '0' COMMENT '是否已读',
+    `read_time` datetime DEFAULT NULL COMMENT '阅读时间',
+    `status` tinyint(4) DEFAULT '1' COMMENT '1-正常 2-已撤回',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_member_id` (`member_id`),
+    KEY `idx_is_read` (`is_read`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息通知表';
+
+
+-- ------------------------------------------------------------
+-- 佣金调整记录表（人工调账）
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_commission_adjustment`;
+CREATE TABLE `union_commission_adjustment` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
+    `adjust_no` varchar(64) NOT NULL COMMENT '调整单号',
+    `adjust_type` tinyint(4) NOT NULL COMMENT '调整类型：1-补偿 2-扣减 3-修正',
+    `adjust_amount` decimal(12,2) NOT NULL COMMENT '调整金额（正数增加，负数减少）',
+    `before_balance` decimal(12,2) NOT NULL COMMENT '调整前余额',
+    `after_balance` decimal(12,2) NOT NULL COMMENT '调整后余额',
+    `order_id` bigint(20) DEFAULT NULL COMMENT '关联订单ID（如订单佣金修正）',
+    `reason` varchar(256) NOT NULL COMMENT '调整原因',
+    `attachments` json DEFAULT NULL COMMENT '附件（凭证图片）',
+    `operator_id` bigint(20) NOT NULL COMMENT '操作人ID',
+    `operator_name` varchar(64) NOT NULL COMMENT '操作人姓名',
+    `status` tinyint(4) DEFAULT '1' COMMENT '1-生效 2-已撤销',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_adjust_no` (`adjust_no`),
+    KEY `idx_member_id` (`member_id`),
+    KEY `idx_order_id` (`order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='佣金调整记录表';
+
+
+-- ------------------------------------------------------------
+-- 商品状态变更日志表
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_product_status_log`;
+CREATE TABLE `union_product_status_log` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `product_id` bigint(20) NOT NULL COMMENT '商品ID',
+    `field_name` varchar(32) NOT NULL COMMENT '变更字段：status/is_recommend',
+    `old_value` varchar(32) DEFAULT NULL COMMENT '旧值',
+    `new_value` varchar(32) DEFAULT NULL COMMENT '新值',
+    `operator_id` bigint(20) DEFAULT NULL COMMENT '操作人ID',
+    `operator_name` varchar(64) DEFAULT NULL COMMENT '操作人姓名',
+    `remark` varchar(256) DEFAULT NULL COMMENT '变更原因',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_product_id` (`product_id`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品状态变更日志表';
+
+
+-- 在 union_order 中增加分表标记字段
+ALTER TABLE `union_order`
+    ADD COLUMN `sharding_key` varchar(32) DEFAULT NULL COMMENT '分表键（格式：YYYYMM）' AFTER `id`,
+    ADD COLUMN `order_source` tinyint(4) DEFAULT '1' COMMENT '订单来源：1-平台推送 2-定时轮询 3-手动录入' AFTER `platform`,
+    ADD KEY `idx_sharding_key` (`sharding_key`);
+
+ALTER TABLE `union_member_relation`
+    ADD COLUMN `cache_version` int(11) DEFAULT '0' COMMENT '缓存版本号（变更时自增）' AFTER `total_team`;
+
+ALTER TABLE `union_promotion_link`
+    ADD COLUMN `platform_adzone_id` varchar(64) DEFAULT NULL COMMENT '平台广告位ID（淘宝adzone_id）' AFTER `platform`,
+    ADD COLUMN `platform_site_id` varchar(64) DEFAULT NULL COMMENT '平台站点ID（淘宝site_id）' AFTER `platform_adzone_id`;
+
+
+-- ------------------------------------------------------------
+-- 推广者设备信息表
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_member_device`;
+CREATE TABLE `union_member_device` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `member_id` bigint(20) NOT NULL COMMENT '推广者ID',
+    `device_id` varchar(128) NOT NULL COMMENT '设备唯一标识（UUID/IMEI/IDFA）',
+    `device_type` varchar(32) DEFAULT NULL COMMENT '设备类型：IOS/ANDROID/PC/H5',
+    `device_model` varchar(64) DEFAULT NULL COMMENT '设备型号',
+    `os_version` varchar(32) DEFAULT NULL COMMENT '操作系统版本',
+    `app_version` varchar(32) DEFAULT NULL COMMENT 'APP版本',
+    `last_login_ip` varchar(64) DEFAULT NULL COMMENT '最后登录IP',
+    `last_login_time` datetime DEFAULT NULL COMMENT '最后登录时间',
+    `login_count` int(11) DEFAULT '0' COMMENT '登录次数',
+    `status` tinyint(4) DEFAULT '1' COMMENT '1-正常 2-异常 3-已禁用',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_member_device` (`member_id`, `device_id`),
+    KEY `idx_device_id` (`device_id`),
+    KEY `idx_member_id` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='推广者设备信息表';
+
+
+-- ------------------------------------------------------------
+-- 平台类目映射表（统一各平台类目）
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_platform_category_map`;
+CREATE TABLE `union_platform_category_map` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `platform` tinyint(4) NOT NULL COMMENT '平台',
+    `platform_category_id` varchar(64) NOT NULL COMMENT '平台类目ID',
+    `platform_category_name` varchar(128) NOT NULL COMMENT '平台类目名称',
+    `platform_parent_id` varchar(64) DEFAULT NULL COMMENT '平台父级类目ID',
+    `union_category_id` bigint(20) DEFAULT NULL COMMENT '映射到union_category.id',
+    `status` tinyint(4) DEFAULT '1' COMMENT '1-启用 0-禁用',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_platform_category` (`platform`, `platform_category_id`),
+    KEY `idx_union_category` (`union_category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台类目映射表';
+
+
+ALTER TABLE `union_commission_record`
+    ADD COLUMN `confirm_status` tinyint(4) DEFAULT '0' COMMENT '确认状态：0-待确认 1-已确认 2-待修正 3-已驳回' AFTER `status`,
+    ADD COLUMN `confirm_time` datetime DEFAULT NULL COMMENT '确认时间' AFTER `confirm_status`;
+
+
+-- 在 union_link_config 中增加配置字段
+ALTER TABLE `union_link_config`
+    ADD COLUMN `expire_strategy` json DEFAULT NULL COMMENT '过期策略：{"activity":7, "product":30, "shop":60, "default":30}' AFTER `smart_redirect`;
+
+-- ------------------------------------------------------------
+-- 外部推广者/影子推广者表（无系统登录账号）
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_external_promoter`;
+CREATE TABLE `union_external_promoter` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `promoter_code` varchar(32) NOT NULL COMMENT '推广者唯一编码（业务生成）',
+    `name` varchar(64) NOT NULL COMMENT '推广者姓名/昵称',
+    `mobile` varchar(20) DEFAULT NULL COMMENT '手机号（可选）',
+
+    -- 关联关系（关键）
+    `master_member_id` bigint(20) NOT NULL COMMENT '所属团长/上级推广者ID（有系统账号）',
+    `bind_type` tinyint(4) DEFAULT '1' COMMENT '绑定类型：1-临时绑定 2-永久绑定 3-活动绑定',
+
+    -- 佣金结算方式
+    `commission_settle_type` tinyint(4) NOT NULL DEFAULT '1' COMMENT '佣金结算方式：1-由团长手动结算 2-系统自动结算到团长账户',
+
+    -- 状态与时间
+    `status` tinyint(4) DEFAULT '1' COMMENT '状态：1-正常 2-已禁用 3-已过期',
+    `bind_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '绑定时间',
+    `expire_time` datetime DEFAULT NULL COMMENT '过期时间（临时绑定用）',
+    `unbind_time` datetime DEFAULT NULL COMMENT '解绑时间',
+
+    `remark` varchar(256) DEFAULT NULL COMMENT '备注',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_promoter_code` (`promoter_code`),
+    KEY `idx_master_member_id` (`master_member_id`),
+    KEY `idx_mobile` (`mobile`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='外部推广者/影子推广者表';
+
+
+-- 新增字段
+ALTER TABLE `union_promotion_link`
+    ADD COLUMN `promoter_type` tinyint(4) NOT NULL DEFAULT '1' COMMENT '推广者类型：1-系统会员 2-外部推广者' AFTER `member_id`,
+    ADD COLUMN `external_promoter_id` bigint(20) DEFAULT NULL COMMENT '外部推广者ID（关联union_external_promoter.id）' AFTER `promoter_type`,
+    ADD COLUMN `master_member_id` bigint(20) DEFAULT NULL COMMENT '所属团长ID（冗余，便于快速查询）' AFTER `external_promoter_id`;
+
+-- 索引优化
+CREATE INDEX `idx_external_promoter` ON `union_promotion_link` (`external_promoter_id`);
+CREATE INDEX `idx_master_member` ON `union_promotion_link` (`master_member_id`);
+
+-- 新增字段
+ALTER TABLE `union_order`
+    ADD COLUMN `promoter_type` tinyint(4) DEFAULT '1' COMMENT '推广者类型：1-系统会员 2-外部推广者' AFTER `member_id`,
+    ADD COLUMN `external_promoter_id` bigint(20) DEFAULT NULL COMMENT '外部推广者ID' AFTER `promoter_type`,
+    ADD COLUMN `master_member_id` bigint(20) DEFAULT NULL COMMENT '所属团长ID' AFTER `external_promoter_id`;
+
+-- 索引
+CREATE INDEX `idx_external_promoter_order` ON `union_order` (`external_promoter_id`);
+CREATE INDEX `idx_master_member_order` ON `union_order` (`master_member_id`);
+
+ALTER TABLE `union_commission_record`
+    ADD COLUMN `actual_promoter_id` bigint(20) DEFAULT NULL COMMENT '实际推广者ID（可能是外部推广者）' AFTER `member_id`,
+    ADD COLUMN `actual_promoter_type` tinyint(4) DEFAULT '1' COMMENT '实际推广者类型：1-系统会员 2-外部推广者' AFTER `actual_promoter_id`,
+    ADD COLUMN `external_promoter_id` bigint(20) DEFAULT NULL COMMENT '外部推广者ID' AFTER `actual_promoter_type`,
+    ADD COLUMN `settle_target_type` tinyint(4) DEFAULT '1' COMMENT '结算目标类型：1-系统会员 2-团长代收' AFTER `external_promoter_id`;
+
+-- 新增：外部推广者佣金待分配表
+DROP TABLE IF EXISTS `union_external_commission_pending`;
+CREATE TABLE `union_external_commission_pending` (
+     `id` bigint(20) NOT NULL AUTO_INCREMENT,
+     `external_promoter_id` bigint(20) NOT NULL COMMENT '外部推广者ID',
+     `master_member_id` bigint(20) NOT NULL COMMENT '团长ID',
+     `order_id` bigint(20) NOT NULL COMMENT '订单ID',
+     `commission_amount` decimal(12,2) NOT NULL COMMENT '待分配佣金',
+     `settle_status` tinyint(4) DEFAULT '0' COMMENT '结算状态：0-待结算 1-已结算 2-已取消',
+     `settle_time` datetime DEFAULT NULL COMMENT '结算时间',
+     `remark` varchar(256) DEFAULT NULL COMMENT '备注',
+     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     PRIMARY KEY (`id`),
+     KEY `idx_external_promoter` (`external_promoter_id`),
+     KEY `idx_master_member` (`master_member_id`),
+     KEY `idx_settle_status` (`settle_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='外部推广者待结算佣金表';
+
+
+-- ------------------------------------------------------------
+-- 外部推广者账户表
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_external_account`;
+CREATE TABLE `union_external_account` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `external_promoter_id` bigint(20) NOT NULL COMMENT '外部推广者ID',
+    `master_member_id` bigint(20) NOT NULL COMMENT '所属团长ID',
+    `total_commission` decimal(12,2) DEFAULT '0.00' COMMENT '累计佣金总额',
+    `available_balance` decimal(12,2) DEFAULT '0.00' COMMENT '可提现余额',
+    `frozen_balance` decimal(12,2) DEFAULT '0.00' COMMENT '冻结余额（提现中）',
+    `total_withdrawn` decimal(12,2) DEFAULT '0.00' COMMENT '累计已提现',
+    `pending_settle` decimal(12,2) DEFAULT '0.00' COMMENT '待结算佣金（未到结算周期）',
+    `version` int(11) DEFAULT '0' COMMENT '乐观锁版本号',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_external_promoter` (`external_promoter_id`),
+    KEY `idx_master_member` (`master_member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='外部推广者账户表';
+
+
+-- ------------------------------------------------------------
+-- 外部推广者资金流水表
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_external_transaction`;
+CREATE TABLE `union_external_transaction` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `external_promoter_id` bigint(20) NOT NULL COMMENT '外部推广者ID',
+    `master_member_id` bigint(20) NOT NULL COMMENT '所属团长ID',
+    `transaction_no` varchar(64) NOT NULL COMMENT '流水号（唯一）',
+    `transaction_type` tinyint(4) NOT NULL COMMENT '类型：1-佣金入账 2-提现扣减 3-系统调整 4-退款回滚',
+    `amount` decimal(12,2) NOT NULL COMMENT '变动金额（正数增加，负数减少）',
+    `balance_before` decimal(12,2) NOT NULL COMMENT '变动前余额',
+    `balance_after` decimal(12,2) NOT NULL COMMENT '变动后余额',
+    `source_id` varchar(64) DEFAULT NULL COMMENT '来源ID（如订单ID、提现申请ID）',
+    `remark` varchar(256) DEFAULT NULL COMMENT '备注',
+    `status` tinyint(4) DEFAULT '1' COMMENT '1-成功 2-失败 3-处理中',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_transaction_no` (`transaction_no`),
+    KEY `idx_external_promoter` (`external_promoter_id`),
+    KEY `idx_master_member` (`master_member_id`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='外部推广者资金流水表';
+
+-- ------------------------------------------------------------
+-- 外部推广者佣金明细表（记录每笔订单产生的佣金）
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `union_external_commission_detail`;
+CREATE TABLE `union_external_commission_detail` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `external_promoter_id` bigint(20) NOT NULL COMMENT '外部推广者ID',
+    `master_member_id` bigint(20) NOT NULL COMMENT '所属团长ID',
+    `order_id` bigint(20) NOT NULL COMMENT '关联订单ID',
+    `order_amount` decimal(12,2) NOT NULL COMMENT '订单金额',
+    `commission_rate` decimal(8,2) NOT NULL COMMENT '佣金比率',
+    `commission_amount` decimal(12,2) NOT NULL COMMENT '佣金金额',
+
+    -- 结算状态
+    `settle_status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '结算状态：0-待结算 1-已结算 2-已退款 3-结算失败',
+    `settle_time` datetime DEFAULT NULL COMMENT '结算时间',
+    `settle_batch_no` varchar(64) DEFAULT NULL COMMENT '结算批次号',
+
+    -- 关联资金流水
+    `transaction_id` bigint(20) DEFAULT NULL COMMENT '关联资金流水ID',
+
+    -- 扩展
+    `remark` varchar(256) DEFAULT NULL COMMENT '备注',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_order_external` (`order_id`, `external_promoter_id`),
+    KEY `idx_external_promoter` (`external_promoter_id`),
+    KEY `idx_master_member` (`master_member_id`),
+    KEY `idx_settle_status` (`settle_status`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='外部推广者佣金明细表';
+
+-- 新增字段：外部推广者佣金比例
+ALTER TABLE `union_commission_rule`
+    ADD COLUMN `external_promoter_rate` decimal(5,4) DEFAULT '0.0000' COMMENT '外部推广者佣金比例' AFTER `direct_commission_rate`;
+
+-- 外部推广者提现申请表
+DROP TABLE IF EXISTS `union_external_withdraw`;
+CREATE TABLE `union_external_withdraw` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `external_promoter_id` bigint(20) NOT NULL,
+    `master_member_id` bigint(20) NOT NULL,
+    `apply_no` varchar(64) NOT NULL COMMENT '申请单号',
+    `apply_amount` decimal(12,2) NOT NULL,
+    `actual_amount` decimal(12,2) DEFAULT NULL,
+    `fee_amount` decimal(12,2) DEFAULT '0.00',
+    `pay_account` varchar(128) NOT NULL COMMENT '收款账号',
+    `pay_account_name` varchar(64) NOT NULL COMMENT '收款人姓名',
+    `status` tinyint(4) DEFAULT '1' COMMENT '1-待处理 2-已打款 3-已驳回',
+    `pay_time` datetime DEFAULT NULL,
+    `transaction_id` bigint(20) DEFAULT NULL,
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_apply_no` (`apply_no`),
+    KEY `idx_external_promoter` (`external_promoter_id`),
+    KEY `idx_master_member` (`master_member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='外部推广者提现申请表';

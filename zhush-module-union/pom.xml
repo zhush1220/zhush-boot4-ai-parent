@@ -7,10 +7,14 @@
         <artifactId>zhush-boot4-parent</artifactId>
         <version>${revision}</version>
     </parent>
-    <artifactId>zhush-module-system</artifactId>
+    <artifactId>zhush-module-union</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-common</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-web</artifactId>
