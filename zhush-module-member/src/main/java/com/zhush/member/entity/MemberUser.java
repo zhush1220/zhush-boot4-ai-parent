@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class MemberUser extends BaseEntity implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 6811268557902780756L;
 
     /** 手机号 */
     private String mobile;

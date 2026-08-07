@@ -19,7 +19,7 @@ import java.io.Serializable;
 public class MemberSocialUser extends BaseEntity implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 3038890361743345228L;
 
     /** 会员用户ID */
     private Long userId;
