@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionNotificationVO
  * @Description 消息通知表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionNotification.class)
@@ -39,7 +39,7 @@ public class UnionNotificationVO {
     private String extraData;
 
     @Schema(description = "是否已读")
-    private Integer isRead;
+    private Boolean isRead;
 
     @Schema(description = "阅读时间")
     private LocalDateTime readTime;

@@ -57,7 +57,7 @@ public class UnionWithdrawConfig implements Serializable {
     /**
      * 是否启用
      */
-    private Integer isActive;
+    private Boolean isActive;
 
     /**
      * 排序

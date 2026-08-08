@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  * @ClassName UnionPlatformCategoryMapQuery
  * @Description 平台类目映射表 分页查询请求
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data

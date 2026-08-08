@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionShortUrlMap;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -10,23 +12,26 @@ import lombok.Data;
  * @ClassName UnionShortUrlMapParam
  * @Description 短链接映射表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionShortUrlMap.class)
 @Schema(description = "短链接映射表新增/修改请求参数")
 public class UnionShortUrlMapParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "短链码（如：abc123）")
+    @NotBlank(message = "短链码（如：abc123）不能为空")
     private String shortCode;
 
     @Schema(description = "关联推广链接ID")
+    @NotNull(message = "关联推广链接ID不能为空")
     private Long promotionLinkId;
 
     @Schema(description = "原始推广链接")
+    @NotBlank(message = "原始推广链接不能为空")
     private String originalUrl;
 
     @Schema(description = "最终跳转URL（可做A/B测试或渠道跟踪）")

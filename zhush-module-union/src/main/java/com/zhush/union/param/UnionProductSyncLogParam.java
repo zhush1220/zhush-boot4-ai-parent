@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionProductSyncLog;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -10,20 +12,22 @@ import lombok.Data;
  * @ClassName UnionProductSyncLogParam
  * @Description 商品同步日志表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionProductSyncLog.class)
 @Schema(description = "商品同步日志表新增/修改请求参数")
 public class UnionProductSyncLogParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "平台")
+    @NotNull(message = "平台不能为空")
     private Integer platform;
 
     @Schema(description = "同步类型：1-全量 2-增量 3-手动")
+    @NotNull(message = "同步类型：1-全量 2-增量 3-手动不能为空")
     private Integer syncType;
 
     @Schema(description = "同步总数")
@@ -39,6 +43,7 @@ public class UnionProductSyncLogParam {
     private String errorMsg;
 
     @Schema(description = "start_time")
+    @NotNull(message = "start_time不能为空")
     private LocalDateTime startTime;
 
     @Schema(description = "end_time")

@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionCommissionRule;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -11,20 +13,22 @@ import lombok.Data;
  * @ClassName UnionCommissionRuleParam
  * @Description 佣金分配规则配置表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionCommissionRule.class)
 @Schema(description = "佣金分配规则配置表新增/修改请求参数")
 public class UnionCommissionRuleParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "规则名称")
+    @NotBlank(message = "规则名称不能为空")
     private String ruleName;
 
     @Schema(description = "规则类型：1-全局默认 2-按商品类目 3-按推广者等级 4-按商品平台")
+    @NotNull(message = "规则类型：1-全局默认 2-按商品类目 3-按推广者等级 4-按商品平台不能为空")
     private Integer ruleType;
 
     @Schema(description = "平台：1-淘宝 2-京东 3-拼多多（NULL表示全部）")
@@ -40,12 +44,15 @@ public class UnionCommissionRuleParam {
     private BigDecimal platformServiceRate;
 
     @Schema(description = "系统运营成本率（如15%）")
+    @NotNull(message = "系统运营成本率（如15%）不能为空")
     private BigDecimal systemCostRate;
 
     @Schema(description = "可分配佣金率 = 1 - platform_service_rate - system_cost_rate")
+    @NotNull(message = "可分配佣金率 = 1 - platform_service_rate - system_cost_rate不能为空")
     private BigDecimal distributableRate;
 
     @Schema(description = "推广者直接佣金率（占可分配池）")
+    @NotNull(message = "推广者直接佣金率（占可分配池）不能为空")
     private BigDecimal directCommissionRate;
 
     @Schema(description = "外部推广者佣金比例")

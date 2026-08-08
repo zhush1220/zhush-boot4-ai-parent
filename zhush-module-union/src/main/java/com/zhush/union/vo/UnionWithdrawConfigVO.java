@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionWithdrawConfigVO
  * @Description 提现配置表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionWithdrawConfig.class)
@@ -36,7 +36,7 @@ public class UnionWithdrawConfigVO {
     private String description;
 
     @Schema(description = "是否启用")
-    private Integer isActive;
+    private Boolean isActive;
 
     @Schema(description = "排序")
     private Integer sortOrder;

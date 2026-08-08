@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionOrder;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -11,26 +13,28 @@ import lombok.Data;
  * @ClassName UnionOrderParam
  * @Description 联盟订单主表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionOrder.class)
 @Schema(description = "联盟订单主表新增/修改请求参数")
 public class UnionOrderParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "分表键（格式：YYYYMM）")
     private String shardingKey;
 
     @Schema(description = "平台：1-淘宝 2-京东 3-拼多多")
+    @NotNull(message = "平台：1-淘宝 2-京东 3-拼多多不能为空")
     private Integer platform;
 
     @Schema(description = "订单来源：1-平台推送 2-定时轮询 3-手动录入")
     private Integer orderSource;
 
     @Schema(description = "第三方平台订单号")
+    @NotBlank(message = "第三方平台订单号不能为空")
     private String outerOrderId;
 
     @Schema(description = "父订单号（合并支付时）")
@@ -67,6 +71,7 @@ public class UnionOrderParam {
     private String shopName;
 
     @Schema(description = "订单金额（实际支付）")
+    @NotNull(message = "订单金额（实际支付）不能为空")
     private BigDecimal orderAmount;
 
     @Schema(description = "该笔订单的佣金比率（快照）")
@@ -94,6 +99,7 @@ public class UnionOrderParam {
     private LocalDateTime settleTime;
 
     @Schema(description = "下单时间（第三方）")
+    @NotNull(message = "下单时间（第三方）不能为空")
     private LocalDateTime orderTime;
 
     @Schema(description = "支付时间")

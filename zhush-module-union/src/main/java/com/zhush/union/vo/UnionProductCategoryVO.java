@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionProductCategoryVO
  * @Description 商品分类关联表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionProductCategory.class)

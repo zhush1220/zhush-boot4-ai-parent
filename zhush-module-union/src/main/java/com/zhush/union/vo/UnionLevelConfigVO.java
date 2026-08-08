@@ -11,7 +11,7 @@ import lombok.Data;
  * @ClassName UnionLevelConfigVO
  * @Description 层级佣金配置表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionLevelConfig.class)
@@ -37,7 +37,7 @@ public class UnionLevelConfigVO {
     private BigDecimal minTeamCommission;
 
     @Schema(description = "是否启用")
-    private Integer isActive;
+    private Boolean isActive;
 
     @Schema(description = "排序")
     private Integer sortOrder;

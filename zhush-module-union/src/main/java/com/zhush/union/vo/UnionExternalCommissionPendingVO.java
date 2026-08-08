@@ -11,7 +11,7 @@ import lombok.Data;
  * @ClassName UnionExternalCommissionPendingVO
  * @Description 外部推广者待结算佣金表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionExternalCommissionPending.class)

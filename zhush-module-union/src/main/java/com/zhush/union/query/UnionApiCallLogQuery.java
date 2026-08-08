@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  * @ClassName UnionApiCallLogQuery
  * @Description 平台API调用日志表 分页查询请求
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -30,9 +30,6 @@ public class UnionApiCallLogQuery extends BaseQuery {
 
     @Schema(description = "响应消息")
     private String responseMsg;
-
-    @Schema(description = "是否成功")
-    private Integer isSuccess;
 
     @Schema(description = "耗时（毫秒）")
     private Integer duration;

@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  * @ClassName UnionWithdrawConfigQuery
  * @Description 提现配置表 分页查询请求
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -30,9 +30,6 @@ public class UnionWithdrawConfigQuery extends BaseQuery {
 
     @Schema(description = "配置说明")
     private String description;
-
-    @Schema(description = "是否启用")
-    private Integer isActive;
 
     @Schema(description = "排序")
     private Integer sortOrder;

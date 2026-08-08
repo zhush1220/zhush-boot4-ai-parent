@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionApiCallLogVO
  * @Description 平台API调用日志表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionApiCallLog.class)
@@ -36,7 +36,7 @@ public class UnionApiCallLogVO {
     private String responseMsg;
 
     @Schema(description = "是否成功")
-    private Integer isSuccess;
+    private Boolean isSuccess;
 
     @Schema(description = "耗时（毫秒）")
     private Integer duration;

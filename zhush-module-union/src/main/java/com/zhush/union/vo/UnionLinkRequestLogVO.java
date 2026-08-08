@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionLinkRequestLogVO
  * @Description 转链请求日志表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionLinkRequestLog.class)

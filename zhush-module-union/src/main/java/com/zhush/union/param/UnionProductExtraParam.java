@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionProductExtra;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -11,17 +13,18 @@ import lombok.Data;
  * @ClassName UnionProductExtraParam
  * @Description 商品扩展信息表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionProductExtra.class)
 @Schema(description = "商品扩展信息表新增/修改请求参数")
 public class UnionProductExtraParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "关联union_product.id")
+    @NotNull(message = "关联union_product.id不能为空")
     private Long productId;
 
     @Schema(description = "商品详情页URL")

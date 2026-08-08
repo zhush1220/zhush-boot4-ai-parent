@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  * @ClassName UnionNotificationQuery
  * @Description 消息通知表 分页查询请求
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -33,9 +33,6 @@ public class UnionNotificationQuery extends BaseQuery {
 
     @Schema(description = "扩展数据（如订单ID、提现ID）")
     private String extraData;
-
-    @Schema(description = "是否已读")
-    private Integer isRead;
 
     @Schema(description = "1-正常 2-已撤回")
     private Integer status;

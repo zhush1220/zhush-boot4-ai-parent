@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionPromotionLinkVO
  * @Description 推广链接表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionPromotionLink.class)

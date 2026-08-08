@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  * @ClassName UnionLevelConfigQuery
  * @Description 层级佣金配置表 分页查询请求
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -24,9 +24,6 @@ public class UnionLevelConfigQuery extends BaseQuery {
 
     @Schema(description = "晋升该层级所需最小团队人数")
     private Integer minTeamSize;
-
-    @Schema(description = "是否启用")
-    private Integer isActive;
 
     @Schema(description = "排序")
     private Integer sortOrder;

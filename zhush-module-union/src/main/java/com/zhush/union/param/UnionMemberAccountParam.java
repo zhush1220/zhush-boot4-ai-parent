@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionMemberAccount;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -11,17 +13,18 @@ import lombok.Data;
  * @ClassName UnionMemberAccountParam
  * @Description 推广者账户表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionMemberAccount.class)
 @Schema(description = "推广者账户表新增/修改请求参数")
 public class UnionMemberAccountParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "推广者ID")
+    @NotNull(message = "推广者ID不能为空")
     private Long memberId;
 
     @Schema(description = "累计佣金总额")

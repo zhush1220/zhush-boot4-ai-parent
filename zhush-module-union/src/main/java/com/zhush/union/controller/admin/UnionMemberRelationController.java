@@ -6,18 +6,29 @@ import com.zhush.union.param.UnionMemberRelationParam;
 import com.zhush.union.query.UnionMemberRelationQuery;
 import com.zhush.union.service.UnionMemberRelationService;
 import com.zhush.union.vo.UnionMemberRelationVO;
+import com.zhush.web.operatelog.annotation.OperateLog;
+import com.zhush.web.operatelog.enums.OperateTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * @ClassName UnionMemberRelationController
  * @Description 推广者关系表 控制器
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @RestController
-@Tag(name = "管理端-推广者关系表")
+@Tag(name = "管理端-推广者关系", description = "推广者关系的增删改查")
 @RequestMapping("/admin/union/member-relation")
 public class UnionMemberRelationController {
 
@@ -25,6 +36,56 @@ public class UnionMemberRelationController {
 
     public UnionMemberRelationController(UnionMemberRelationService memberRelationService) {
         this.memberRelationService = memberRelationService;
+    }
+
+    /**
+     * 新增推广者关系
+     */
+    @PostMapping
+    @OperateLog(module = "推广者关系", type = OperateTypeEnum.CREATE)
+    @Operation(summary = "新增推广者关系")
+    public Result<Long> create(@RequestBody @Valid UnionMemberRelationParam param) {
+        return Result.success(memberRelationService.createMemberRelation(param));
+    }
+
+    /**
+     * 修改推广者关系
+     */
+    @PutMapping
+    @OperateLog(module = "推广者关系", type = OperateTypeEnum.UPDATE)
+    @Operation(summary = "修改推广者关系")
+    public Result<Void> update(@RequestBody @Valid UnionMemberRelationParam param) {
+        memberRelationService.updateMemberRelation(param);
+        return Result.success();
+    }
+
+    /**
+     * 删除推广者关系
+     */
+    @DeleteMapping("/{id}")
+    @OperateLog(module = "推广者关系", type = OperateTypeEnum.DELETE)
+    @Operation(summary = "删除推广者关系")
+    public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
+        memberRelationService.deleteMemberRelation(id);
+        return Result.success();
+    }
+
+    /**
+     * 推广者关系详情
+     */
+    @GetMapping("/{id}")
+    @Operation(summary = "推广者关系详情")
+    public Result<UnionMemberRelationVO> get(@Parameter(description = "ID") @PathVariable Long id) {
+        return Result.success(memberRelationService.getMemberRelation(id));
+    }
+
+    /**
+     * 推广者关系分页
+     */
+    @GetMapping("/page")
+    @Operation(summary = "推广者关系分页")
+    public Result<PageResult<UnionMemberRelationVO>> page(@Valid UnionMemberRelationQuery query) {
+        return Result.success(memberRelationService.getMemberRelationPage(query));
     }
 
 }

@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionLinkRequestLog;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -10,26 +12,30 @@ import lombok.Data;
  * @ClassName UnionLinkRequestLogParam
  * @Description 转链请求日志表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionLinkRequestLog.class)
 @Schema(description = "转链请求日志表新增/修改请求参数")
 public class UnionLinkRequestLogParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "推广者ID")
+    @NotNull(message = "推广者ID不能为空")
     private Long memberId;
 
     @Schema(description = "平台")
+    @NotNull(message = "平台不能为空")
     private Integer platform;
 
     @Schema(description = "来源类型：1-商品链接 2-商品ID 3-淘口令 4-搜索关键词")
+    @NotNull(message = "来源类型：1-商品链接 2-商品ID 3-淘口令 4-搜索关键词不能为空")
     private Integer sourceType;
 
     @Schema(description = "用户输入的原始内容（脱敏后）")
+    @NotBlank(message = "用户输入的原始内容（脱敏后）不能为空")
     private String sourceInput;
 
     @Schema(description = "解析出的第三方商品ID")
@@ -39,6 +45,7 @@ public class UnionLinkRequestLogParam {
     private Long productId;
 
     @Schema(description = "链接类型：1-单品 2-店铺 3-活动 4-通用")
+    @NotNull(message = "链接类型：1-单品 2-店铺 3-活动 4-通用不能为空")
     private Integer linkType;
 
     @Schema(description = "请求IP")

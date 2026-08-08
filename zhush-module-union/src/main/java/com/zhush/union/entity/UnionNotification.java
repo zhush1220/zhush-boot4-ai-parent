@@ -62,7 +62,7 @@ public class UnionNotification implements Serializable {
     /**
      * 是否已读
      */
-    private Integer isRead;
+    private Boolean isRead;
 
     /**
      * 阅读时间

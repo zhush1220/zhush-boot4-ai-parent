@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
  * @ClassName UnionExternalWithdrawQuery
  * @Description 外部推广者提现申请表 分页查询请求
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @EqualsAndHashCode(callSuper = true)
 @Data

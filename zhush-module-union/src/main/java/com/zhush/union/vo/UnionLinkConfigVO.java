@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionLinkConfigVO
  * @Description 转链配置表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionLinkConfig.class)
@@ -33,25 +33,25 @@ public class UnionLinkConfigVO {
     private Long categoryId;
 
     @Schema(description = "是否生成短链接")
-    private Integer enableShortUrl;
+    private Boolean enableShortUrl;
 
     @Schema(description = "短链接有效期（天数）")
     private Integer shortUrlExpireDays;
 
     @Schema(description = "是否生成口令/二维码")
-    private Integer enablePromotionCode;
+    private Boolean enablePromotionCode;
 
     @Schema(description = "是否生成海报")
-    private Integer enablePoster;
+    private Boolean enablePoster;
 
     @Schema(description = "转链时自动保存商品信息到union_product")
-    private Integer autoSaveProduct;
+    private Boolean autoSaveProduct;
 
     @Schema(description = "是否启用点击追踪")
-    private Integer clickTrackingEnabled;
+    private Boolean clickTrackingEnabled;
 
     @Schema(description = "是否启用智能跳转（根据设备跳转不同端）")
-    private Integer smartRedirect;
+    private Boolean smartRedirect;
 
     @Schema(description = "expire_strategy")
     private String expireStrategy;

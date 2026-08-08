@@ -52,7 +52,7 @@ public class UnionLinkConfig implements Serializable {
     /**
      * 是否生成短链接
      */
-    private Integer enableShortUrl;
+    private Boolean enableShortUrl;
 
     /**
      * 短链接有效期（天数）
@@ -62,27 +62,27 @@ public class UnionLinkConfig implements Serializable {
     /**
      * 是否生成口令/二维码
      */
-    private Integer enablePromotionCode;
+    private Boolean enablePromotionCode;
 
     /**
      * 是否生成海报
      */
-    private Integer enablePoster;
+    private Boolean enablePoster;
 
     /**
      * 转链时自动保存商品信息到union_product
      */
-    private Integer autoSaveProduct;
+    private Boolean autoSaveProduct;
 
     /**
      * 是否启用点击追踪
      */
-    private Integer clickTrackingEnabled;
+    private Boolean clickTrackingEnabled;
 
     /**
      * 是否启用智能跳转（根据设备跳转不同端）
      */
-    private Integer smartRedirect;
+    private Boolean smartRedirect;
 
     /**
      * expire_strategy

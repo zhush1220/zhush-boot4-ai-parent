@@ -11,7 +11,7 @@ import lombok.Data;
  * @ClassName UnionCommissionAdjustmentVO
  * @Description 佣金调整记录表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionCommissionAdjustment.class)

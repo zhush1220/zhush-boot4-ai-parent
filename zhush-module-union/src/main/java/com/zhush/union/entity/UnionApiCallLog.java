@@ -57,7 +57,7 @@ public class UnionApiCallLog implements Serializable {
     /**
      * 是否成功
      */
-    private Integer isSuccess;
+    private Boolean isSuccess;
 
     /**
      * 耗时（毫秒）

@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionMemberDeviceVO
  * @Description 推广者设备信息表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionMemberDevice.class)

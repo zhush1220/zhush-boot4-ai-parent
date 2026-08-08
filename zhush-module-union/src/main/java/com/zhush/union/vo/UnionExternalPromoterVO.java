@@ -10,7 +10,7 @@ import lombok.Data;
  * @ClassName UnionExternalPromoterVO
  * @Description 外部推广者/影子推广者表 详情/列表返回
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionExternalPromoter.class)

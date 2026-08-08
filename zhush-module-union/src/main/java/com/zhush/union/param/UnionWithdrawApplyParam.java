@@ -3,6 +3,8 @@ package com.zhush.union.param;
 import com.zhush.union.entity.UnionWithdrawApply;
 import io.github.linpeilie.annotations.AutoMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -11,20 +13,22 @@ import lombok.Data;
  * @ClassName UnionWithdrawApplyParam
  * @Description 提现申请表 新增/修改请求参数
  * @Author zhush
- * @Date 2026/08/07
+ * @Date 2026/08/08
  **/
 @Data
 @AutoMapper(target = UnionWithdrawApply.class)
 @Schema(description = "提现申请表新增/修改请求参数")
 public class UnionWithdrawApplyParam {
 
-    @Schema(description = "ID")
+    @Schema(description = "ID（新增时不需要传）")
     private Long id;
 
     @Schema(description = "申请单号（业务唯一，格式：WD + 日期 + 序列号）")
+    @NotBlank(message = "申请单号（业务唯一，格式：WD + 日期 + 序列号）不能为空")
     private String applyNo;
 
     @Schema(description = "推广者ID")
+    @NotNull(message = "推广者ID不能为空")
     private Long memberId;
 
     @Schema(description = "推广者姓名（冗余，便于展示）")
@@ -34,6 +38,7 @@ public class UnionWithdrawApplyParam {
     private String memberMobile;
 
     @Schema(description = "申请提现金额")
+    @NotNull(message = "申请提现金额不能为空")
     private BigDecimal applyAmount;
 
     @Schema(description = "实际到账金额（扣除税费/手续费后）")
@@ -49,12 +54,15 @@ public class UnionWithdrawApplyParam {
     private BigDecimal taxRate;
 
     @Schema(description = "提现方式：1-银行卡 2-支付宝 3-微信支付")
+    @NotNull(message = "提现方式：1-银行卡 2-支付宝 3-微信支付不能为空")
     private Integer withdrawType;
 
     @Schema(description = "收款账号（脱敏存储）")
+    @NotBlank(message = "收款账号（脱敏存储）不能为空")
     private String payAccount;
 
     @Schema(description = "收款人姓名")
+    @NotBlank(message = "收款人姓名不能为空")
     private String payAccountName;
 
     @Schema(description = "开户银行名称（银行卡时必填）")
