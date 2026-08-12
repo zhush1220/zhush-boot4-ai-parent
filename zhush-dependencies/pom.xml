@@ -34,7 +34,6 @@
         <skywalking.version>9.6.0</skywalking.version>
         <spring-boot-admin.version>4.1.2</spring-boot-admin.version>
         <aliyun-sdk-oss.version>3.18.5</aliyun-sdk-oss.version>
-        <x-file-storage.version>2.3.0</x-file-storage.version>
         <fesod-sheet.version>2.0.2-incubating</fesod-sheet.version>
         <redisson.version>4.6.1</redisson.version>
         <knife4j.version>4.5.0</knife4j.version>
@@ -301,13 +300,6 @@
                 <groupId>com.aliyun.oss</groupId>
                 <artifactId>aliyun-sdk-oss</artifactId>
                 <version>${aliyun-sdk-oss.version}</version>
-            </dependency>
-
-            <!-- 文件存储（x-file-storage） -->
-            <dependency>
-                <groupId>org.dromara.x-file-storage</groupId>
-                <artifactId>x-file-storage-spring</artifactId>
-                <version>${x-file-storage.version}</version>
             </dependency>
 
             <!--excel解析相关-->

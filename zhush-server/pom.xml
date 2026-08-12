@@ -23,6 +23,12 @@
             <version>${revision}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-module-union</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!-- 全文搜索（默认关闭，zhush.search.enabled=true 时启用）-->
         <dependency>
             <groupId>com.zhush</groupId>

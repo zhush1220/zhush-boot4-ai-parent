@@ -15,6 +15,11 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-common</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.binarywang</groupId>
+            <artifactId>weixin-java-pay</artifactId>
+        </dependency>
     </dependencies>
 
 
