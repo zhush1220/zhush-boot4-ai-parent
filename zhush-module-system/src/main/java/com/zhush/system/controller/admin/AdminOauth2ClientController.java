@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
+import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.system.param.Oauth2ClientParam;
 import com.zhush.system.query.Oauth2ClientQuery;
 import com.zhush.system.service.Oauth2ClientService;
@@ -43,6 +44,7 @@ public class AdminOauth2ClientController {
      */
     @PostMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:oauth2-client:add")
+    @Idempotent
     @Operation(summary = "新增客户端", description = "client_secret 由服务端生成，明文仅本次返回")
     public Result<Oauth2ClientSecretVO> create(@Valid @RequestBody Oauth2ClientParam param) {
         return Result.success(oauth2ClientService.createClient(param));
@@ -53,6 +55,7 @@ public class AdminOauth2ClientController {
      */
     @PutMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:oauth2-client:update")
+    @Idempotent
     @Operation(summary = "修改客户端", description = "clientId 与密钥不可经此修改")
     public Result<Void> update(@Valid @RequestBody Oauth2ClientParam param) {
         oauth2ClientService.updateClient(param);
@@ -64,6 +67,7 @@ public class AdminOauth2ClientController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:oauth2-client:delete")
+    @Idempotent
     @Operation(summary = "删除客户端", description = "逻辑删除，存量令牌立即失效")
     public Result<Void> delete(@Parameter(description = "客户端ID") @PathVariable Long id) {
         oauth2ClientService.deleteClient(id);
@@ -75,6 +79,7 @@ public class AdminOauth2ClientController {
      */
     @PutMapping("/reset-secret/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:oauth2-client:update")
+    @Idempotent(timeout = 10, message = "密钥重置中，请勿重复提交")
     @Operation(summary = "重置密钥", description = "旧密钥立即作废，明文仅本次返回")
     public Result<Oauth2ClientSecretVO> resetSecret(@Parameter(description = "客户端ID") @PathVariable Long id) {
         return Result.success(oauth2ClientService.resetSecret(id));

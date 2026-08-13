@@ -35,7 +35,11 @@ public enum GlobalErrorCode implements IErrorCode {
     REQUEST_TIMEOUT(1000408, "请求超时"),
     PAYLOAD_TOO_LARGE(1000413, "上传文件过大"),
     UNSUPPORTED_MEDIA_TYPE(1000415, "不支持的媒体类型"),
+    REPEATED_REQUEST(1000409, "重复请求，请勿重复提交"),
     TOO_MANY_REQUESTS(1000429, "操作过于频繁，请稍后再试"),
+    FILE_EMPTY(1000430, "上传文件不能为空"),
+    FILE_TYPE_UNSUPPORTED(1000431, "不支持的文件类型：{0}"),
+    FILE_NOT_FOUND(1000432, "文件不存在：{0}"),
 
     // ================ 2xxxxxx 服务端错误 ================
     INTERNAL_ERROR(2000000, "系统繁忙，请稍后重试"),
@@ -43,6 +47,8 @@ public enum GlobalErrorCode implements IErrorCode {
     DB_DUPLICATE_KEY(2000002, "数据已存在"),
     DB_INTEGRITY_VIOLATION(2000003, "数据完整性约束冲突"),
     RPC_ERROR(2000004, "远程调用失败"),
+    FILE_UPLOAD_ERROR(2000005, "文件上传失败：{0}"),
+    FILE_STORAGE_ERROR(2000006, "文件存储配置错误：{0}"),
     ;
 
     private final int code;

@@ -10,4 +10,38 @@
     <artifactId>zhush-spring-boot-starter-protection</artifactId>
     <packaging>jar</packaging>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-common</artifactId>
+        </dependency>
+
+        <!-- Redis：幂等去重基于 Redis SET NX 实现（RedisCache 封装） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-redis</artifactId>
+        </dependency>
+
+        <!-- 以下为切面编译期依赖（zhush-common 中均为 provided，需显式声明） -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+
+        <!-- Sa-Token：识别当前登录人以支撑“用户维度”去重（可选，缺失时按匿名用户处理） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-satoken</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
 </project>

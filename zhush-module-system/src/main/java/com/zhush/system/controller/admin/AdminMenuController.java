@@ -2,6 +2,7 @@ package com.zhush.system.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.response.Result;
+import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.system.param.AdminMenuParam;
 import com.zhush.system.query.AdminMenuQuery;
 import com.zhush.system.service.AdminMenuService;
@@ -44,6 +45,7 @@ public class AdminMenuController {
      */
     @PostMapping
     @SaCheckPermission(type = TYPE, value = "system:menu:create")
+    @Idempotent
     @Operation(summary = "新增菜单")
     public Result<Long> create(@RequestBody @Valid AdminMenuParam param) {
         return Result.success(menuService.createMenu(param));
@@ -54,6 +56,7 @@ public class AdminMenuController {
      */
     @PutMapping
     @SaCheckPermission(type = TYPE, value = "system:menu:update")
+    @Idempotent
     @Operation(summary = "修改菜单")
     public Result<Void> update(@RequestBody @Valid AdminMenuParam param) {
         menuService.updateMenu(param);
@@ -65,6 +68,7 @@ public class AdminMenuController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = TYPE, value = "system:menu:delete")
+    @Idempotent
     @Operation(summary = "删除菜单")
     public Result<Void> delete(@Parameter(description = "菜单ID") @PathVariable Long id) {
         menuService.deleteMenu(id);

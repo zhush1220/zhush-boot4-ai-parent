@@ -34,6 +34,8 @@
         <skywalking.version>9.6.0</skywalking.version>
         <spring-boot-admin.version>4.1.2</spring-boot-admin.version>
         <aliyun-sdk-oss.version>3.18.5</aliyun-sdk-oss.version>
+        <qiniu-java-sdk.version>7.16.0</qiniu-java-sdk.version>
+        <huawei-obs.version>3.24.3</huawei-obs.version>
         <fesod-sheet.version>2.0.2-incubating</fesod-sheet.version>
         <redisson.version>4.6.1</redisson.version>
         <knife4j.version>4.5.0</knife4j.version>
@@ -300,6 +302,20 @@
                 <groupId>com.aliyun.oss</groupId>
                 <artifactId>aliyun-sdk-oss</artifactId>
                 <version>${aliyun-sdk-oss.version}</version>
+            </dependency>
+
+            <!-- 七牛云对象存储 SDK -->
+            <dependency>
+                <groupId>com.qiniu</groupId>
+                <artifactId>qiniu-java-sdk</artifactId>
+                <version>${qiniu-java-sdk.version}</version>
+            </dependency>
+
+            <!-- 华为云 OBS 对象存储 SDK -->
+            <dependency>
+                <groupId>com.huaweicloud</groupId>
+                <artifactId>esdk-obs-java</artifactId>
+                <version>${huawei-obs.version}</version>
             </dependency>
 
             <!--excel解析相关-->

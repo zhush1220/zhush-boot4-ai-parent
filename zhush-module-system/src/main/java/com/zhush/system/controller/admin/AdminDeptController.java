@@ -3,6 +3,7 @@ package com.zhush.system.controller.admin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.Result;
+import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.system.param.AdminDeptParam;
 import com.zhush.system.query.AdminDeptQuery;
 import com.zhush.system.service.AdminDeptService;
@@ -43,6 +44,7 @@ public class AdminDeptController {
      */
     @PostMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:dept:create")
+    @Idempotent
     @Operation(summary = "新增部门")
     public Result<Long> create(@RequestBody @Valid AdminDeptParam param) {
         return Result.success(deptService.createDept(param));
@@ -53,6 +55,7 @@ public class AdminDeptController {
      */
     @PutMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:dept:update")
+    @Idempotent
     @Operation(summary = "修改部门")
     public Result<Void> update(@RequestBody @Valid AdminDeptParam param) {
         deptService.updateDept(param);
@@ -64,6 +67,7 @@ public class AdminDeptController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:dept:delete")
+    @Idempotent
     @Operation(summary = "删除部门")
     public Result<Void> delete(@Parameter(description = "部门ID") @PathVariable Long id) {
         deptService.deleteDept(id);

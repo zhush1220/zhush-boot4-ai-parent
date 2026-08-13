@@ -2,6 +2,11 @@ server:
   port: 9166
 
 spring:
+  # 文件上传大小限制（与 zhush.file.max-size 保持一致）
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
   # Redis 连接（starter-redis / Redisson / Sa-Token 共用）
   data:
     redis:
@@ -81,6 +86,40 @@ zhush:
   encrypt:
     enabled: true
     sm4-key: your-16-char-key    # 可选，不配则走 SmUtils 默认密钥策略（必须16字节）
+  # 接口幂等（@Idempotent + Redis 去重）：默认开启，zhush.idempotent.enabled=false 可整体关闭
+  idempotent:
+    enabled: true
+  # 文件存储（starter-file 自研多存储抽象）：切换存储只需修改 primary
+  file:
+    enabled: true
+    primary: local                       # local / aliyun-oss / qiniu / huawei-obs
+    max-size: 52428800                   # 单文件上限 50MB（字节）
+    # allowed-extensions: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip   # 扩展名白名单，不配则不限制
+    local:
+      enabled: true
+      base-path: D:/zhush/upload/        # 本地存储根目录
+      domain: http://localhost:9166/files/  # 文件访问 URL 前缀
+      url-path: /files/**                # 静态资源映射路径
+    aliyun-oss:
+      enabled: false
+      endpoint: your-endpoint
+      access-key-id: your-access-key-id
+      access-key-secret: your-access-key-secret
+      bucket-name: your-bucket-name
+      domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+    qiniu:
+      enabled: false
+      access-key: your-access-key
+      secret-key: your-secret-key
+      bucket: your-bucket
+      domain: https://your-domain/
+    huawei-obs:
+      enabled: false
+      endpoint: your-endpoint
+      access-key: your-access-key
+      secret-key: your-secret-key
+      bucket-name: your-bucket-name
+      domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false

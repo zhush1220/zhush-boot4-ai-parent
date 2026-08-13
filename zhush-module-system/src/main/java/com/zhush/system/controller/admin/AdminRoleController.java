@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
+import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.system.param.AdminRoleAssignDataScopeParam;
 import com.zhush.system.param.AdminRoleAssignMenuParam;
 import com.zhush.system.param.AdminRoleParam;
@@ -46,6 +47,7 @@ public class AdminRoleController {
      */
     @PostMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:create")
+    @Idempotent
     @Operation(summary = "新增角色")
     public Result<Long> create(@RequestBody @Valid AdminRoleParam param) {
         return Result.success(roleService.createRole(param));
@@ -56,6 +58,7 @@ public class AdminRoleController {
      */
     @PutMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:update")
+    @Idempotent
     @Operation(summary = "修改角色")
     public Result<Void> update(@RequestBody @Valid AdminRoleParam param) {
         roleService.updateRole(param);
@@ -67,6 +70,7 @@ public class AdminRoleController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:delete")
+    @Idempotent
     @Operation(summary = "删除角色")
     public Result<Void> delete(@Parameter(description = "角色ID") @PathVariable Long id) {
         roleService.deleteRole(id);
@@ -108,6 +112,7 @@ public class AdminRoleController {
      */
     @PutMapping("/assign-menu")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:assign-menu")
+    @Idempotent
     @Operation(summary = "分配菜单（权限）")
     public Result<Void> assignMenu(@RequestBody @Valid AdminRoleAssignMenuParam param) {
         roleService.assignMenus(param.getRoleId(), param.getMenuIds());
@@ -119,6 +124,7 @@ public class AdminRoleController {
      */
     @PutMapping("/assign-data-scope")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:assign-data-scope")
+    @Idempotent
     @Operation(summary = "分配数据范围")
     public Result<Void> assignDataScope(@RequestBody @Valid AdminRoleAssignDataScopeParam param) {
         roleService.assignDataScope(param);

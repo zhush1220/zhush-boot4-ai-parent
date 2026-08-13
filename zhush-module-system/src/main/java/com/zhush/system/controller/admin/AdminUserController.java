@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
+import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.system.param.AdminUserAssignRoleParam;
 import com.zhush.system.param.AdminUserParam;
 import com.zhush.system.param.AdminUserResetPwdParam;
@@ -47,6 +48,7 @@ public class AdminUserController {
      */
     @PostMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:create")
+    @Idempotent
     @OperateLog(module = "用户管理", type = OperateTypeEnum.CREATE, recordParams = false)
     @Operation(summary = "新增管理员")
     public Result<Long> create(@RequestBody @Valid AdminUserParam param) {
@@ -58,6 +60,7 @@ public class AdminUserController {
      */
     @PutMapping
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
+    @Idempotent
     @OperateLog(module = "用户管理", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改管理员")
     public Result<Void> update(@RequestBody @Valid AdminUserParam param) {
@@ -70,6 +73,7 @@ public class AdminUserController {
      */
     @DeleteMapping("/{id}")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:delete")
+    @Idempotent
     @OperateLog(module = "用户管理", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除管理员")
     public Result<Void> delete(@Parameter(description = "用户ID") @PathVariable Long id) {
@@ -102,6 +106,7 @@ public class AdminUserController {
      */
     @PutMapping("/assign-role")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:assign-role")
+    @Idempotent
     @OperateLog(module = "用户管理", type = OperateTypeEnum.GRANT)
     @Operation(summary = "分配角色")
     public Result<Void> assignRole(@RequestBody @Valid AdminUserAssignRoleParam param) {
@@ -114,6 +119,7 @@ public class AdminUserController {
      */
     @PutMapping("/reset-password")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:reset-password")
+    @Idempotent
     @OperateLog(module = "用户管理", type = OperateTypeEnum.GRANT, recordParams = false)
     @Operation(summary = "重置密码")
     public Result<Void> resetPassword(@RequestBody @Valid AdminUserResetPwdParam param) {
@@ -126,6 +132,7 @@ public class AdminUserController {
      */
     @PutMapping("/update-status")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:update")
+    @Idempotent
     @OperateLog(module = "用户管理", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改状态（0-禁用 1-启用）")
     public Result<Void> updateStatus(@Parameter(description = "用户ID") @RequestParam Long id,

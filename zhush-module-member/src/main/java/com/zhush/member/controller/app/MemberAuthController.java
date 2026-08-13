@@ -6,6 +6,7 @@ import com.zhush.member.param.MemberWxMiniLoginParam;
 import com.zhush.member.service.MemberAuthService;
 import com.zhush.member.vo.MemberInfoVO;
 import com.zhush.member.vo.MemberLoginVO;
+import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.satoken.annotation.IgnoreAuth;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,7 @@ public class MemberAuthController {
      */
     @IgnoreAuth
     @PostMapping("/wx-mini-login")
+    @Idempotent(timeout = 10, message = "登录请求处理中，请勿重复提交")
     @Operation(summary = "微信小程序登录（静默注册）")
     public Result<MemberLoginVO> wxMiniLogin(@RequestBody @Valid MemberWxMiniLoginParam param,
                                              HttpServletRequest request) {
@@ -49,6 +51,7 @@ public class MemberAuthController {
      */
     @IgnoreAuth
     @PostMapping("/login")
+    @Idempotent(timeout = 10, message = "登录请求处理中，请勿重复提交")
     @Operation(summary = "账号密码登录")
     public Result<MemberLoginVO> login(@RequestBody @Valid MemberLoginParam param,
                                        HttpServletRequest request) {

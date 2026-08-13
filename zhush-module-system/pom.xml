@@ -35,6 +35,14 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-biz-data-permission</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-file</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-protection</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>cloud.tianai.captcha</groupId>

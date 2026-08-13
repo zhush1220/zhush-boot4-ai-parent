@@ -56,6 +56,10 @@ public enum SystemErrorCode implements IErrorCode {
     OAUTH2_CLIENT_ID_DUPLICATE(1001602, "客户端标识已存在：{0}"),
     OPEN_API_LOG_NOT_FOUND(1001603, "开放 API 调用日志不存在：{0}"),
 
+    // ================ 文件 1001 7xx ================
+    FILE_NOT_FOUND(1001701, "文件不存在：{0}"),
+    FILE_NO_PERMISSION(1001702, "无权操作该文件：{0}"),
+
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
     ;
