@@ -3,6 +3,8 @@ package com.zhush.mq.core;
 import com.zhush.common.utils.json.JacksonUtils;
 import com.zhush.mq.config.RocketMQProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.acl.common.AclClientRPCHook;
+import org.apache.rocketmq.acl.common.SessionCredentials;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
@@ -10,9 +12,7 @@ import org.apache.rocketmq.client.consumer.rebalance.AllocateMessageQueueAverage
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.remoting RPCHook;
-import org.apache.rocketmq.acl.common.AclClientRPCHook;
-import org.apache.rocketmq.acl.common.SessionCredentials;
+import org.apache.rocketmq.remoting.RPCHook;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
@@ -73,8 +73,7 @@ public class MqListenerContainer implements SmartLifecycle, SmartInitializingSin
             throw new IllegalStateException("无法解析 @ZhushMqListener 注解: " + beanName);
         }
         RocketMQProperties.Consumer consumerConfig = properties.getConsumer();
-        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(
-                annotation.consumerGroup(), buildAclHook(), new AllocateMessageQueueAveragely());
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(annotation.consumerGroup(), buildAclHook(), new AllocateMessageQueueAveragely());
         consumer.setNamesrvAddr(properties.getNamesrvAddr());
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
         consumer.setConsumeThreadMin(annotation.consumeThreadMin() > 0
