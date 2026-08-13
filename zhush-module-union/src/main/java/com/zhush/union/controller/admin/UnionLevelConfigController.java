@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionLevelConfigParam;
@@ -42,6 +44,7 @@ public class UnionLevelConfigController {
      * 新增层级佣金配置
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:level-config:create")
     @OperateLog(module = "层级佣金配置", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增层级佣金配置")
     public Result<Long> create(@RequestBody @Valid UnionLevelConfigParam param) {
@@ -52,6 +55,7 @@ public class UnionLevelConfigController {
      * 修改层级佣金配置
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:level-config:update")
     @OperateLog(module = "层级佣金配置", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改层级佣金配置")
     public Result<Void> update(@RequestBody @Valid UnionLevelConfigParam param) {
@@ -63,6 +67,7 @@ public class UnionLevelConfigController {
      * 删除层级佣金配置
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:level-config:delete")
     @OperateLog(module = "层级佣金配置", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除层级佣金配置")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionLevelConfigController {
      * 层级佣金配置详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:level-config:query")
     @Operation(summary = "层级佣金配置详情")
     public Result<UnionLevelConfigVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(levelConfigService.getLevelConfig(id));
@@ -83,6 +89,7 @@ public class UnionLevelConfigController {
      * 层级佣金配置分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:level-config:query")
     @Operation(summary = "层级佣金配置分页")
     public Result<PageResult<UnionLevelConfigVO>> page(@Valid UnionLevelConfigQuery query) {
         return Result.success(levelConfigService.getLevelConfigPage(query));

@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionWithdrawAuditLogParam;
@@ -42,6 +44,7 @@ public class UnionWithdrawAuditLogController {
      * 新增提现审核日志
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-audit-log:create")
     @OperateLog(module = "提现审核日志", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增提现审核日志")
     public Result<Long> create(@RequestBody @Valid UnionWithdrawAuditLogParam param) {
@@ -52,6 +55,7 @@ public class UnionWithdrawAuditLogController {
      * 修改提现审核日志
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-audit-log:update")
     @OperateLog(module = "提现审核日志", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改提现审核日志")
     public Result<Void> update(@RequestBody @Valid UnionWithdrawAuditLogParam param) {
@@ -63,6 +67,7 @@ public class UnionWithdrawAuditLogController {
      * 删除提现审核日志
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-audit-log:delete")
     @OperateLog(module = "提现审核日志", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除提现审核日志")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionWithdrawAuditLogController {
      * 提现审核日志详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-audit-log:query")
     @Operation(summary = "提现审核日志详情")
     public Result<UnionWithdrawAuditLogVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(withdrawAuditLogService.getWithdrawAuditLog(id));
@@ -83,6 +89,7 @@ public class UnionWithdrawAuditLogController {
      * 提现审核日志分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-audit-log:query")
     @Operation(summary = "提现审核日志分页")
     public Result<PageResult<UnionWithdrawAuditLogVO>> page(@Valid UnionWithdrawAuditLogQuery query) {
         return Result.success(withdrawAuditLogService.getWithdrawAuditLogPage(query));

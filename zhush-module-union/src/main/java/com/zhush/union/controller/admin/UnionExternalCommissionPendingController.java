@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionExternalCommissionPendingParam;
@@ -42,6 +44,7 @@ public class UnionExternalCommissionPendingController {
      * 新增外部推广者待结算佣金
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-pending:create")
     @OperateLog(module = "外部推广者待结算佣金", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增外部推广者待结算佣金")
     public Result<Long> create(@RequestBody @Valid UnionExternalCommissionPendingParam param) {
@@ -52,6 +55,7 @@ public class UnionExternalCommissionPendingController {
      * 修改外部推广者待结算佣金
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-pending:update")
     @OperateLog(module = "外部推广者待结算佣金", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改外部推广者待结算佣金")
     public Result<Void> update(@RequestBody @Valid UnionExternalCommissionPendingParam param) {
@@ -63,6 +67,7 @@ public class UnionExternalCommissionPendingController {
      * 删除外部推广者待结算佣金
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-pending:delete")
     @OperateLog(module = "外部推广者待结算佣金", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除外部推广者待结算佣金")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionExternalCommissionPendingController {
      * 外部推广者待结算佣金详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-pending:query")
     @Operation(summary = "外部推广者待结算佣金详情")
     public Result<UnionExternalCommissionPendingVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(externalCommissionPendingService.getExternalCommissionPending(id));
@@ -83,6 +89,7 @@ public class UnionExternalCommissionPendingController {
      * 外部推广者待结算佣金分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-pending:query")
     @Operation(summary = "外部推广者待结算佣金分页")
     public Result<PageResult<UnionExternalCommissionPendingVO>> page(@Valid UnionExternalCommissionPendingQuery query) {
         return Result.success(externalCommissionPendingService.getExternalCommissionPendingPage(query));

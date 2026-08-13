@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionLinkRequestLogParam;
@@ -42,6 +44,7 @@ public class UnionLinkRequestLogController {
      * 新增转链请求日志
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-request-log:create")
     @OperateLog(module = "转链请求日志", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增转链请求日志")
     public Result<Long> create(@RequestBody @Valid UnionLinkRequestLogParam param) {
@@ -52,6 +55,7 @@ public class UnionLinkRequestLogController {
      * 修改转链请求日志
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-request-log:update")
     @OperateLog(module = "转链请求日志", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改转链请求日志")
     public Result<Void> update(@RequestBody @Valid UnionLinkRequestLogParam param) {
@@ -63,6 +67,7 @@ public class UnionLinkRequestLogController {
      * 删除转链请求日志
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-request-log:delete")
     @OperateLog(module = "转链请求日志", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除转链请求日志")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionLinkRequestLogController {
      * 转链请求日志详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-request-log:query")
     @Operation(summary = "转链请求日志详情")
     public Result<UnionLinkRequestLogVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(linkRequestLogService.getLinkRequestLog(id));
@@ -83,6 +89,7 @@ public class UnionLinkRequestLogController {
      * 转链请求日志分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-request-log:query")
     @Operation(summary = "转链请求日志分页")
     public Result<PageResult<UnionLinkRequestLogVO>> page(@Valid UnionLinkRequestLogQuery query) {
         return Result.success(linkRequestLogService.getLinkRequestLogPage(query));

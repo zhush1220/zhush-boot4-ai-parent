@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionExternalWithdrawParam;
@@ -42,6 +44,7 @@ public class UnionExternalWithdrawController {
      * 新增外部推广者提现申请
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-withdraw:create")
     @OperateLog(module = "外部推广者提现申请", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增外部推广者提现申请")
     public Result<Long> create(@RequestBody @Valid UnionExternalWithdrawParam param) {
@@ -52,6 +55,7 @@ public class UnionExternalWithdrawController {
      * 修改外部推广者提现申请
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-withdraw:update")
     @OperateLog(module = "外部推广者提现申请", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改外部推广者提现申请")
     public Result<Void> update(@RequestBody @Valid UnionExternalWithdrawParam param) {
@@ -63,6 +67,7 @@ public class UnionExternalWithdrawController {
      * 删除外部推广者提现申请
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-withdraw:delete")
     @OperateLog(module = "外部推广者提现申请", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除外部推广者提现申请")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionExternalWithdrawController {
      * 外部推广者提现申请详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-withdraw:query")
     @Operation(summary = "外部推广者提现申请详情")
     public Result<UnionExternalWithdrawVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(externalWithdrawService.getExternalWithdraw(id));
@@ -83,6 +89,7 @@ public class UnionExternalWithdrawController {
      * 外部推广者提现申请分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-withdraw:query")
     @Operation(summary = "外部推广者提现申请分页")
     public Result<PageResult<UnionExternalWithdrawVO>> page(@Valid UnionExternalWithdrawQuery query) {
         return Result.success(externalWithdrawService.getExternalWithdrawPage(query));

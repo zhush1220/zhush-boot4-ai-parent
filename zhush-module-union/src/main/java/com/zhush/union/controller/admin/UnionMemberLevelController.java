@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionMemberLevelParam;
@@ -42,6 +44,7 @@ public class UnionMemberLevelController {
      * 新增推广者等级配置
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-level:create")
     @OperateLog(module = "推广者等级配置", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增推广者等级配置")
     public Result<Long> create(@RequestBody @Valid UnionMemberLevelParam param) {
@@ -52,6 +55,7 @@ public class UnionMemberLevelController {
      * 修改推广者等级配置
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-level:update")
     @OperateLog(module = "推广者等级配置", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改推广者等级配置")
     public Result<Void> update(@RequestBody @Valid UnionMemberLevelParam param) {
@@ -63,6 +67,7 @@ public class UnionMemberLevelController {
      * 删除推广者等级配置
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-level:delete")
     @OperateLog(module = "推广者等级配置", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除推广者等级配置")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionMemberLevelController {
      * 推广者等级配置详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-level:query")
     @Operation(summary = "推广者等级配置详情")
     public Result<UnionMemberLevelVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(memberLevelService.getMemberLevel(id));
@@ -83,6 +89,7 @@ public class UnionMemberLevelController {
      * 推广者等级配置分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-level:query")
     @Operation(summary = "推广者等级配置分页")
     public Result<PageResult<UnionMemberLevelVO>> page(@Valid UnionMemberLevelQuery query) {
         return Result.success(memberLevelService.getMemberLevelPage(query));

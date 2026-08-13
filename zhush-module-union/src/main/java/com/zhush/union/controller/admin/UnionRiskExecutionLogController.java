@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionRiskExecutionLogParam;
@@ -42,6 +44,7 @@ public class UnionRiskExecutionLogController {
      * 新增风控执行记录
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-execution-log:create")
     @OperateLog(module = "风控执行记录", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增风控执行记录")
     public Result<Long> create(@RequestBody @Valid UnionRiskExecutionLogParam param) {
@@ -52,6 +55,7 @@ public class UnionRiskExecutionLogController {
      * 修改风控执行记录
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-execution-log:update")
     @OperateLog(module = "风控执行记录", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改风控执行记录")
     public Result<Void> update(@RequestBody @Valid UnionRiskExecutionLogParam param) {
@@ -63,6 +67,7 @@ public class UnionRiskExecutionLogController {
      * 删除风控执行记录
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-execution-log:delete")
     @OperateLog(module = "风控执行记录", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除风控执行记录")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionRiskExecutionLogController {
      * 风控执行记录详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-execution-log:query")
     @Operation(summary = "风控执行记录详情")
     public Result<UnionRiskExecutionLogVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(riskExecutionLogService.getRiskExecutionLog(id));
@@ -83,6 +89,7 @@ public class UnionRiskExecutionLogController {
      * 风控执行记录分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-execution-log:query")
     @Operation(summary = "风控执行记录分页")
     public Result<PageResult<UnionRiskExecutionLogVO>> page(@Valid UnionRiskExecutionLogQuery query) {
         return Result.success(riskExecutionLogService.getRiskExecutionLogPage(query));

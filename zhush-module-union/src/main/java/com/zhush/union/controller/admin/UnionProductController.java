@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionProductParam;
@@ -42,6 +44,7 @@ public class UnionProductController {
      * 新增联盟商品主
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product:create")
     @OperateLog(module = "联盟商品主", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增联盟商品主")
     public Result<Long> create(@RequestBody @Valid UnionProductParam param) {
@@ -52,6 +55,7 @@ public class UnionProductController {
      * 修改联盟商品主
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product:update")
     @OperateLog(module = "联盟商品主", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改联盟商品主")
     public Result<Void> update(@RequestBody @Valid UnionProductParam param) {
@@ -63,6 +67,7 @@ public class UnionProductController {
      * 删除联盟商品主
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product:delete")
     @OperateLog(module = "联盟商品主", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除联盟商品主")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionProductController {
      * 联盟商品主详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product:query")
     @Operation(summary = "联盟商品主详情")
     public Result<UnionProductVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(productService.getProduct(id));
@@ -83,6 +89,7 @@ public class UnionProductController {
      * 联盟商品主分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product:query")
     @Operation(summary = "联盟商品主分页")
     public Result<PageResult<UnionProductVO>> page(@Valid UnionProductQuery query) {
         return Result.success(productService.getProductPage(query));

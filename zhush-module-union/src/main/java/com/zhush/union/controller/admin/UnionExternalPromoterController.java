@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionExternalPromoterParam;
@@ -42,6 +44,7 @@ public class UnionExternalPromoterController {
      * 新增外部推广者/影子推广者
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-promoter:create")
     @OperateLog(module = "外部推广者/影子推广者", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增外部推广者/影子推广者")
     public Result<Long> create(@RequestBody @Valid UnionExternalPromoterParam param) {
@@ -52,6 +55,7 @@ public class UnionExternalPromoterController {
      * 修改外部推广者/影子推广者
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-promoter:update")
     @OperateLog(module = "外部推广者/影子推广者", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改外部推广者/影子推广者")
     public Result<Void> update(@RequestBody @Valid UnionExternalPromoterParam param) {
@@ -63,6 +67,7 @@ public class UnionExternalPromoterController {
      * 删除外部推广者/影子推广者
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-promoter:delete")
     @OperateLog(module = "外部推广者/影子推广者", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除外部推广者/影子推广者")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionExternalPromoterController {
      * 外部推广者/影子推广者详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-promoter:query")
     @Operation(summary = "外部推广者/影子推广者详情")
     public Result<UnionExternalPromoterVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(externalPromoterService.getExternalPromoter(id));
@@ -83,6 +89,7 @@ public class UnionExternalPromoterController {
      * 外部推广者/影子推广者分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-promoter:query")
     @Operation(summary = "外部推广者/影子推广者分页")
     public Result<PageResult<UnionExternalPromoterVO>> page(@Valid UnionExternalPromoterQuery query) {
         return Result.success(externalPromoterService.getExternalPromoterPage(query));

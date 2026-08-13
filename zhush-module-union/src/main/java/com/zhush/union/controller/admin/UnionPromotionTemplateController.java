@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionPromotionTemplateParam;
@@ -42,6 +44,7 @@ public class UnionPromotionTemplateController {
      * 新增推广文案模板
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:promotion-template:create")
     @OperateLog(module = "推广文案模板", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增推广文案模板")
     public Result<Long> create(@RequestBody @Valid UnionPromotionTemplateParam param) {
@@ -52,6 +55,7 @@ public class UnionPromotionTemplateController {
      * 修改推广文案模板
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:promotion-template:update")
     @OperateLog(module = "推广文案模板", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改推广文案模板")
     public Result<Void> update(@RequestBody @Valid UnionPromotionTemplateParam param) {
@@ -63,6 +67,7 @@ public class UnionPromotionTemplateController {
      * 删除推广文案模板
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:promotion-template:delete")
     @OperateLog(module = "推广文案模板", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除推广文案模板")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionPromotionTemplateController {
      * 推广文案模板详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:promotion-template:query")
     @Operation(summary = "推广文案模板详情")
     public Result<UnionPromotionTemplateVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(promotionTemplateService.getPromotionTemplate(id));
@@ -83,6 +89,7 @@ public class UnionPromotionTemplateController {
      * 推广文案模板分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:promotion-template:query")
     @Operation(summary = "推广文案模板分页")
     public Result<PageResult<UnionPromotionTemplateVO>> page(@Valid UnionPromotionTemplateQuery query) {
         return Result.success(promotionTemplateService.getPromotionTemplatePage(query));

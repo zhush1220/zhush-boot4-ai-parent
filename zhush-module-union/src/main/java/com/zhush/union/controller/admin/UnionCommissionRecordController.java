@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionCommissionRecordParam;
@@ -42,6 +44,7 @@ public class UnionCommissionRecordController {
      * 新增佣金记录
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-record:create")
     @OperateLog(module = "佣金记录", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增佣金记录")
     public Result<Long> create(@RequestBody @Valid UnionCommissionRecordParam param) {
@@ -52,6 +55,7 @@ public class UnionCommissionRecordController {
      * 修改佣金记录
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-record:update")
     @OperateLog(module = "佣金记录", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改佣金记录")
     public Result<Void> update(@RequestBody @Valid UnionCommissionRecordParam param) {
@@ -63,6 +67,7 @@ public class UnionCommissionRecordController {
      * 删除佣金记录
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-record:delete")
     @OperateLog(module = "佣金记录", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除佣金记录")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionCommissionRecordController {
      * 佣金记录详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-record:query")
     @Operation(summary = "佣金记录详情")
     public Result<UnionCommissionRecordVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(commissionRecordService.getCommissionRecord(id));
@@ -83,6 +89,7 @@ public class UnionCommissionRecordController {
      * 佣金记录分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-record:query")
     @Operation(summary = "佣金记录分页")
     public Result<PageResult<UnionCommissionRecordVO>> page(@Valid UnionCommissionRecordQuery query) {
         return Result.success(commissionRecordService.getCommissionRecordPage(query));

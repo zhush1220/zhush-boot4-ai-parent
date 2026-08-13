@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionClickTrackingParam;
@@ -42,6 +44,7 @@ public class UnionClickTrackingController {
      * 新增推广链接点击明细
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:click-tracking:create")
     @OperateLog(module = "推广链接点击明细", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增推广链接点击明细")
     public Result<Long> create(@RequestBody @Valid UnionClickTrackingParam param) {
@@ -52,6 +55,7 @@ public class UnionClickTrackingController {
      * 修改推广链接点击明细
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:click-tracking:update")
     @OperateLog(module = "推广链接点击明细", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改推广链接点击明细")
     public Result<Void> update(@RequestBody @Valid UnionClickTrackingParam param) {
@@ -63,6 +67,7 @@ public class UnionClickTrackingController {
      * 删除推广链接点击明细
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:click-tracking:delete")
     @OperateLog(module = "推广链接点击明细", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除推广链接点击明细")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionClickTrackingController {
      * 推广链接点击明细详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:click-tracking:query")
     @Operation(summary = "推广链接点击明细详情")
     public Result<UnionClickTrackingVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(clickTrackingService.getClickTracking(id));
@@ -83,6 +89,7 @@ public class UnionClickTrackingController {
      * 推广链接点击明细分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:click-tracking:query")
     @Operation(summary = "推广链接点击明细分页")
     public Result<PageResult<UnionClickTrackingVO>> page(@Valid UnionClickTrackingQuery query) {
         return Result.success(clickTrackingService.getClickTrackingPage(query));

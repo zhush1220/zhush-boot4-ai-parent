@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionExternalCommissionDetailParam;
@@ -42,6 +44,7 @@ public class UnionExternalCommissionDetailController {
      * 新增外部推广者佣金明细
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-detail:create")
     @OperateLog(module = "外部推广者佣金明细", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增外部推广者佣金明细")
     public Result<Long> create(@RequestBody @Valid UnionExternalCommissionDetailParam param) {
@@ -52,6 +55,7 @@ public class UnionExternalCommissionDetailController {
      * 修改外部推广者佣金明细
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-detail:update")
     @OperateLog(module = "外部推广者佣金明细", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改外部推广者佣金明细")
     public Result<Void> update(@RequestBody @Valid UnionExternalCommissionDetailParam param) {
@@ -63,6 +67,7 @@ public class UnionExternalCommissionDetailController {
      * 删除外部推广者佣金明细
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-detail:delete")
     @OperateLog(module = "外部推广者佣金明细", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除外部推广者佣金明细")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionExternalCommissionDetailController {
      * 外部推广者佣金明细详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-detail:query")
     @Operation(summary = "外部推广者佣金明细详情")
     public Result<UnionExternalCommissionDetailVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(externalCommissionDetailService.getExternalCommissionDetail(id));
@@ -83,6 +89,7 @@ public class UnionExternalCommissionDetailController {
      * 外部推广者佣金明细分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-commission-detail:query")
     @Operation(summary = "外部推广者佣金明细分页")
     public Result<PageResult<UnionExternalCommissionDetailVO>> page(@Valid UnionExternalCommissionDetailQuery query) {
         return Result.success(externalCommissionDetailService.getExternalCommissionDetailPage(query));

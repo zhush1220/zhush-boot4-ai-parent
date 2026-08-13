@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionOrderParam;
@@ -42,6 +44,7 @@ public class UnionOrderController {
      * 新增联盟订单主
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:order:create")
     @OperateLog(module = "联盟订单主", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增联盟订单主")
     public Result<Long> create(@RequestBody @Valid UnionOrderParam param) {
@@ -52,6 +55,7 @@ public class UnionOrderController {
      * 修改联盟订单主
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:order:update")
     @OperateLog(module = "联盟订单主", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改联盟订单主")
     public Result<Void> update(@RequestBody @Valid UnionOrderParam param) {
@@ -63,6 +67,7 @@ public class UnionOrderController {
      * 删除联盟订单主
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:order:delete")
     @OperateLog(module = "联盟订单主", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除联盟订单主")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionOrderController {
      * 联盟订单主详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:order:query")
     @Operation(summary = "联盟订单主详情")
     public Result<UnionOrderVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(orderService.getOrder(id));
@@ -83,6 +89,7 @@ public class UnionOrderController {
      * 联盟订单主分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:order:query")
     @Operation(summary = "联盟订单主分页")
     public Result<PageResult<UnionOrderVO>> page(@Valid UnionOrderQuery query) {
         return Result.success(orderService.getOrderPage(query));

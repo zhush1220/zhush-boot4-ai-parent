@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionExternalTransactionParam;
@@ -42,6 +44,7 @@ public class UnionExternalTransactionController {
      * 新增外部推广者资金流水
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-transaction:create")
     @OperateLog(module = "外部推广者资金流水", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增外部推广者资金流水")
     public Result<Long> create(@RequestBody @Valid UnionExternalTransactionParam param) {
@@ -52,6 +55,7 @@ public class UnionExternalTransactionController {
      * 修改外部推广者资金流水
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-transaction:update")
     @OperateLog(module = "外部推广者资金流水", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改外部推广者资金流水")
     public Result<Void> update(@RequestBody @Valid UnionExternalTransactionParam param) {
@@ -63,6 +67,7 @@ public class UnionExternalTransactionController {
      * 删除外部推广者资金流水
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-transaction:delete")
     @OperateLog(module = "外部推广者资金流水", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除外部推广者资金流水")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionExternalTransactionController {
      * 外部推广者资金流水详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-transaction:query")
     @Operation(summary = "外部推广者资金流水详情")
     public Result<UnionExternalTransactionVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(externalTransactionService.getExternalTransaction(id));
@@ -83,6 +89,7 @@ public class UnionExternalTransactionController {
      * 外部推广者资金流水分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-transaction:query")
     @Operation(summary = "外部推广者资金流水分页")
     public Result<PageResult<UnionExternalTransactionVO>> page(@Valid UnionExternalTransactionQuery query) {
         return Result.success(externalTransactionService.getExternalTransactionPage(query));

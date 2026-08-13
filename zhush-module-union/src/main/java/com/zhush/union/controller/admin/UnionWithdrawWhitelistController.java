@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionWithdrawWhitelistParam;
@@ -42,6 +44,7 @@ public class UnionWithdrawWhitelistController {
      * 新增提现白名单
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-whitelist:create")
     @OperateLog(module = "提现白名单", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增提现白名单")
     public Result<Long> create(@RequestBody @Valid UnionWithdrawWhitelistParam param) {
@@ -52,6 +55,7 @@ public class UnionWithdrawWhitelistController {
      * 修改提现白名单
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-whitelist:update")
     @OperateLog(module = "提现白名单", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改提现白名单")
     public Result<Void> update(@RequestBody @Valid UnionWithdrawWhitelistParam param) {
@@ -63,6 +67,7 @@ public class UnionWithdrawWhitelistController {
      * 删除提现白名单
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-whitelist:delete")
     @OperateLog(module = "提现白名单", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除提现白名单")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionWithdrawWhitelistController {
      * 提现白名单详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-whitelist:query")
     @Operation(summary = "提现白名单详情")
     public Result<UnionWithdrawWhitelistVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(withdrawWhitelistService.getWithdrawWhitelist(id));
@@ -83,6 +89,7 @@ public class UnionWithdrawWhitelistController {
      * 提现白名单分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-whitelist:query")
     @Operation(summary = "提现白名单分页")
     public Result<PageResult<UnionWithdrawWhitelistVO>> page(@Valid UnionWithdrawWhitelistQuery query) {
         return Result.success(withdrawWhitelistService.getWithdrawWhitelistPage(query));

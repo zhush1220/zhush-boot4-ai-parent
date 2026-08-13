@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionProductSyncLogParam;
@@ -42,6 +44,7 @@ public class UnionProductSyncLogController {
      * 新增商品同步日志
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-sync-log:create")
     @OperateLog(module = "商品同步日志", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增商品同步日志")
     public Result<Long> create(@RequestBody @Valid UnionProductSyncLogParam param) {
@@ -52,6 +55,7 @@ public class UnionProductSyncLogController {
      * 修改商品同步日志
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-sync-log:update")
     @OperateLog(module = "商品同步日志", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改商品同步日志")
     public Result<Void> update(@RequestBody @Valid UnionProductSyncLogParam param) {
@@ -63,6 +67,7 @@ public class UnionProductSyncLogController {
      * 删除商品同步日志
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-sync-log:delete")
     @OperateLog(module = "商品同步日志", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除商品同步日志")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionProductSyncLogController {
      * 商品同步日志详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-sync-log:query")
     @Operation(summary = "商品同步日志详情")
     public Result<UnionProductSyncLogVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(productSyncLogService.getProductSyncLog(id));
@@ -83,6 +89,7 @@ public class UnionProductSyncLogController {
      * 商品同步日志分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-sync-log:query")
     @Operation(summary = "商品同步日志分页")
     public Result<PageResult<UnionProductSyncLogVO>> page(@Valid UnionProductSyncLogQuery query) {
         return Result.success(productSyncLogService.getProductSyncLogPage(query));

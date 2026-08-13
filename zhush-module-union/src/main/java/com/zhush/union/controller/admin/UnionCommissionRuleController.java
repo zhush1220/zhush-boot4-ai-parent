@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionCommissionRuleParam;
@@ -42,6 +44,7 @@ public class UnionCommissionRuleController {
      * 新增佣金分配规则配置
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-rule:create")
     @OperateLog(module = "佣金分配规则配置", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增佣金分配规则配置")
     public Result<Long> create(@RequestBody @Valid UnionCommissionRuleParam param) {
@@ -52,6 +55,7 @@ public class UnionCommissionRuleController {
      * 修改佣金分配规则配置
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-rule:update")
     @OperateLog(module = "佣金分配规则配置", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改佣金分配规则配置")
     public Result<Void> update(@RequestBody @Valid UnionCommissionRuleParam param) {
@@ -63,6 +67,7 @@ public class UnionCommissionRuleController {
      * 删除佣金分配规则配置
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-rule:delete")
     @OperateLog(module = "佣金分配规则配置", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除佣金分配规则配置")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionCommissionRuleController {
      * 佣金分配规则配置详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-rule:query")
     @Operation(summary = "佣金分配规则配置详情")
     public Result<UnionCommissionRuleVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(commissionRuleService.getCommissionRule(id));
@@ -83,6 +89,7 @@ public class UnionCommissionRuleController {
      * 佣金分配规则配置分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-rule:query")
     @Operation(summary = "佣金分配规则配置分页")
     public Result<PageResult<UnionCommissionRuleVO>> page(@Valid UnionCommissionRuleQuery query) {
         return Result.success(commissionRuleService.getCommissionRulePage(query));

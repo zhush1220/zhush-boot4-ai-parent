@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionWithdrawRiskRecordParam;
@@ -42,6 +44,7 @@ public class UnionWithdrawRiskRecordController {
      * 新增提现风控记录
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-risk-record:create")
     @OperateLog(module = "提现风控记录", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增提现风控记录")
     public Result<Long> create(@RequestBody @Valid UnionWithdrawRiskRecordParam param) {
@@ -52,6 +55,7 @@ public class UnionWithdrawRiskRecordController {
      * 修改提现风控记录
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-risk-record:update")
     @OperateLog(module = "提现风控记录", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改提现风控记录")
     public Result<Void> update(@RequestBody @Valid UnionWithdrawRiskRecordParam param) {
@@ -63,6 +67,7 @@ public class UnionWithdrawRiskRecordController {
      * 删除提现风控记录
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-risk-record:delete")
     @OperateLog(module = "提现风控记录", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除提现风控记录")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionWithdrawRiskRecordController {
      * 提现风控记录详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-risk-record:query")
     @Operation(summary = "提现风控记录详情")
     public Result<UnionWithdrawRiskRecordVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(withdrawRiskRecordService.getWithdrawRiskRecord(id));
@@ -83,6 +89,7 @@ public class UnionWithdrawRiskRecordController {
      * 提现风控记录分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-risk-record:query")
     @Operation(summary = "提现风控记录分页")
     public Result<PageResult<UnionWithdrawRiskRecordVO>> page(@Valid UnionWithdrawRiskRecordQuery query) {
         return Result.success(withdrawRiskRecordService.getWithdrawRiskRecordPage(query));

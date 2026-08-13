@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionWithdrawApplyParam;
@@ -42,6 +44,7 @@ public class UnionWithdrawApplyController {
      * 新增提现申请
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:create")
     @OperateLog(module = "提现申请", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增提现申请")
     public Result<Long> create(@RequestBody @Valid UnionWithdrawApplyParam param) {
@@ -52,6 +55,7 @@ public class UnionWithdrawApplyController {
      * 修改提现申请
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:update")
     @OperateLog(module = "提现申请", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改提现申请")
     public Result<Void> update(@RequestBody @Valid UnionWithdrawApplyParam param) {
@@ -63,6 +67,7 @@ public class UnionWithdrawApplyController {
      * 删除提现申请
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:delete")
     @OperateLog(module = "提现申请", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除提现申请")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionWithdrawApplyController {
      * 提现申请详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:query")
     @Operation(summary = "提现申请详情")
     public Result<UnionWithdrawApplyVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(withdrawApplyService.getWithdrawApply(id));
@@ -83,6 +89,7 @@ public class UnionWithdrawApplyController {
      * 提现申请分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:query")
     @Operation(summary = "提现申请分页")
     public Result<PageResult<UnionWithdrawApplyVO>> page(@Valid UnionWithdrawApplyQuery query) {
         return Result.success(withdrawApplyService.getWithdrawApplyPage(query));

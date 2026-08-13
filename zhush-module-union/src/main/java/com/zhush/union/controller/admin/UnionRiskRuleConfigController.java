@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionRiskRuleConfigParam;
@@ -42,6 +44,7 @@ public class UnionRiskRuleConfigController {
      * 新增风控规则配置
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-rule-config:create")
     @OperateLog(module = "风控规则配置", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增风控规则配置")
     public Result<Long> create(@RequestBody @Valid UnionRiskRuleConfigParam param) {
@@ -52,6 +55,7 @@ public class UnionRiskRuleConfigController {
      * 修改风控规则配置
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-rule-config:update")
     @OperateLog(module = "风控规则配置", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改风控规则配置")
     public Result<Void> update(@RequestBody @Valid UnionRiskRuleConfigParam param) {
@@ -63,6 +67,7 @@ public class UnionRiskRuleConfigController {
      * 删除风控规则配置
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-rule-config:delete")
     @OperateLog(module = "风控规则配置", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除风控规则配置")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionRiskRuleConfigController {
      * 风控规则配置详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-rule-config:query")
     @Operation(summary = "风控规则配置详情")
     public Result<UnionRiskRuleConfigVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(riskRuleConfigService.getRiskRuleConfig(id));
@@ -83,6 +89,7 @@ public class UnionRiskRuleConfigController {
      * 风控规则配置分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-rule-config:query")
     @Operation(summary = "风控规则配置分页")
     public Result<PageResult<UnionRiskRuleConfigVO>> page(@Valid UnionRiskRuleConfigQuery query) {
         return Result.success(riskRuleConfigService.getRiskRuleConfigPage(query));

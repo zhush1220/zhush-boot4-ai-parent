@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionExternalAccountParam;
@@ -42,6 +44,7 @@ public class UnionExternalAccountController {
      * 新增外部推广者账户
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-account:create")
     @OperateLog(module = "外部推广者账户", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增外部推广者账户")
     public Result<Long> create(@RequestBody @Valid UnionExternalAccountParam param) {
@@ -52,6 +55,7 @@ public class UnionExternalAccountController {
      * 修改外部推广者账户
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-account:update")
     @OperateLog(module = "外部推广者账户", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改外部推广者账户")
     public Result<Void> update(@RequestBody @Valid UnionExternalAccountParam param) {
@@ -63,6 +67,7 @@ public class UnionExternalAccountController {
      * 删除外部推广者账户
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-account:delete")
     @OperateLog(module = "外部推广者账户", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除外部推广者账户")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionExternalAccountController {
      * 外部推广者账户详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-account:query")
     @Operation(summary = "外部推广者账户详情")
     public Result<UnionExternalAccountVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(externalAccountService.getExternalAccount(id));
@@ -83,6 +89,7 @@ public class UnionExternalAccountController {
      * 外部推广者账户分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:external-account:query")
     @Operation(summary = "外部推广者账户分页")
     public Result<PageResult<UnionExternalAccountVO>> page(@Valid UnionExternalAccountQuery query) {
         return Result.success(externalAccountService.getExternalAccountPage(query));

@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionRiskBlacklistParam;
@@ -42,6 +44,7 @@ public class UnionRiskBlacklistController {
      * 新增风控黑名单
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-blacklist:create")
     @OperateLog(module = "风控黑名单", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增风控黑名单")
     public Result<Long> create(@RequestBody @Valid UnionRiskBlacklistParam param) {
@@ -52,6 +55,7 @@ public class UnionRiskBlacklistController {
      * 修改风控黑名单
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-blacklist:update")
     @OperateLog(module = "风控黑名单", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改风控黑名单")
     public Result<Void> update(@RequestBody @Valid UnionRiskBlacklistParam param) {
@@ -63,6 +67,7 @@ public class UnionRiskBlacklistController {
      * 删除风控黑名单
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-blacklist:delete")
     @OperateLog(module = "风控黑名单", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除风控黑名单")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionRiskBlacklistController {
      * 风控黑名单详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-blacklist:query")
     @Operation(summary = "风控黑名单详情")
     public Result<UnionRiskBlacklistVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(riskBlacklistService.getRiskBlacklist(id));
@@ -83,6 +89,7 @@ public class UnionRiskBlacklistController {
      * 风控黑名单分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:risk-blacklist:query")
     @Operation(summary = "风控黑名单分页")
     public Result<PageResult<UnionRiskBlacklistVO>> page(@Valid UnionRiskBlacklistQuery query) {
         return Result.success(riskBlacklistService.getRiskBlacklistPage(query));

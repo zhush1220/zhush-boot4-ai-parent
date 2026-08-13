@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionProductCategoryParam;
@@ -42,6 +44,7 @@ public class UnionProductCategoryController {
      * 新增商品分类关联
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-category:create")
     @OperateLog(module = "商品分类关联", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增商品分类关联")
     public Result<Long> create(@RequestBody @Valid UnionProductCategoryParam param) {
@@ -52,6 +55,7 @@ public class UnionProductCategoryController {
      * 修改商品分类关联
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-category:update")
     @OperateLog(module = "商品分类关联", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改商品分类关联")
     public Result<Void> update(@RequestBody @Valid UnionProductCategoryParam param) {
@@ -63,6 +67,7 @@ public class UnionProductCategoryController {
      * 删除商品分类关联
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-category:delete")
     @OperateLog(module = "商品分类关联", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除商品分类关联")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionProductCategoryController {
      * 商品分类关联详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-category:query")
     @Operation(summary = "商品分类关联详情")
     public Result<UnionProductCategoryVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(productCategoryService.getProductCategory(id));
@@ -83,6 +89,7 @@ public class UnionProductCategoryController {
      * 商品分类关联分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-category:query")
     @Operation(summary = "商品分类关联分页")
     public Result<PageResult<UnionProductCategoryVO>> page(@Valid UnionProductCategoryQuery query) {
         return Result.success(productCategoryService.getProductCategoryPage(query));

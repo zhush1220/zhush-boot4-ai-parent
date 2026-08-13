@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionNotificationParam;
@@ -42,6 +44,7 @@ public class UnionNotificationController {
      * 新增消息通知
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:notification:create")
     @OperateLog(module = "消息通知", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增消息通知")
     public Result<Long> create(@RequestBody @Valid UnionNotificationParam param) {
@@ -52,6 +55,7 @@ public class UnionNotificationController {
      * 修改消息通知
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:notification:update")
     @OperateLog(module = "消息通知", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改消息通知")
     public Result<Void> update(@RequestBody @Valid UnionNotificationParam param) {
@@ -63,6 +67,7 @@ public class UnionNotificationController {
      * 删除消息通知
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:notification:delete")
     @OperateLog(module = "消息通知", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除消息通知")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionNotificationController {
      * 消息通知详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:notification:query")
     @Operation(summary = "消息通知详情")
     public Result<UnionNotificationVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(notificationService.getNotification(id));
@@ -83,6 +89,7 @@ public class UnionNotificationController {
      * 消息通知分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:notification:query")
     @Operation(summary = "消息通知分页")
     public Result<PageResult<UnionNotificationVO>> page(@Valid UnionNotificationQuery query) {
         return Result.success(notificationService.getNotificationPage(query));

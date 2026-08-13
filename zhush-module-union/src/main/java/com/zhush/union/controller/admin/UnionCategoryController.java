@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionCategoryParam;
@@ -42,6 +44,7 @@ public class UnionCategoryController {
      * 新增商品分类
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:category:create")
     @OperateLog(module = "商品分类", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增商品分类")
     public Result<Long> create(@RequestBody @Valid UnionCategoryParam param) {
@@ -52,6 +55,7 @@ public class UnionCategoryController {
      * 修改商品分类
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:category:update")
     @OperateLog(module = "商品分类", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改商品分类")
     public Result<Void> update(@RequestBody @Valid UnionCategoryParam param) {
@@ -63,6 +67,7 @@ public class UnionCategoryController {
      * 删除商品分类
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:category:delete")
     @OperateLog(module = "商品分类", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除商品分类")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionCategoryController {
      * 商品分类详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:category:query")
     @Operation(summary = "商品分类详情")
     public Result<UnionCategoryVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(categoryService.getCategory(id));
@@ -83,6 +89,7 @@ public class UnionCategoryController {
      * 商品分类分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:category:query")
     @Operation(summary = "商品分类分页")
     public Result<PageResult<UnionCategoryVO>> page(@Valid UnionCategoryQuery query) {
         return Result.success(categoryService.getCategoryPage(query));

@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionSettleBatchParam;
@@ -42,6 +44,7 @@ public class UnionSettleBatchController {
      * 新增结算批次
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:settle-batch:create")
     @OperateLog(module = "结算批次", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增结算批次")
     public Result<Long> create(@RequestBody @Valid UnionSettleBatchParam param) {
@@ -52,6 +55,7 @@ public class UnionSettleBatchController {
      * 修改结算批次
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:settle-batch:update")
     @OperateLog(module = "结算批次", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改结算批次")
     public Result<Void> update(@RequestBody @Valid UnionSettleBatchParam param) {
@@ -63,6 +67,7 @@ public class UnionSettleBatchController {
      * 删除结算批次
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:settle-batch:delete")
     @OperateLog(module = "结算批次", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除结算批次")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionSettleBatchController {
      * 结算批次详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:settle-batch:query")
     @Operation(summary = "结算批次详情")
     public Result<UnionSettleBatchVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(settleBatchService.getSettleBatch(id));
@@ -83,6 +89,7 @@ public class UnionSettleBatchController {
      * 结算批次分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:settle-batch:query")
     @Operation(summary = "结算批次分页")
     public Result<PageResult<UnionSettleBatchVO>> page(@Valid UnionSettleBatchQuery query) {
         return Result.success(settleBatchService.getSettleBatchPage(query));

@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionMemberRelationParam;
@@ -42,6 +44,7 @@ public class UnionMemberRelationController {
      * 新增推广者关系
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-relation:create")
     @OperateLog(module = "推广者关系", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增推广者关系")
     public Result<Long> create(@RequestBody @Valid UnionMemberRelationParam param) {
@@ -52,6 +55,7 @@ public class UnionMemberRelationController {
      * 修改推广者关系
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-relation:update")
     @OperateLog(module = "推广者关系", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改推广者关系")
     public Result<Void> update(@RequestBody @Valid UnionMemberRelationParam param) {
@@ -63,6 +67,7 @@ public class UnionMemberRelationController {
      * 删除推广者关系
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-relation:delete")
     @OperateLog(module = "推广者关系", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除推广者关系")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionMemberRelationController {
      * 推广者关系详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-relation:query")
     @Operation(summary = "推广者关系详情")
     public Result<UnionMemberRelationVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(memberRelationService.getMemberRelation(id));
@@ -83,6 +89,7 @@ public class UnionMemberRelationController {
      * 推广者关系分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-relation:query")
     @Operation(summary = "推广者关系分页")
     public Result<PageResult<UnionMemberRelationVO>> page(@Valid UnionMemberRelationQuery query) {
         return Result.success(memberRelationService.getMemberRelationPage(query));

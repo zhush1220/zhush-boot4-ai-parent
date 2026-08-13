@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionMemberDeviceParam;
@@ -42,6 +44,7 @@ public class UnionMemberDeviceController {
      * 新增推广者设备信息
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-device:create")
     @OperateLog(module = "推广者设备信息", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增推广者设备信息")
     public Result<Long> create(@RequestBody @Valid UnionMemberDeviceParam param) {
@@ -52,6 +55,7 @@ public class UnionMemberDeviceController {
      * 修改推广者设备信息
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-device:update")
     @OperateLog(module = "推广者设备信息", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改推广者设备信息")
     public Result<Void> update(@RequestBody @Valid UnionMemberDeviceParam param) {
@@ -63,6 +67,7 @@ public class UnionMemberDeviceController {
      * 删除推广者设备信息
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-device:delete")
     @OperateLog(module = "推广者设备信息", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除推广者设备信息")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionMemberDeviceController {
      * 推广者设备信息详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-device:query")
     @Operation(summary = "推广者设备信息详情")
     public Result<UnionMemberDeviceVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(memberDeviceService.getMemberDevice(id));
@@ -83,6 +89,7 @@ public class UnionMemberDeviceController {
      * 推广者设备信息分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:member-device:query")
     @Operation(summary = "推广者设备信息分页")
     public Result<PageResult<UnionMemberDeviceVO>> page(@Valid UnionMemberDeviceQuery query) {
         return Result.success(memberDeviceService.getMemberDevicePage(query));

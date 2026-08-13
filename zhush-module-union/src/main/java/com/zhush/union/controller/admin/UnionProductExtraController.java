@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionProductExtraParam;
@@ -42,6 +44,7 @@ public class UnionProductExtraController {
      * 新增商品扩展信息
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-extra:create")
     @OperateLog(module = "商品扩展信息", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增商品扩展信息")
     public Result<Long> create(@RequestBody @Valid UnionProductExtraParam param) {
@@ -52,6 +55,7 @@ public class UnionProductExtraController {
      * 修改商品扩展信息
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-extra:update")
     @OperateLog(module = "商品扩展信息", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改商品扩展信息")
     public Result<Void> update(@RequestBody @Valid UnionProductExtraParam param) {
@@ -63,6 +67,7 @@ public class UnionProductExtraController {
      * 删除商品扩展信息
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-extra:delete")
     @OperateLog(module = "商品扩展信息", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除商品扩展信息")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionProductExtraController {
      * 商品扩展信息详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-extra:query")
     @Operation(summary = "商品扩展信息详情")
     public Result<UnionProductExtraVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(productExtraService.getProductExtra(id));
@@ -83,6 +89,7 @@ public class UnionProductExtraController {
      * 商品扩展信息分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:product-extra:query")
     @Operation(summary = "商品扩展信息分页")
     public Result<PageResult<UnionProductExtraVO>> page(@Valid UnionProductExtraQuery query) {
         return Result.success(productExtraService.getProductExtraPage(query));

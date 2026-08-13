@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionApiCallLogParam;
@@ -42,6 +44,7 @@ public class UnionApiCallLogController {
      * 新增平台API调用日志
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:api-call-log:create")
     @OperateLog(module = "平台API调用日志", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增平台API调用日志")
     public Result<Long> create(@RequestBody @Valid UnionApiCallLogParam param) {
@@ -52,6 +55,7 @@ public class UnionApiCallLogController {
      * 修改平台API调用日志
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:api-call-log:update")
     @OperateLog(module = "平台API调用日志", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改平台API调用日志")
     public Result<Void> update(@RequestBody @Valid UnionApiCallLogParam param) {
@@ -63,6 +67,7 @@ public class UnionApiCallLogController {
      * 删除平台API调用日志
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:api-call-log:delete")
     @OperateLog(module = "平台API调用日志", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除平台API调用日志")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionApiCallLogController {
      * 平台API调用日志详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:api-call-log:query")
     @Operation(summary = "平台API调用日志详情")
     public Result<UnionApiCallLogVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(apiCallLogService.getApiCallLog(id));
@@ -83,6 +89,7 @@ public class UnionApiCallLogController {
      * 平台API调用日志分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:api-call-log:query")
     @Operation(summary = "平台API调用日志分页")
     public Result<PageResult<UnionApiCallLogVO>> page(@Valid UnionApiCallLogQuery query) {
         return Result.success(apiCallLogService.getApiCallLogPage(query));

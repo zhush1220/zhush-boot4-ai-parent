@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionAccountTransactionParam;
@@ -42,6 +44,7 @@ public class UnionAccountTransactionController {
      * 新增账户资金流水
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:account-transaction:create")
     @OperateLog(module = "账户资金流水", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增账户资金流水")
     public Result<Long> create(@RequestBody @Valid UnionAccountTransactionParam param) {
@@ -52,6 +55,7 @@ public class UnionAccountTransactionController {
      * 修改账户资金流水
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:account-transaction:update")
     @OperateLog(module = "账户资金流水", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改账户资金流水")
     public Result<Void> update(@RequestBody @Valid UnionAccountTransactionParam param) {
@@ -63,6 +67,7 @@ public class UnionAccountTransactionController {
      * 删除账户资金流水
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:account-transaction:delete")
     @OperateLog(module = "账户资金流水", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除账户资金流水")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionAccountTransactionController {
      * 账户资金流水详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:account-transaction:query")
     @Operation(summary = "账户资金流水详情")
     public Result<UnionAccountTransactionVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(accountTransactionService.getAccountTransaction(id));
@@ -83,6 +89,7 @@ public class UnionAccountTransactionController {
      * 账户资金流水分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:account-transaction:query")
     @Operation(summary = "账户资金流水分页")
     public Result<PageResult<UnionAccountTransactionVO>> page(@Valid UnionAccountTransactionQuery query) {
         return Result.success(accountTransactionService.getAccountTransactionPage(query));

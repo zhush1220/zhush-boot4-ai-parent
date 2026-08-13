@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionPlatformCategoryMapParam;
@@ -42,6 +44,7 @@ public class UnionPlatformCategoryMapController {
      * 新增平台类目映射
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:platform-category-map:create")
     @OperateLog(module = "平台类目映射", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增平台类目映射")
     public Result<Long> create(@RequestBody @Valid UnionPlatformCategoryMapParam param) {
@@ -52,6 +55,7 @@ public class UnionPlatformCategoryMapController {
      * 修改平台类目映射
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:platform-category-map:update")
     @OperateLog(module = "平台类目映射", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改平台类目映射")
     public Result<Void> update(@RequestBody @Valid UnionPlatformCategoryMapParam param) {
@@ -63,6 +67,7 @@ public class UnionPlatformCategoryMapController {
      * 删除平台类目映射
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:platform-category-map:delete")
     @OperateLog(module = "平台类目映射", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除平台类目映射")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionPlatformCategoryMapController {
      * 平台类目映射详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:platform-category-map:query")
     @Operation(summary = "平台类目映射详情")
     public Result<UnionPlatformCategoryMapVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(platformCategoryMapService.getPlatformCategoryMap(id));
@@ -83,6 +89,7 @@ public class UnionPlatformCategoryMapController {
      * 平台类目映射分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:platform-category-map:query")
     @Operation(summary = "平台类目映射分页")
     public Result<PageResult<UnionPlatformCategoryMapVO>> page(@Valid UnionPlatformCategoryMapQuery query) {
         return Result.success(platformCategoryMapService.getPlatformCategoryMapPage(query));

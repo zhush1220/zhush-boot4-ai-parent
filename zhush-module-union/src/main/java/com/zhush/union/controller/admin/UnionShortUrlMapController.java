@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionShortUrlMapParam;
@@ -42,6 +44,7 @@ public class UnionShortUrlMapController {
      * 新增短链接映射
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:short-url-map:create")
     @OperateLog(module = "短链接映射", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增短链接映射")
     public Result<Long> create(@RequestBody @Valid UnionShortUrlMapParam param) {
@@ -52,6 +55,7 @@ public class UnionShortUrlMapController {
      * 修改短链接映射
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:short-url-map:update")
     @OperateLog(module = "短链接映射", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改短链接映射")
     public Result<Void> update(@RequestBody @Valid UnionShortUrlMapParam param) {
@@ -63,6 +67,7 @@ public class UnionShortUrlMapController {
      * 删除短链接映射
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:short-url-map:delete")
     @OperateLog(module = "短链接映射", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除短链接映射")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionShortUrlMapController {
      * 短链接映射详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:short-url-map:query")
     @Operation(summary = "短链接映射详情")
     public Result<UnionShortUrlMapVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(shortUrlMapService.getShortUrlMap(id));
@@ -83,6 +89,7 @@ public class UnionShortUrlMapController {
      * 短链接映射分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:short-url-map:query")
     @Operation(summary = "短链接映射分页")
     public Result<PageResult<UnionShortUrlMapVO>> page(@Valid UnionShortUrlMapQuery query) {
         return Result.success(shortUrlMapService.getShortUrlMapPage(query));

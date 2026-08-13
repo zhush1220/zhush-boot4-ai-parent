@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionAutoAuditConfigParam;
@@ -42,6 +44,7 @@ public class UnionAutoAuditConfigController {
      * 新增自动审核配置
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:auto-audit-config:create")
     @OperateLog(module = "自动审核配置", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增自动审核配置")
     public Result<Long> create(@RequestBody @Valid UnionAutoAuditConfigParam param) {
@@ -52,6 +55,7 @@ public class UnionAutoAuditConfigController {
      * 修改自动审核配置
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:auto-audit-config:update")
     @OperateLog(module = "自动审核配置", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改自动审核配置")
     public Result<Void> update(@RequestBody @Valid UnionAutoAuditConfigParam param) {
@@ -63,6 +67,7 @@ public class UnionAutoAuditConfigController {
      * 删除自动审核配置
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:auto-audit-config:delete")
     @OperateLog(module = "自动审核配置", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除自动审核配置")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionAutoAuditConfigController {
      * 自动审核配置详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:auto-audit-config:query")
     @Operation(summary = "自动审核配置详情")
     public Result<UnionAutoAuditConfigVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(autoAuditConfigService.getAutoAuditConfig(id));
@@ -83,6 +89,7 @@ public class UnionAutoAuditConfigController {
      * 自动审核配置分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:auto-audit-config:query")
     @Operation(summary = "自动审核配置分页")
     public Result<PageResult<UnionAutoAuditConfigVO>> page(@Valid UnionAutoAuditConfigQuery query) {
         return Result.success(autoAuditConfigService.getAutoAuditConfigPage(query));

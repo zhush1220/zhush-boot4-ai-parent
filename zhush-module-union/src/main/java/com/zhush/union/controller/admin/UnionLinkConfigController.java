@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionLinkConfigParam;
@@ -42,6 +44,7 @@ public class UnionLinkConfigController {
      * 新增转链配置
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-config:create")
     @OperateLog(module = "转链配置", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增转链配置")
     public Result<Long> create(@RequestBody @Valid UnionLinkConfigParam param) {
@@ -52,6 +55,7 @@ public class UnionLinkConfigController {
      * 修改转链配置
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-config:update")
     @OperateLog(module = "转链配置", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改转链配置")
     public Result<Void> update(@RequestBody @Valid UnionLinkConfigParam param) {
@@ -63,6 +67,7 @@ public class UnionLinkConfigController {
      * 删除转链配置
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-config:delete")
     @OperateLog(module = "转链配置", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除转链配置")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionLinkConfigController {
      * 转链配置详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-config:query")
     @Operation(summary = "转链配置详情")
     public Result<UnionLinkConfigVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(linkConfigService.getLinkConfig(id));
@@ -83,6 +89,7 @@ public class UnionLinkConfigController {
      * 转链配置分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:link-config:query")
     @Operation(summary = "转链配置分页")
     public Result<PageResult<UnionLinkConfigVO>> page(@Valid UnionLinkConfigQuery query) {
         return Result.success(linkConfigService.getLinkConfigPage(query));

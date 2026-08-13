@@ -1,5 +1,7 @@
 package com.zhush.union.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import com.zhush.union.param.UnionCommissionDistributionParam;
@@ -42,6 +44,7 @@ public class UnionCommissionDistributionController {
      * 新增佣金分配明细
      */
     @PostMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-distribution:create")
     @OperateLog(module = "佣金分配明细", type = OperateTypeEnum.CREATE)
     @Operation(summary = "新增佣金分配明细")
     public Result<Long> create(@RequestBody @Valid UnionCommissionDistributionParam param) {
@@ -52,6 +55,7 @@ public class UnionCommissionDistributionController {
      * 修改佣金分配明细
      */
     @PutMapping
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-distribution:update")
     @OperateLog(module = "佣金分配明细", type = OperateTypeEnum.UPDATE)
     @Operation(summary = "修改佣金分配明细")
     public Result<Void> update(@RequestBody @Valid UnionCommissionDistributionParam param) {
@@ -63,6 +67,7 @@ public class UnionCommissionDistributionController {
      * 删除佣金分配明细
      */
     @DeleteMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-distribution:delete")
     @OperateLog(module = "佣金分配明细", type = OperateTypeEnum.DELETE)
     @Operation(summary = "删除佣金分配明细")
     public Result<Void> delete(@Parameter(description = "ID") @PathVariable Long id) {
@@ -74,6 +79,7 @@ public class UnionCommissionDistributionController {
      * 佣金分配明细详情
      */
     @GetMapping("/{id}")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-distribution:query")
     @Operation(summary = "佣金分配明细详情")
     public Result<UnionCommissionDistributionVO> get(@Parameter(description = "ID") @PathVariable Long id) {
         return Result.success(commissionDistributionService.getCommissionDistribution(id));
@@ -83,6 +89,7 @@ public class UnionCommissionDistributionController {
      * 佣金分配明细分页
      */
     @GetMapping("/page")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:commission-distribution:query")
     @Operation(summary = "佣金分配明细分页")
     public Result<PageResult<UnionCommissionDistributionVO>> page(@Valid UnionCommissionDistributionQuery query) {
         return Result.success(commissionDistributionService.getCommissionDistributionPage(query));
