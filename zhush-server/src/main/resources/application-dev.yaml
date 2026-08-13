@@ -142,6 +142,39 @@ zhush:
       exposed-headers: Content-Disposition   # 需要前端读取的响应头(如文件下载)
       allow-credentials: true
       max-age: 3600
+  # 定时任务（Quartz）：默认关闭；启用时改为 true 并放开下方 spring.quartz 配置
+  job:
+    enabled: false
+    # default-group: DEFAULT    # 未指定分组时的默认分组
+  # 消息队列（RocketMQ）：默认关闭；启用时改为 true 并确认 namesrv-addr 指向实际地址
+  mq:
+    enabled: false
+    # namesrv-addr: 127.0.0.1:9876
+    # access-key: ""              # 开启 ACL 时配置
+    # secret-key: ""
+    # producer:
+    #   enabled: true             # 仅需要消费时可关闭生产者
+    #   group: zhush_producer_group
+    #   send-timeout: 3000
+    #   retry-times: 2
+  # WebSocket 推送：默认关闭；启用后客户端通过 ws://host:port/ws?userId=xxx 连接
+  websocket:
+    enabled: false
+    # endpoint: /ws               # 端点路径
+    # allowed-origins: "*"        # 生产建议收敛来源
+
+# --- 启用定时任务（zhush.job.enabled=true）时同步放开：Quartz 持久化配置 ---
+# 建表脚本：sql/07_quartz.sql（MySQL InnoDB 16 张表）
+# spring:
+#   quartz:
+#     job-store-type: jdbc          # memory（内存，重启丢失）/ jdbc（持久化）
+#     jdbc:
+#       initialize-schema: never    # 表结构由 sql/07_quartz.sql 维护，不由框架自动建表
+#     properties:
+#       org.quartz.scheduler.instanceName: zhushScheduler
+#       org.quartz.scheduler.instanceId: AUTO
+#       org.quartz.threadPool.threadCount: 10
+#       org.quartz.jobStore.isClustered: true   # 多实例集群部署时开启
 
 # ES 健康检查随搜索开关同步启停（启用搜索后改为 true）
 management:

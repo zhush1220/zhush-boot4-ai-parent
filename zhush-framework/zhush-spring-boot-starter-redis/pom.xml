@@ -22,6 +22,12 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- Jackson 3（value 序列化器 GenericJacksonJsonRedisSerializer 的 Mapper 定制） -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <!-- Redisson（分布式锁等高级能力，同时提供 Redis 连接实现） -->
         <dependency>
             <groupId>org.redisson</groupId>

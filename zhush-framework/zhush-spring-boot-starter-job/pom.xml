@@ -10,4 +10,16 @@
     <artifactId>zhush-spring-boot-starter-job</artifactId>
     <packaging>jar</packaging>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-common</artifactId>
+        </dependency>
+
+        <!-- Quartz（版本由 Spring Boot BOM 托管） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-quartz</artifactId>
+        </dependency>
+    </dependencies>
 </project>

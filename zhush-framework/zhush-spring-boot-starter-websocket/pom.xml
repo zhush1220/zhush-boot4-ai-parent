@@ -12,6 +12,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-common</artifactId>
+        </dependency>
+
+        <!-- WebSocket（版本由 Spring Boot BOM 托管） -->
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>

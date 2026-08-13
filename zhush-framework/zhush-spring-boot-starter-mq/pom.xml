@@ -10,4 +10,16 @@
     <artifactId>zhush-spring-boot-starter-mq</artifactId>
     <packaging>jar</packaging>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-common</artifactId>
+        </dependency>
+
+        <!-- RocketMQ 官方客户端（remoting 协议，与 Boot 版本解耦，版本由 BOM 托管） -->
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-client</artifactId>
+        </dependency>
+    </dependencies>
 </project>

@@ -44,6 +44,7 @@
         <jasypt-spring-boot-starter.version>4.0.4</jasypt-spring-boot-starter.version>
         <weixin.version>4.8.0</weixin.version>
         <tianai-captcha.version>1.5.5</tianai-captcha.version>
+        <rocketmq.version>5.5.0</rocketmq.version>
     </properties>
 
     <dependencyManagement>
@@ -395,6 +396,13 @@
                 <groupId>cloud.tianai.captcha</groupId>
                 <artifactId>tianai-captcha-springboot-starter</artifactId>
                 <version>${tianai-captcha.version}</version>
+            </dependency>
+
+            <!-- 消息队列：RocketMQ 官方客户端（remoting 协议，与 Boot 版本解耦） -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-client</artifactId>
+                <version>${rocketmq.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
