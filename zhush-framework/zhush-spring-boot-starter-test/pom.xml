@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.zhush</groupId>
+        <artifactId>zhush-framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>zhush-spring-boot-starter-test</artifactId>
+    <packaging>jar</packaging>
+
+    <description>测试基础设施：统一测试框架依赖 + 装配冒烟测试基类</description>
+
+    <dependencies>
+        <!-- 测试框架全家桶（JUnit5 + AssertJ + Mockito + Spring Boot Test）：
+             各模块以 test scope 引入本 starter 即可获得全部测试能力 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+
+        <!-- WebApplicationContextRunner 泛型需要（装配冒烟测试基类） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
