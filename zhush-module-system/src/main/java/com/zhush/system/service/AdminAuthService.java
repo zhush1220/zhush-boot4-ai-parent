@@ -1,6 +1,8 @@
 package com.zhush.system.service;
 
 import cn.hutool.crypto.digest.BCrypt;
+import com.zhush.captcha.core.CaptchaService;
+import com.zhush.common.exception.ServiceException;
 import com.zhush.satoken.core.DeviceTypeConstants;
 import com.zhush.satoken.core.StpAdminUtil;
 import com.zhush.system.entity.SysAdminUser;
@@ -10,6 +12,7 @@ import com.zhush.system.param.AdminLoginParam;
 import com.zhush.system.param.AdminSocialLoginParam;
 import com.zhush.system.vo.AdminLoginVO;
 import com.zhush.system.vo.AdminUserInfoVO;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,26 +36,49 @@ public class AdminAuthService {
 
     private final SysAdminUserMapper adminUserMapper;
     private final AdminPermissionService permissionService;
+    private final LoginLogService loginLogService;
+    /**
+     * 验证码服务（可选：zhush.captcha.enabled=false 时不装配，登录自动跳过验证码校验）
+     */
+    private final CaptchaService captchaService;
 
     public AdminAuthService(SysAdminUserMapper adminUserMapper,
-                            AdminPermissionService permissionService) {
+                            AdminPermissionService permissionService,
+                            LoginLogService loginLogService,
+                            ObjectProvider<CaptchaService> captchaServiceProvider) {
         this.adminUserMapper = adminUserMapper;
         this.permissionService = permissionService;
+        this.loginLogService = loginLogService;
+        this.captchaService = captchaServiceProvider.getIfAvailable();
     }
 
     /**
-     * 账号密码登录
+     * 账号密码登录（成功 / 失败均记录登录日志）
      */
-    public AdminLoginVO login(AdminLoginParam param, String clientIp) {
-        SysAdminUser user = adminUserMapper.selectByUsername(param.getUsername());
-        // 账号不存在与密码错误统一提示，避免账号探测
-        assertNotNull(user, SystemErrorCode.PASSWORD_INCORRECT);
-        assertTrue(BCrypt.checkpw(param.getPassword(), user.getPassword()),
-                SystemErrorCode.PASSWORD_INCORRECT);
-        assertTrue(user.getStatus() != null && user.getStatus() == STATUS_ENABLED,
-                SystemErrorCode.USER_DISABLED);
+    public AdminLoginVO login(AdminLoginParam param, String clientIp, String userAgent) {
+        String device = resolveDevice(param.getDevice());
+        try {
+            // 验证码前置校验（一次性，防自动化爆破；验证码开关关闭时跳过）
+            validateCaptcha(param.getCaptchaId(), param.getCaptchaData());
 
-        return doLogin(user, resolveDevice(param.getDevice()), clientIp);
+            SysAdminUser user = adminUserMapper.selectByUsername(param.getUsername());
+            // 账号不存在与密码错误统一提示，避免账号探测
+            assertNotNull(user, SystemErrorCode.PASSWORD_INCORRECT);
+            assertTrue(BCrypt.checkpw(param.getPassword(), user.getPassword()),
+                    SystemErrorCode.PASSWORD_INCORRECT);
+            assertTrue(user.getStatus() != null && user.getStatus() == STATUS_ENABLED,
+                    SystemErrorCode.USER_DISABLED);
+
+            AdminLoginVO loginVO = doLogin(user, device, clientIp);
+            // 登录日志：记录成功（异步落库，不阻塞登录主流程）
+            loginLogService.recordLoginSuccess(user.getId(), user.getUsername(), clientIp, userAgent, device);
+            return loginVO;
+        } catch (ServiceException ex) {
+            // 登录日志：记录失败原因（验证码错误 / 账号或密码错误 / 账号禁用等）
+            loginLogService.recordLoginFailure(param.getUsername(), clientIp, userAgent, device,
+                    ex.getCode(), ex.getMessage());
+            throw ex;
+        }
     }
 
     /**
@@ -92,6 +118,14 @@ public class AdminAuthService {
     }
 
     // ================ 内部方法 ================
+
+    private void validateCaptcha(String captchaId, String captchaData) {
+        if (captchaService == null || !captchaService.isLoginRequired()) {
+            return;
+        }
+        assertTrue(captchaService.validate(captchaId, captchaData),
+                SystemErrorCode.CAPTCHA_INVALID);
+    }
 
     private AdminLoginVO doLogin(SysAdminUser user, String device, String clientIp) {
         // 同端互踢：先注销该账号在同一设备类型的旧会话，再登录

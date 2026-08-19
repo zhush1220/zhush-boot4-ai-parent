@@ -43,10 +43,15 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-protection</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>cloud.tianai.captcha</groupId>
-            <artifactId>tianai-captcha-springboot-starter</artifactId>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-biz-ip</artifactId>
+        </dependency>
+
+        <!-- 行为验证码（tianai-captcha 封装，登录验证码） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-captcha</artifactId>
         </dependency>
 
         <dependency>
@@ -57,6 +62,12 @@
         <dependency>
             <groupId>com.github.binarywang</groupId>
             <artifactId>weixin-java-open</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

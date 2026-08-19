@@ -35,6 +35,12 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-oauth2-server</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 

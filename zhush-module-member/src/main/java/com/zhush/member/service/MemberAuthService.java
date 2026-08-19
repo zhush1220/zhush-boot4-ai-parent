@@ -2,6 +2,7 @@ package com.zhush.member.service;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
+import com.zhush.captcha.core.CaptchaService;
 import com.zhush.member.entity.MemberSocialUser;
 import com.zhush.member.entity.MemberUser;
 import com.zhush.member.enums.MemberErrorCode;
@@ -16,6 +17,7 @@ import com.zhush.member.vo.MemberInfoVO;
 import com.zhush.member.vo.MemberLoginVO;
 import com.zhush.satoken.core.DeviceTypeConstants;
 import com.zhush.satoken.core.StpMemberUtil;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,13 +42,19 @@ public class MemberAuthService {
     private final MemberUserMapper memberUserMapper;
     private final MemberSocialUserMapper memberSocialUserMapper;
     private final WxMiniClient wxMiniClient;
+    /**
+     * 验证码服务（可选：zhush.captcha.enabled=false 时不装配，登录自动跳过验证码校验）
+     */
+    private final CaptchaService captchaService;
 
     public MemberAuthService(MemberUserMapper memberUserMapper,
                              MemberSocialUserMapper memberSocialUserMapper,
-                             WxMiniClient wxMiniClient) {
+                             WxMiniClient wxMiniClient,
+                             ObjectProvider<CaptchaService> captchaServiceProvider) {
         this.memberUserMapper = memberUserMapper;
         this.memberSocialUserMapper = memberSocialUserMapper;
         this.wxMiniClient = wxMiniClient;
+        this.captchaService = captchaServiceProvider.getIfAvailable();
     }
 
     /**
@@ -93,6 +101,9 @@ public class MemberAuthService {
      * 账号密码登录
      */
     public MemberLoginVO passwordLogin(MemberLoginParam param, String clientIp) {
+        // 验证码前置校验（一次性，防自动化爆破；验证码开关关闭时跳过）
+        validateCaptcha(param.getCaptchaId(), param.getCaptchaData());
+
         MemberUser user = memberUserMapper.selectByMobile(param.getMobile());
         assertNotNull(user, MemberErrorCode.LOGIN_PASSWORD_INCORRECT);
         assertTrue(StrUtil.isNotBlank(user.getPassword())
@@ -131,6 +142,14 @@ public class MemberAuthService {
     }
 
     // ================ 内部方法 ================
+
+    private void validateCaptcha(String captchaId, String captchaData) {
+        if (captchaService == null || !captchaService.isLoginRequired()) {
+            return;
+        }
+        assertTrue(captchaService.validate(captchaId, captchaData),
+                MemberErrorCode.CAPTCHA_INVALID);
+    }
 
     private MemberUser registerByWxMini(WxMaSession session, String clientIp) {
         MemberUser user = new MemberUser();

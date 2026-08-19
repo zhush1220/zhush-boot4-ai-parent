@@ -60,6 +60,16 @@ public enum SystemErrorCode implements IErrorCode {
     FILE_NOT_FOUND(1001701, "文件不存在：{0}"),
     FILE_NO_PERMISSION(1001702, "无权操作该文件：{0}"),
 
+    // ================ 数据字典 1001 8xx ================
+    DICT_TYPE_NOT_FOUND(1001801, "字典类型不存在：{0}"),
+    DICT_TYPE_DUPLICATE(1001802, "字典类型编码已存在：{0}"),
+    DICT_TYPE_HAS_DATA(1001803, "字典类型下仍有数据，无法删除"),
+    DICT_DATA_NOT_FOUND(1001804, "字典数据不存在：{0}"),
+    DICT_DATA_DUPLICATE(1001805, "字典数据键值已存在：{0}"),
+
+    // ================ 登录日志 1001 9xx ================
+    LOGIN_LOG_NOT_FOUND(1001901, "登录日志不存在：{0}"),
+
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
     ;

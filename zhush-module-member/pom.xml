@@ -31,6 +31,11 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-protection</artifactId>
         </dependency>
+        <!-- 行为验证码（tianai-captcha 封装，与管理端共用） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-captcha</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.github.binarywang</groupId>

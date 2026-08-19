@@ -1,5 +1,7 @@
 package com.zhush.system.controller.admin;
 
+import com.zhush.captcha.core.CaptchaService;
+import com.zhush.captcha.vo.CaptchaVO;
 import com.zhush.common.response.Result;
 import com.zhush.satoken.annotation.IgnoreAuth;
 import com.zhush.system.param.AdminLoginParam;
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,9 +31,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminAuthController {
 
     private final AdminAuthService authService;
+    private final CaptchaService captchaService;
 
-    public AdminAuthController(AdminAuthService authService) {
+    public AdminAuthController(AdminAuthService authService,
+                               ObjectProvider<CaptchaService> captchaServiceProvider) {
         this.authService = authService;
+        this.captchaService = captchaServiceProvider.getIfAvailable();
+    }
+
+    /**
+     * 获取登录验证码（验证码关闭时返回 null，前端据此跳过验证码流程）
+     */
+    @IgnoreAuth
+    @GetMapping("/captcha")
+    @Operation(summary = "获取登录验证码")
+    public Result<CaptchaVO> captcha() {
+        return Result.success(captchaService == null ? null : captchaService.generate());
     }
 
     /**
@@ -41,7 +57,7 @@ public class AdminAuthController {
     @Operation(summary = "账号密码登录")
     public Result<AdminLoginVO> login(@RequestBody @Valid AdminLoginParam param,
                                       HttpServletRequest request) {
-        return Result.success(authService.login(param, request.getRemoteAddr()));
+        return Result.success(authService.login(param, request.getRemoteAddr(), request.getHeader("User-Agent")));
     }
 
     /**

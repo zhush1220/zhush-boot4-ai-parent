@@ -24,7 +24,7 @@
         <dameng.version>8.1.5.45</dameng.version>
         <kingbase8.version>9.0.1</kingbase8.version>
         <oracle.jdbc.version>23.26.2.0.0</oracle.jdbc.version>
-        <sa.token.version>1.45.0</sa.token.version>
+        <sa.token.version>1.46.0</sa.token.version>
         <commons.pool.version>2.13.1</commons.pool.version>
         <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
         <lombok.version>1.18.46</lombok.version>
@@ -58,6 +58,11 @@
             <dependency>
                 <groupId>com.zhush</groupId>
                 <artifactId>zhush-spring-boot-starter-biz-data-permission</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zhush</groupId>
+                <artifactId>zhush-spring-boot-starter-captcha</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -397,9 +402,10 @@
                 <version>${weixin.version}</version>
             </dependency>
 
+            <!-- 行为验证码核心库（项目自建 starter-captcha 封装，不使用官方 Boot starter） -->
             <dependency>
                 <groupId>cloud.tianai.captcha</groupId>
-                <artifactId>tianai-captcha-springboot-starter</artifactId>
+                <artifactId>tianai-captcha</artifactId>
                 <version>${tianai-captcha.version}</version>
             </dependency>
 

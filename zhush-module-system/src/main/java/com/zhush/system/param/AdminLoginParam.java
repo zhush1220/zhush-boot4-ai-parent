@@ -24,4 +24,10 @@ public class AdminLoginParam {
 
     @Schema(description = "登录设备：PC / APP / MINI（不传默认 PC）")
     private String device;
+
+    @Schema(description = "验证码ID（获取验证码接口返回；开启验证码时必传）")
+    private String captchaId;
+
+    @Schema(description = "验证码行为数据（如滑块位移量；开启验证码时必传）")
+    private String captchaData;
 }

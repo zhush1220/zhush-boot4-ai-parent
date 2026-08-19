@@ -1,5 +1,7 @@
 package com.zhush.member.controller.app;
 
+import com.zhush.captcha.core.CaptchaService;
+import com.zhush.captcha.vo.CaptchaVO;
 import com.zhush.common.response.Result;
 import com.zhush.member.param.MemberLoginParam;
 import com.zhush.member.param.MemberWxMiniLoginParam;
@@ -12,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,9 +32,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberAuthController {
 
     private final MemberAuthService authService;
+    private final CaptchaService captchaService;
 
-    public MemberAuthController(MemberAuthService authService) {
+    public MemberAuthController(MemberAuthService authService,
+                                ObjectProvider<CaptchaService> captchaServiceProvider) {
         this.authService = authService;
+        this.captchaService = captchaServiceProvider.getIfAvailable();
+    }
+
+    /**
+     * 获取登录验证码（验证码关闭时返回 null，前端据此跳过验证码流程）
+     */
+    @IgnoreAuth
+    @GetMapping("/captcha")
+    @Operation(summary = "获取登录验证码")
+    public Result<CaptchaVO> captcha() {
+        return Result.success(captchaService == null ? null : captchaService.generate());
     }
 
     /**
