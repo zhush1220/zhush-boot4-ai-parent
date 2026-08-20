@@ -1,5 +1,7 @@
 package com.zhush.union.mapper;
 
+
+import org.apache.ibatis.annotations.Mapper;
 import com.zhush.mybatis.core.mapper.BaseMapperX;
 import com.zhush.union.entity.UnionWithdrawApply;
 
@@ -9,5 +11,6 @@ import com.zhush.union.entity.UnionWithdrawApply;
  * @Author zhush
  * @Date 2026/08/07
  **/
+@Mapper
 public interface UnionWithdrawApplyMapper extends BaseMapperX<UnionWithdrawApply> {
 }

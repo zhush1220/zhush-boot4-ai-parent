@@ -47,15 +47,10 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- 接口文档：Knife4j（基于 SpringDoc OpenAPI3）-->
+        <!-- 接口文档：Knife4j Boot 4 适配版（基于 SpringDoc OpenAPI3，自带 springdoc，版本由 zhush-dependencies 锁定）-->
         <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-        </dependency>
-        <!-- knife4j 已排除其传递的 springdoc，这里显式引入 Boot4 适配版 -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <groupId>com.baizhukui</groupId>
+            <artifactId>knife4j-openapi3-boot4-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 </project>

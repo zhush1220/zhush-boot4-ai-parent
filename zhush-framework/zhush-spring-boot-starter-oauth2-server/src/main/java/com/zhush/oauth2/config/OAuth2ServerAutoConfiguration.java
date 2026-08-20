@@ -11,7 +11,6 @@ import com.zhush.oauth2.core.OAuth2DoLoginHandler;
 import com.zhush.oauth2.core.OpenApiInterceptor;
 import com.zhush.oauth2.core.OpenApiLogRecorder;
 import com.zhush.oauth2.core.OpenApiRateLimiter;
-import com.zhush.oauth2.endpoint.OAuth2ServerEndpoint;
 import com.zhush.satoken.core.StpAdminUtil;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.ObjectProvider;
@@ -92,10 +91,8 @@ public class OAuth2ServerAutoConfiguration implements WebMvcConfigurer {
                 SaOAuth2Strategy.instance.doLoginHandle = handler::doLogin);
     }
 
-    @Bean
-    public OAuth2ServerEndpoint oauth2ServerEndpoint() {
-        return new OAuth2ServerEndpoint();
-    }
+    // OAuth2ServerEndpoint 标注 @RestController，由应用侧 com.zhush 组件扫描统一装配；
+    // 若此处再用 @Bean 重复注册，两个 Bean 会重复映射 /oauth2/* 导致启动报 Ambiguous mapping
 
     @Bean
     public OpenApiInterceptor openApiInterceptor() {

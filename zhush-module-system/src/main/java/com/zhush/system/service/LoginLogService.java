@@ -15,6 +15,7 @@ import com.zhush.system.vo.LoginLogVO;
 import io.github.linpeilie.Converter;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -49,6 +50,7 @@ public class LoginLogService {
      */
     private final ExecutorService logExecutor;
 
+    @Autowired
     public LoginLogService(SysLoginLogMapper loginLogMapper, Converter converter) {
         this(loginLogMapper, converter, new ThreadPoolExecutor(
                 1, 1, 60, TimeUnit.SECONDS,

@@ -6,6 +6,13 @@
     - 挂载 skywalking-agent 时输出真实链路ID（TID:xxx），可在 SkyWalking UI 按 TID 反查整条链路
     - 未挂载 agent 时输出 TID: N/A，不影响正常运行
 
+    文件滚动策略（SizeAndTimeBasedRollingPolicy）：
+    - 按天归档 + 单文件超过 fileSize 立即滚动新建文件（文件名以 .0/.1 递增）
+    - 生产环境（prod）单文件 50MB，保留 30 天，总量上限 2GB
+    - 其他环境（dev/test/docker/my 等）单文件 100MB，保留 7 天，总量上限 1GB
+    - 可通过 yaml 覆盖：logging.file.path（目录）、logging.file.max-history（保留天数）、
+      logging.file.total-size-cap（总量上限）
+
     logging.level.* 等 yaml 配置仍然生效
 -->
 <configuration>
@@ -17,6 +24,10 @@
     <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%tid] --- [%15.15t] %-40.40logger{39} : %m%n"/>
 
+    <!-- 日志目录与应用名（可被 yaml 的 logging.file.path / spring.application.name 覆盖） -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="zhush-server"/>
+    <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="logs"/>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${LOG_PATTERN}</pattern>
@@ -24,8 +35,51 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+    <!-- ================ 生产环境：单文件 50MB，超过即新建日志文件 ================ -->
+    <springProfile name="prod">
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${APP_NAME}.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <!-- 按天归档；单文件超过 50MB 滚动，%i 递增（app.log.2026-08-20.0/.1/...） -->
+                <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>50MB</maxFileSize>
+                <!-- 保留 30 天，全部归档总量上限 2GB，超限自动清理最旧归档 -->
+                <maxHistory>${LOG_FILE_MAX_HISTORY:-30}</maxHistory>
+                <totalSizeCap>${LOG_FILE_TOTAL_SIZE_CAP:-2GB}</totalSizeCap>
+                <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            </rollingPolicy>
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- ================ 非生产环境：控制台 + 文件（单文件 100MB） ================ -->
+    <springProfile name="!prod">
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${APP_NAME}.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>${LOG_FILE_MAX_HISTORY:-7}</maxHistory>
+                <totalSizeCap>${LOG_FILE_TOTAL_SIZE_CAP:-1GB}</totalSizeCap>
+                <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            </rollingPolicy>
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
 
 </configuration>

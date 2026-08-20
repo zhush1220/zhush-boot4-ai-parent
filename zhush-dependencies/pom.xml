@@ -38,7 +38,10 @@
         <huawei-obs.version>3.24.3</huawei-obs.version>
         <fesod-sheet.version>2.0.2-incubating</fesod-sheet.version>
         <redisson.version>4.6.1</redisson.version>
-        <knife4j.version>4.5.0</knife4j.version>
+        <!-- knife4j 官方版（com.github.xiaoymin）停更在 4.5.0 且不兼容 springdoc 3.x，
+             改用 com.baizhukui 社区 fork 的 Boot 4 适配版（针对 springdoc 3.x 重新编译） -->
+        <knife4j.version>5.2.4</knife4j.version>
+        <!-- fork 按 springdoc 3.x 编译，随其自带的 3.0.3 与其字节码一致 -->
         <springdoc.version>3.0.3</springdoc.version>
         <ip2region.version>3.3.7</ip2region.version>
         <jasypt-spring-boot-starter.version>4.0.4</jasypt-spring-boot-starter.version>
@@ -342,16 +345,11 @@
                 <version>${redisson.version}</version>
             </dependency>
 
+            <!-- Boot 4 / springdoc 3.x 兼容 fork，自带 springdoc 3.0.3，无需排除 -->
             <dependency>
-                <groupId>com.github.xiaoymin</groupId>
-                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+                <groupId>com.baizhukui</groupId>
+                <artifactId>knife4j-openapi3-boot4-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springdoc</groupId>
-                        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
