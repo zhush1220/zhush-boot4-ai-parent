@@ -57,6 +57,14 @@ public class ServiceException extends RuntimeException {
     }
 
     /**
+     * 同时携带 cause 与 {@link MessageFormat} 占位符参数的构造（如文件解析等包装底层异常场景）
+     */
+    public ServiceException(IErrorCode errorCode, Throwable cause, Object... args) {
+        super(format(errorCode.getMessage(), args), cause);
+        this.code = errorCode.getCode();
+    }
+
+    /**
      * 链式设置附加数据
      */
     public ServiceException withData(Object data) {

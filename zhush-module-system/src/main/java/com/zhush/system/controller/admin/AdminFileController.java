@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
+import com.zhush.file.core.DocParseResult;
 import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.satoken.core.LoginTypeConstants;
 import com.zhush.system.query.InfraFileQuery;
@@ -30,7 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @author zhush
  */
 @RestController
-@Tag(name = "管理端-文件管理", description = "文件的上传、删除、详情与分页查询")
+@Tag(name = "管理端-文件管理", description = "文件的上传、解析、删除、详情与分页查询")
 @RequestMapping("/admin/system/file")
 public class AdminFileController {
 
@@ -50,6 +51,19 @@ public class AdminFileController {
     @Operation(summary = "上传文件")
     public Result<InfraFileVO> upload(@Parameter(description = "文件") @RequestParam("file") MultipartFile file) {
         return Result.success(fileService.uploadFile(file, LoginTypeConstants.ADMIN));
+    }
+
+    /**
+     * 解析文档：提取文本并自动判断是否存在内嵌图片，存在则上传文件服务，
+     * 返回可直接回显富文本编辑器的 HTML 内容与图片访问路径（适用于 Word / PDF 转富文本场景）
+     */
+    @PostMapping("/parse-doc")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:file:create")
+    @Idempotent(timeout = 3, message = "文档正在解析，请勿重复提交")
+    @OperateLog(module = "文件管理", type = OperateTypeEnum.CREATE, recordParams = false)
+    @Operation(summary = "解析文档（提取文本与图片，输出富文本 HTML）")
+    public Result<DocParseResult> parseDoc(@Parameter(description = "文档") @RequestParam("file") MultipartFile file) {
+        return Result.success(fileService.parseDoc(file, LoginTypeConstants.ADMIN));
     }
 
     /**

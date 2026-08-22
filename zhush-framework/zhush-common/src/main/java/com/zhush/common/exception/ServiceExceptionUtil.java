@@ -32,6 +32,10 @@ public final class ServiceExceptionUtil {
         return new ServiceException(code, message);
     }
 
+    public static ServiceException exception(IErrorCode errorCode, Throwable cause, Object... args) {
+        return new ServiceException(errorCode, cause, args);
+    }
+
     // ================ 断言 ================
 
     /**

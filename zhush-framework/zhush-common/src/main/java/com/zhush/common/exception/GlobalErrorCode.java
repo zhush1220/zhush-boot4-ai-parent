@@ -49,6 +49,7 @@ public enum GlobalErrorCode implements IErrorCode {
     RPC_ERROR(2000004, "远程调用失败"),
     FILE_UPLOAD_ERROR(2000005, "文件上传失败：{0}"),
     FILE_STORAGE_ERROR(2000006, "文件存储配置错误：{0}"),
+    FILE_PARSE_ERROR(2000007, "文件解析失败：{0}"),
     ;
 
     private final int code;

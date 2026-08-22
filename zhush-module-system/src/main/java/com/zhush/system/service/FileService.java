@@ -2,6 +2,9 @@ package com.zhush.system.service;
 
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.response.PageResult;
+import com.zhush.file.core.DocParseImage;
+import com.zhush.file.core.DocParseResult;
+import com.zhush.file.core.DocParseService;
 import com.zhush.file.core.FileClient;
 import com.zhush.file.core.FileUploadResult;
 import com.zhush.mybatis.core.query.QueryWrapperX;
@@ -29,6 +32,8 @@ import static com.zhush.common.exception.ServiceExceptionUtil.assertTrue;
  *
  * <p>上传：调用 {@link FileClient} 将物理文件写入当前启用的存储平台，
  * 成功后将文件元信息写入 {@code infra_file} 表；
+ * 文档解析：调用 {@link DocParseService} 提取文本，自动探测内嵌图片并上传，
+ * 图片元信息同样落库，返回可直接回显富文本编辑器的 HTML 内容；
  * 删除：先删除存储平台上的物理文件（尽力而为），再逻辑删除数据库记录。
  * 管理端可操作全部文件，会员端仅可操作本人上传的文件。
  *
@@ -40,11 +45,14 @@ public class FileService {
 
     private final InfraFileMapper fileMapper;
     private final FileClient fileClient;
+    private final DocParseService docParseService;
     private final Converter converter;
 
-    public FileService(InfraFileMapper fileMapper, FileClient fileClient, Converter converter) {
+    public FileService(InfraFileMapper fileMapper, FileClient fileClient,
+                       DocParseService docParseService, Converter converter) {
         this.fileMapper = fileMapper;
         this.fileClient = fileClient;
+        this.docParseService = docParseService;
         this.converter = converter;
     }
 
@@ -71,6 +79,37 @@ public class FileService {
         infraFile.setUserId(resolveUserId(userType));
         fileMapper.insert(infraFile);
         return converter.convert(infraFile, InfraFileVO.class);
+    }
+
+    /**
+     * 解析文档（面向富文本编辑器场景）
+     *
+     * <p>提取文档文本并自动判断是否存在内嵌图片：存在则逐张上传文件服务，
+     * 图片元信息落库 {@code infra_file}，返回的 {@code html} 字段可直接回显到富文本编辑器。
+     *
+     * @param file     文档文件（docx / doc / pdf / txt / html 等 Tika 支持的格式）
+     * @param userType 上传人类型（admin / member）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public DocParseResult parseDoc(MultipartFile file, String userType) {
+        DocParseResult result = docParseService.parse(file);
+        // 提取出的图片已由 DocParseService 上传，元信息落库便于统一管理与删除
+        Long userId = resolveUserId(userType);
+        for (DocParseImage image : result.getImages()) {
+            InfraFile infraFile = new InfraFile();
+            infraFile.setName(image.getFileName());
+            infraFile.setPath(image.getPath());
+            infraFile.setUrl(image.getUrl());
+            infraFile.setExt(cn.hutool.core.io.file.FileNameUtil.extName(
+                    cn.hutool.core.util.StrUtil.blankToDefault(image.getFileName(), "")));
+            infraFile.setContentType(image.getContentType());
+            infraFile.setSize(image.getSize());
+            infraFile.setStorageType(image.getStorageType());
+            infraFile.setUserType(userType);
+            infraFile.setUserId(userId);
+            fileMapper.insert(infraFile);
+        }
+        return result;
     }
 
     /**

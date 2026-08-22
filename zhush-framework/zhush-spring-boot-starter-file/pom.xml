@@ -16,6 +16,12 @@
             <artifactId>zhush-common</artifactId>
         </dependency>
 
+        <!-- 文档内容解析：Tika 解析器包（含 POI / PDFBox 等；zhush-common 中为 optional，使用方需显式声明） -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers-standard-package</artifactId>
+        </dependency>
+
         <!-- Spring Boot 自动装配基础 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -51,6 +57,12 @@
         <dependency>
             <groupId>com.huaweicloud</groupId>
             <artifactId>esdk-obs-java</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

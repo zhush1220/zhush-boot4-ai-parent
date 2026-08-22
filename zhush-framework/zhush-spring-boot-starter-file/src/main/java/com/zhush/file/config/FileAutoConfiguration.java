@@ -1,5 +1,6 @@
 package com.zhush.file.config;
 
+import com.zhush.file.core.DocParseService;
 import com.zhush.file.core.FileClient;
 import com.zhush.file.core.FileStorage;
 import com.zhush.file.storage.AliyunOssFileStorage;
@@ -67,6 +68,15 @@ public class FileAutoConfiguration {
     @ConditionalOnMissingBean
     public FileClient fileClient(List<FileStorage> storages, FileStorageProperties properties) {
         return new FileClient(storages, properties);
+    }
+
+    /**
+     * 文档解析上传服务：提取文本 + 自动探测图片并上传文件服务，输出富文本 HTML
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public DocParseService docParseService(FileClient fileClient) {
+        return new DocParseService(fileClient);
     }
 
     // ================ 本地存储静态资源映射 ================
