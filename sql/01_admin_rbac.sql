@@ -151,3 +151,17 @@ INSERT INTO `sys_role` (`id`, `name`, `code`, `sort`, `status`, `remark`)
 VALUES (1, '超级管理员', 'super_admin', 1, 1, '拥有全部权限');
 
 INSERT INTO `sys_admin_user_role` (`id`, `user_id`, `role_id`) VALUES (1, 1, 1);
+
+-- ------------------------------------------------------------
+-- 菜单种子数据（登录后动态路由/菜单；component 对应前端 views 目录）
+-- ------------------------------------------------------------
+INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `type`, `permission`, `path`, `component`, `icon`, `sort`, `visible`, `status`)
+VALUES (1, 0, 'Dashboard', 1, '', 'dashboard', '', 'lucide:layout-dashboard', 1, 1, 1);
+
+INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `type`, `permission`, `path`, `component`, `icon`, `sort`, `visible`, `status`)
+VALUES (2, 1, '分析页', 2, '', 'analytics', '/dashboard/analytics/index', 'lucide:area-chart', 1, 1, 1);
+
+INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `type`, `permission`, `path`, `component`, `icon`, `sort`, `visible`, `status`)
+VALUES (3, 1, '工作台', 2, '', 'workspace', '/dashboard/workspace/index', 'lucide:briefcase', 2, 1, 1);
+
+INSERT INTO `sys_role_menu` (`id`, `role_id`, `menu_id`) VALUES (1, 1, 1), (2, 1, 2), (3, 1, 3);

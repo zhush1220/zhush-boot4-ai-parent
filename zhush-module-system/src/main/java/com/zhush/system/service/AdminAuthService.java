@@ -12,10 +12,12 @@ import com.zhush.system.param.AdminLoginParam;
 import com.zhush.system.param.AdminSocialLoginParam;
 import com.zhush.system.vo.AdminLoginVO;
 import com.zhush.system.vo.AdminUserInfoVO;
+import com.zhush.system.vo.AdminUserMenuVO;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.zhush.common.exception.ServiceExceptionUtil.assertNotNull;
 import static com.zhush.common.exception.ServiceExceptionUtil.assertTrue;
@@ -37,6 +39,8 @@ public class AdminAuthService {
     private final SysAdminUserMapper adminUserMapper;
     private final AdminPermissionService permissionService;
     private final LoginLogService loginLogService;
+    private final RefreshTokenService refreshTokenService;
+    private final AdminMenuService menuService;
     /**
      * 验证码服务（可选：zhush.captcha.enabled=false 时不装配，登录自动跳过验证码校验）
      */
@@ -45,10 +49,14 @@ public class AdminAuthService {
     public AdminAuthService(SysAdminUserMapper adminUserMapper,
                             AdminPermissionService permissionService,
                             LoginLogService loginLogService,
+                            RefreshTokenService refreshTokenService,
+                            AdminMenuService menuService,
                             ObjectProvider<CaptchaService> captchaServiceProvider) {
         this.adminUserMapper = adminUserMapper;
         this.permissionService = permissionService;
         this.loginLogService = loginLogService;
+        this.refreshTokenService = refreshTokenService;
+        this.menuService = menuService;
         this.captchaService = captchaServiceProvider.getIfAvailable();
     }
 
@@ -93,9 +101,42 @@ public class AdminAuthService {
     }
 
     /**
-     * 注销当前登录
+     * 刷新令牌（双 Token 无感续期）
+     *
+     * <p>refresh-token 单次消费：无论成功失败立即作废，防重放；
+     * 成功后签发新 access-token 与新 refresh-token（轮换）。
+     * 刷新不算一次登录，不记登录日志、不踢同端旧会话。
+     *
+     * @param refreshToken 刷新令牌（可为空，空时直接返回 null）
+     * @return 新登录凭证；令牌无效 / 用户不存在 / 已禁用返回 {@code null}
      */
-    public void logout() {
+    public AdminLoginVO refresh(String refreshToken) {
+        RefreshTokenService.Payload payload = refreshTokenService.consume(refreshToken);
+        if (payload == null) {
+            return null;
+        }
+        SysAdminUser user = adminUserMapper.selectOneById(payload.userId());
+        if (user == null || user.getStatus() == null || user.getStatus() != STATUS_ENABLED) {
+            return null;
+        }
+        // 重新登录签发新 access-token（沿用原 device，不算新登录，不做同端互踢）
+        StpAdminUtil.login(user.getId(), payload.device());
+
+        AdminLoginVO loginVO = new AdminLoginVO();
+        loginVO.setUserId(user.getId());
+        loginVO.setTokenName(StpAdminUtil.getTokenInfo().getTokenName());
+        loginVO.setTokenValue(StpAdminUtil.getTokenValue());
+        loginVO.setAccessToken(StpAdminUtil.getTokenValue());
+        loginVO.setRefreshToken(refreshTokenService.issue(user.getId(), payload.device()));
+        loginVO.setNickname(user.getNickname());
+        return loginVO;
+    }
+
+    /**
+     * 注销当前登录（双端清理：作废 refresh-token + 注销 access-token）
+     */
+    public void logout(String refreshToken) {
+        refreshTokenService.invalidate(refreshToken);
         StpAdminUtil.logout();
     }
 
@@ -114,7 +155,22 @@ public class AdminAuthService {
         vo.setAvatar(user.getAvatar());
         vo.setRoles(permissionService.getRoleCodeList(userId));
         vo.setPermissions(permissionService.getPermissionList(userId));
+        vo.setHomePath(menuService.getHomePath(userId));
         return vo;
+    }
+
+    /**
+     * 当前登录用户的菜单路由树（按角色过滤；无权限返回空数组）
+     */
+    public List<AdminUserMenuVO> getUserMenus() {
+        return menuService.getUserMenuTree(StpAdminUtil.getLoginIdAsLong());
+    }
+
+    /**
+     * 当前登录用户的权限标识列表（用于前端按钮级鉴权）
+     */
+    public List<String> getAccessCodes() {
+        return permissionService.getPermissionList(StpAdminUtil.getLoginIdAsLong());
     }
 
     // ================ 内部方法 ================
@@ -143,6 +199,8 @@ public class AdminAuthService {
         loginVO.setUserId(user.getId());
         loginVO.setTokenName(StpAdminUtil.getTokenInfo().getTokenName());
         loginVO.setTokenValue(StpAdminUtil.getTokenValue());
+        loginVO.setAccessToken(StpAdminUtil.getTokenValue());
+        loginVO.setRefreshToken(refreshTokenService.issue(user.getId(), device));
         loginVO.setNickname(user.getNickname());
         return loginVO;
     }

@@ -33,4 +33,7 @@ public class AdminUserInfoVO {
     @Schema(description = "权限标识列表（超级管理员为 [\"*\"]）")
     private List<String> permissions;
 
+    @Schema(description = "登录后首页路径（首个可见菜单路由，无菜单时为 null）")
+    private String homePath;
+
 }

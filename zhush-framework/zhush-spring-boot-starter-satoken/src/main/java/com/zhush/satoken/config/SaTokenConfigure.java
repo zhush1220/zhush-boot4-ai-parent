@@ -34,6 +34,7 @@ public class SaTokenConfigure implements WebMvcConfigurer {
      */
     private static final List<String> DEFAULT_IGNORE_PATHS = List.of(
             "/admin/auth/login",
+            "/admin/auth/refresh",
             "/admin/auth/social-login",
             "/member/auth/login",
             "/member/auth/wx-mini-login",

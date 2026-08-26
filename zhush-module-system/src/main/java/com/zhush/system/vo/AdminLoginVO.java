@@ -19,8 +19,14 @@ public class AdminLoginVO {
     @Schema(description = "token 名称（放入请求头的 key）")
     private String tokenName;
 
-    @Schema(description = "token 值")
+    @Schema(description = "token 值（同 accessToken，兼容旧字段）")
     private String tokenValue;
+
+    @Schema(description = "访问令牌（access-token，2 小时，放入 Authorization 请求头）")
+    private String accessToken;
+
+    @Schema(description = "刷新令牌（refresh-token，7 天，浏览器经 HttpOnly Cookie 下发，非浏览器端需自行保存）")
+    private String refreshToken;
 
     @Schema(description = "昵称")
     private String nickname;

@@ -9,6 +9,8 @@ import com.zhush.common.response.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -24,10 +26,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class SaTokenExceptionAdvice {
 
+    /**
+     * 未登录 / 登录态过期：返回 <b>HTTP 401</b>（而非 200 + 业务码），
+     * 供前端拦截器识别后触发 refresh-token 无感刷新，刷新失败再跳登录页。
+     * Body 仍保持统一 {@code Result} 结构（code = 1000401）。
+     */
     @ExceptionHandler(NotLoginException.class)
-    public Result<?> handleNotLogin(NotLoginException e) {
+    public ResponseEntity<Result<?>> handleNotLogin(NotLoginException e) {
         log.warn("[NotLogin] type={}, msg={}", e.getType(), e.getMessage());
-        return Result.error(GlobalErrorCode.UNAUTHORIZED);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Result.error(GlobalErrorCode.UNAUTHORIZED));
     }
 
     @ExceptionHandler(NotPermissionException.class)

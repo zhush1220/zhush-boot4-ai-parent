@@ -65,6 +65,21 @@ mybatis-flex:
       validationQuery: SELECT 1
       testWhileIdle: true
 
+# Sa-Token 认证（管理端 / 会员端）
+# access-token 即 Sa-Token 令牌：从 Authorization: Bearer xxx 请求头读取，不写 Cookie（防 CSRF）；
+# 有效期 2 小时，由 /admin/auth/refresh 的 refresh-token 机制负责无感续期。
+sa-token:
+  token-name: Authorization      # 从 Authorization 请求头读取 token
+  token-prefix: Bearer           # 兼容 "Bearer xxx" 格式
+  timeout: 7200                  # access-token 有效期 2 小时（秒）
+  active-timeout: -1             # 不做活跃自动续期，严格 2 小时，靠 refresh-token 续期
+  is-concurrent: true            # 允许同账号多端并发登录（PC / APP / MINI 共存）
+  is-share: false                # 每次登录产生新 token（配合同端互踢）
+  is-read-cookie: false          # access-token 不读写 Cookie，防 CSRF
+  is-read-header: true           # 从请求头读取 token
+  token-style: uuid              # token 风格
+  is-log: false                  # 关闭 Sa-Token 操作日志（避免刷屏）
+
 logging:
   level:
     com.zhush: debug
