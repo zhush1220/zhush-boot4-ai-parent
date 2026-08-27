@@ -51,6 +51,10 @@ class AdminAuthServiceTest {
     @Mock
     private LoginLogService loginLogService;
     @Mock
+    private RefreshTokenService refreshTokenService;
+    @Mock
+    private AdminMenuService menuService;
+    @Mock
     private ObjectProvider<CaptchaService> captchaServiceProvider;
     @InjectMocks
     private AdminAuthService adminAuthService;
@@ -187,7 +191,7 @@ class AdminAuthServiceTest {
     @Test
     void logoutDelegatesToStp() {
         try (MockedStatic<StpAdminUtil> stp = mockStatic(StpAdminUtil.class)) {
-            adminAuthService.logout();
+            adminAuthService.logout("mock-refresh-token");
             stp.verify(StpAdminUtil::logout);
         }
     }
@@ -311,6 +315,7 @@ class AdminAuthServiceTest {
     private AdminAuthService serviceWithCaptcha(CaptchaService captchaService) {
         ObjectProvider<CaptchaService> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(captchaService);
-        return new AdminAuthService(adminUserMapper, permissionService, loginLogService, provider);
+        return new AdminAuthService(adminUserMapper, permissionService, loginLogService,
+                refreshTokenService, menuService, provider);
     }
 }

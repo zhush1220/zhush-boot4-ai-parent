@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *     type: SLIDER           # 验证码玩法：SLIDER-滑块 ROTATE-旋转 CONCAT-拼图
  *     image-format: WEBP     # 图片输出格式：WEBP / JPEG_PNG
  *     expire-seconds: 120    # 验证码有效期（秒）
+ *     resource-path: captcha # 自定义背景图目录（classpath 相对路径，可选，多张随机使用）
  * </pre>
  *
  * @author zhush
@@ -47,4 +48,10 @@ public class CaptchaProperties {
      * 验证码有效期（秒），超时后校验失败
      */
     private Long expireSeconds = 120L;
+
+    /**
+     * 自定义背景图目录（classpath 相对路径，支持 jpg/jpeg/png/webp，多张随机使用；
+     * 目录不存在或无图片时回退使用 jar 内置背景图）
+     */
+    private String resourcePath = "captcha";
 }

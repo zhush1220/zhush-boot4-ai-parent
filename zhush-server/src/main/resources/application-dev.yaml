@@ -109,7 +109,7 @@ zhush:
     enabled: true                    # 总开关：false 不装配验证码，登录自动跳过校验
     login-required: true             # 登录是否强制校验验证码
     type: SLIDER                     # SLIDER-滑块 ROTATE-旋转 CONCAT-拼图
-    image-format: WEBP               # 图片格式：WEBP / JPEG_PNG
+    image-format: JPEG_PNG               # 图片格式：WEBP / JPEG_PNG
     expire-seconds: 120              # 验证码有效期（秒）
   # 文件存储（starter-file 自研多存储抽象）：切换存储只需修改 primary
   file:
