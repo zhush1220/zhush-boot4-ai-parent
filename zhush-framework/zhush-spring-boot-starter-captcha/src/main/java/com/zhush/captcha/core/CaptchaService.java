@@ -49,7 +49,7 @@ public class CaptchaService {
      * 校验验证码（一次性使用：无论成功与否，该校验码随即失效）
      *
      * @param captchaId   验证码ID（生成时返回）
-     * @param captchaData 用户行为数据（滑块位移量 / 旋转角度等，前端回传）
+     * @param captchaData 用户行为数据（滑块拼图为缺口百分比 0~1，前端回传）
      * @return true-校验通过
      */
     public boolean validate(String captchaId, String captchaData) {

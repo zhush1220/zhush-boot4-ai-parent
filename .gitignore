@@ -49,3 +49,5 @@ build/
 !*/build/*.class
 
 application-my.yaml
+
+/logs/

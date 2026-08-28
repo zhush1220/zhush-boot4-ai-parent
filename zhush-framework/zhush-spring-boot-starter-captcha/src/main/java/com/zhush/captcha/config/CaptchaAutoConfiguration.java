@@ -87,7 +87,8 @@ public class CaptchaAutoConfiguration {
             builder.addResource(properties.getType(), background);
         }
         return builder
-                .expire(properties.getType(), properties.getExpireSeconds())
+                // expire 以毫秒为单位（tianai 内部按 TimeUnit.MILLISECONDS 写入缓存），配置按秒换算
+                .expire(properties.getType(), properties.getExpireSeconds() * 1000)
                 .build();
     }
 
