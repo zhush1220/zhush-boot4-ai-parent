@@ -35,7 +35,7 @@ CREATE TABLE `sys_dept` (
 -- 角色表扩展：自定义数据范围的部门ID集合（data_scope = 5 时生效，逗号分隔）
 -- ------------------------------------------------------------
 ALTER TABLE `sys_role`
-    ADD COLUMN `data_scope_dept_ids` VARCHAR(1024) NOT NULL DEFAULT '' COMMENT '自定义数据范围的部门ID集合（逗号分隔，data_scope=5 时生效）' AFTER `data_scope`;
+    ADD COLUMN `data_scope_dept_ids` VARCHAR(1024) NULL DEFAULT '' COMMENT '自定义数据范围的部门ID集合（逗号分隔，data_scope=5 时生效）' AFTER `data_scope`;
 
 -- ------------------------------------------------------------
 -- 初始化根部门（可按需修改名称）
