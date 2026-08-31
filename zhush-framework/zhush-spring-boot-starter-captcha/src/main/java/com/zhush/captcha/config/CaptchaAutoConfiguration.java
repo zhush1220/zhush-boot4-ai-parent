@@ -64,6 +64,8 @@ public class CaptchaAutoConfiguration {
         // 资源管理：内置模板存本地内存，classpath 资源加载器读取 jar 内置素材
         ResourceProviders providers = new ResourceProviders();
         providers.registerResourceProvider(new ClassPathResourceProvider());
+        // 背景图统一缩放提供商：把背景图缩放到固定宽度，避免大图导致前端把拼图块等比缩小到过小
+        providers.registerResourceProvider(new ScaledBackgroundResourceProvider());
         LocalMemoryResourceStore resourceStore = new LocalMemoryResourceStore();
         DefaultImageCaptchaResourceManager resourceManager = new DefaultImageCaptchaResourceManager(
                 resourceStore, providers);
@@ -104,14 +106,16 @@ public class CaptchaAutoConfiguration {
                     PathMatchingResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX
                             + resourcePath + "/*.{jpg,jpeg,png,webp}");
             for (org.springframework.core.io.Resource res : found) {
-                backgrounds.add(new Resource("classpath", resourcePath + "/" + res.getFilename()));
+                backgrounds.add(new Resource(ScaledBackgroundResourceProvider.NAME,
+                        resourcePath + "/" + res.getFilename()));
             }
         } catch (IOException e) {
             log.warn("扫描自定义验证码背景图失败，将使用内置背景图: {}", e.getMessage());
         }
         if (backgrounds.isEmpty()) {
             log.info("未在 classpath:{} 下找到自定义背景图，使用 jar 内置背景图", resourcePath);
-            backgrounds.add(new Resource("classpath", "META-INF/cut-image/resource/1.jpg"));
+            backgrounds.add(new Resource(ScaledBackgroundResourceProvider.NAME,
+                    "META-INF/cut-image/resource/1.jpg"));
         }
         return backgrounds;
     }
