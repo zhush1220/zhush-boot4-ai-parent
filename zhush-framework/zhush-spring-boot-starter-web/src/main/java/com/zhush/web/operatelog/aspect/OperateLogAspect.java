@@ -11,6 +11,7 @@ import com.zhush.web.operatelog.core.OperateLogRecord;
 import com.zhush.web.util.ServletUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.skywalking.apm.toolkit.trace.TraceContext;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -103,6 +104,8 @@ public class OperateLogAspect {
             record.setName(resolveName(operateLog, method));
             record.setType(operateLog.type().getType());
             record.setJavaMethod(joinPoint.getTarget().getClass().getName() + "." + method.getName());
+            // 链路追踪 ID：从 SkyWalking 上下文读取，无 agent/无链路时返回 "N/A"，避免落库空值
+            record.setTraceId(StrUtil.blankToDefault(TraceContext.traceId(), "N/A"));
             if (operateLog.recordParams()) {
                 record.setJavaMethodArgs(buildArgs(joinPoint.getArgs()));
             }

@@ -57,6 +57,8 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <!-- 编译保留方法参数名，供 Spring 反射解析 @PathVariable/@RequestParam 等（Spring 6.2+ 已移除反射回退） -->
+                        <parameters>true</parameters>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>

@@ -16,6 +16,12 @@
             <artifactId>zhush-common</artifactId>
         </dependency>
 
+        <!-- Jackson 3：Web 层统一将 Long 序列化为字符串（雪花ID精度，Module Bean 定制） -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

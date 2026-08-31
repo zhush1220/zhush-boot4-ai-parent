@@ -6,8 +6,12 @@ import com.zhush.web.core.handler.SaTokenExceptionAdvice;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 /**
  * zhush-spring-boot-starter-web 自动装配入口
@@ -54,6 +58,28 @@ public class WebAutoConfiguration {
         @ConditionalOnMissingBean
         public DataAccessExceptionAdvice dataAccessExceptionAdvice() {
             return new DataAccessExceptionAdvice();
+        }
+    }
+
+    /**
+     * Jackson 3 长整型序列化配置：统一把 Long/long 序列化为字符串。
+     *
+     * <p>系统主键采用雪花算法（Long），数值超出 JS Number 安全整数范围（2^53-1），
+     * 若按数字序列化，前端读取时会丢失精度（如 {@code 452014217814351872} 被舍入为
+     * {@code 452014217814351900}），导致修改用户时传回错误的主键。统一序列化为字符串可避免该问题。
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = "tools.jackson.databind.ObjectMapper")
+    static class JacksonLongToStringConfiguration {
+
+        @Bean
+        public JsonMapperBuilderCustomizer jacksonLongToStringCustomizer() {
+            return (builder) -> {
+                SimpleModule module = new SimpleModule("zhushLongToStringModule");
+                module.addSerializer(Long.class, ToStringSerializer.instance);
+                module.addSerializer(Long.TYPE, ToStringSerializer.instance);
+                builder.addModule(module);
+            };
         }
     }
 

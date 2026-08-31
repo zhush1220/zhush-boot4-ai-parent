@@ -73,7 +73,9 @@ public class OperateLogService implements OperateLogHandler {
         SysOperateLog operateLog = BeanUtil.copyProperties(record, SysOperateLog.class);
         logExecutor.execute(() -> {
             try {
-                operateLogMapper.insert(operateLog);
+                // insertSelective：忽略 null 字段，由 DB 列默认值兜底（NOT NULL DEFAULT '' 列），
+                // 避免 MyBatis-Flex 显式插入 null 触发 SQLIntegrityConstraintViolationException
+                operateLogMapper.insertSelective(operateLog);
             } catch (Exception e) {
                 log.error("[OperateLog] 操作日志落库失败, log={}", operateLog, e);
             }
