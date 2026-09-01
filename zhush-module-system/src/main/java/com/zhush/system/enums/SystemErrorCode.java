@@ -70,6 +70,9 @@ public enum SystemErrorCode implements IErrorCode {
     // ================ 登录日志 1001 9xx ================
     LOGIN_LOG_NOT_FOUND(1001901, "登录日志不存在：{0}"),
 
+    // ================ 通知公告 1002 0xx ================
+    NOTICE_NOT_FOUND(1002001, "公告不存在：{0}"),
+
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
     ;

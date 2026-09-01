@@ -188,10 +188,10 @@ zhush:
   # 智能体（AgentScope）：默认关闭；启用前请确认模型供应商 api-key 已通过环境变量注入
   agentscope:
     enabled: true
-    default-model: qwen-max
+    default-model: deepseek-chat
     models:
-      dashscope: { type: dashscope, api-key: ${DASHSCOPE_API_KEY:}, model: qwen-max }
-      deepseek:  { type: openai, api-key: ${DEEPSEEK_API_KEY:}, base-url: https://api.deepseek.com/v1, model: deepseek-chat }
+      dashscope: { type: dashscope, api-key: "${DASHSCOPE_API_KEY:}", model: qwen-max }
+      deepseek:  { type: openai, api-key: "${DEEPSEEK_API_KEY:}", base-url: https://api.deepseek.com/v1, model: deepseek-chat }
       local:     { type: ollama, base-url: http://localhost:11434, model: qwen2.5:7b }
     session:
       store: redis

@@ -1,6 +1,6 @@
 package com.zhush.agentscope.session;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.zhush.redis.core.RedisCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

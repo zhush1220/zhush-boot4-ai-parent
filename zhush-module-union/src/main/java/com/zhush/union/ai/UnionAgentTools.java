@@ -1,6 +1,6 @@
 package com.zhush.union.ai;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.zhush.agentscope.tool.AgentTool;
 import com.zhush.agentscope.tool.ToolParam;
 import com.zhush.union.query.UnionProductQuery;
