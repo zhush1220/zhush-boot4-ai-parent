@@ -36,6 +36,12 @@
             <artifactId>zhush-spring-boot-starter-oauth2-server</artifactId>
         </dependency>
 
+        <!-- AgentScope 智能体框架 -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-agentscope</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-test</artifactId>

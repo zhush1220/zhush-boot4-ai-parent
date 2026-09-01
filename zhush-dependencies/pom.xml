@@ -48,6 +48,8 @@
         <weixin.version>4.8.0</weixin.version>
         <tianai-captcha.version>1.5.5</tianai-captcha.version>
         <rocketmq.version>5.5.0</rocketmq.version>
+        <!-- AgentScope Java 2.0 智能体框架（自建 starter-agentscope 封装，不用官方 Boot starter） -->
+        <agentscope.version>2.0.2</agentscope.version>
     </properties>
 
     <dependencyManagement>
@@ -66,6 +68,11 @@
             <dependency>
                 <groupId>com.zhush</groupId>
                 <artifactId>zhush-spring-boot-starter-captcha</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.zhush</groupId>
+                <artifactId>zhush-spring-boot-starter-agentscope</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -412,6 +419,33 @@
                 <groupId>org.apache.rocketmq</groupId>
                 <artifactId>rocketmq-client</artifactId>
                 <version>${rocketmq.version}</version>
+            </dependency>
+
+            <!-- AgentScope 智能体框架：核心 harness + 模型扩展 + Redis 状态存储 -->
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-harness</artifactId>
+                <version>${agentscope.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-extensions-model-dashscope</artifactId>
+                <version>${agentscope.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-extensions-model-openai</artifactId>
+                <version>${agentscope.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-extensions-model-ollama</artifactId>
+                <version>${agentscope.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.agentscope</groupId>
+                <artifactId>agentscope-extensions-redis</artifactId>
+                <version>${agentscope.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

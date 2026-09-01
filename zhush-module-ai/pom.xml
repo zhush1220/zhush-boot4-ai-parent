@@ -13,7 +13,25 @@
     <dependencies>
         <dependency>
             <groupId>com.zhush</groupId>
-            <artifactId>zhush-common</artifactId>
+            <artifactId>zhush-spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-mybatis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-satoken</artifactId>
+        </dependency>
+
+        <!-- AgentScope 智能体框架：统一接入 zhush-module-ai -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-agentscope</artifactId>
         </dependency>
     </dependencies>
 
