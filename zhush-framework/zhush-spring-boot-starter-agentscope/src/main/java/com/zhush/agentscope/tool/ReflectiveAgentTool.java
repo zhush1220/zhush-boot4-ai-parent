@@ -1,6 +1,6 @@
 package com.zhush.agentscope.tool;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.tool.ToolCallParam;
 import reactor.core.publisher.Mono;

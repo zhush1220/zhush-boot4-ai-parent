@@ -1,6 +1,6 @@
 package com.zhush.agentscope.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.zhush.agentscope.agent.AgentDefinitionProvider;
 import com.zhush.agentscope.agent.AgentRegistry;
 import com.zhush.agentscope.agent.DefaultAgentRegistry;

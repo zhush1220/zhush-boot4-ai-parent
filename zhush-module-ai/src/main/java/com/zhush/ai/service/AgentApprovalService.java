@@ -1,7 +1,7 @@
 package com.zhush.ai.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.ai.context.AiSessionContextResolver;
 import com.zhush.ai.entity.AgentApprovalEntity;
@@ -88,7 +88,7 @@ public class AgentApprovalService {
     private String toJson(java.util.Map<String, Object> value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("序列化审批改参失败", e);
         }
     }

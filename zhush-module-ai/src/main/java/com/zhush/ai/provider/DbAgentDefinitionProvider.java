@@ -1,7 +1,7 @@
 package com.zhush.ai.provider;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.zhush.ai.entity.AgentDefinitionEntity;
 import com.zhush.ai.mapper.AgentDefinitionMapper;
