@@ -11,6 +11,7 @@ import com.zhush.ai.param.AgentDefinitionParam;
 import com.zhush.ai.query.AgentDefinitionQuery;
 import com.zhush.ai.vo.AgentDefinitionVO;
 import com.zhush.ai.vo.AgentModelVO;
+import com.zhush.ai.vo.AiModelVO;
 import com.zhush.agentscope.agent.AgentDefinition;
 import com.zhush.agentscope.agent.AgentRegistry;
 import com.zhush.agentscope.config.AgentScopeProperties;
@@ -47,13 +48,16 @@ public class AgentManageService {
     private final AgentRegistry agentRegistry;
     private final ObjectMapper objectMapper;
     private final AgentScopeProperties properties;
+    private final AiModelService modelService;
 
     public AgentManageService(AgentDefinitionMapper definitionMapper, AgentRegistry agentRegistry,
-                              ObjectMapper objectMapper, AgentScopeProperties properties) {
+                              ObjectMapper objectMapper, AgentScopeProperties properties,
+                              AiModelService modelService) {
         this.definitionMapper = definitionMapper;
         this.agentRegistry = agentRegistry;
         this.objectMapper = objectMapper;
         this.properties = properties;
+        this.modelService = modelService;
     }
 
     /**
@@ -128,10 +132,25 @@ public class AgentManageService {
     }
 
     /**
-     * 模型列表（含逻辑名与默认模型名，供前端下拉）。
+     * 模型列表（优先动态模型库启用态，库空回退 yaml，供前端下拉）。
      */
     public List<AgentModelVO> models() {
         List<AgentModelVO> result = new ArrayList<>();
+        List<AiModelVO> dbModels = modelService.listEnabled();
+        for (AiModelVO db : dbModels) {
+            AgentModelVO vo = new AgentModelVO();
+            vo.setCode(db.getCode());
+            vo.setType(db.getType());
+            vo.setModel(db.getModel());
+            vo.setName(db.getName());
+            vo.setCapability(db.getCapability());
+            vo.setIsDefault(db.getIsDefault());
+            result.add(vo);
+        }
+        if (!result.isEmpty()) {
+            return result;
+        }
+        // 回退 yaml 配置（兼容存量）
         Map<String, AgentScopeProperties.ModelProperties> models = properties.getModels();
         if (models != null) {
             for (Map.Entry<String, AgentScopeProperties.ModelProperties> entry : models.entrySet()) {

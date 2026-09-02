@@ -8,9 +8,13 @@ import com.zhush.agentscope.context.DefaultSessionContextResolver;
 import com.zhush.agentscope.context.SessionContextResolver;
 import com.zhush.agentscope.event.AgentEventListener;
 import com.zhush.agentscope.event.AgentEventPublisher;
+import com.zhush.agentscope.model.AgentModelResolver;
 import com.zhush.agentscope.model.DefaultModelFactory;
+import com.zhush.agentscope.model.ModelConfigProvider;
 import com.zhush.agentscope.safety.DefaultToolApprovalHandler;
 import com.zhush.agentscope.safety.NullToolApprovalHandler;
+import com.zhush.agentscope.safety.SensitiveWordProvider;
+import com.zhush.agentscope.safety.SensitiveWordResolver;
 import com.zhush.agentscope.safety.ToolApprovalHandler;
 import com.zhush.agentscope.session.AgentSessionManager;
 import com.zhush.agentscope.session.AgentSessionStore;
@@ -25,10 +29,14 @@ import com.zhush.redis.core.RedisCache;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 import java.util.List;
 
@@ -114,6 +122,37 @@ public class AgentScopeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public AgentModelResolver agentModelResolver(ObjectProvider<ModelConfigProvider> providers,
+                                                 AgentScopeProperties properties) {
+        List<ModelConfigProvider> list = properties.getDynamicConfig().isEnabled()
+                ? providers.orderedStream().toList() : List.of();
+        return new AgentModelResolver(list, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SensitiveWordResolver sensitiveWordResolver(ObjectProvider<SensitiveWordProvider> providers,
+                                                       AgentScopeProperties properties) {
+        List<SensitiveWordProvider> list = properties.getDynamicConfig().isEnabled()
+                ? providers.orderedStream().toList() : List.of();
+        return new SensitiveWordResolver(list, properties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DynamicConfigRefreshCoordinator dynamicConfigRefreshCoordinator(AgentModelResolver modelResolver,
+                                                                           SensitiveWordResolver sensitiveWordResolver,
+                                                                           AgentScopeProperties properties) {
+        DynamicConfigRefreshCoordinator coordinator =
+                new DynamicConfigRefreshCoordinator(modelResolver, sensitiveWordResolver);
+        if (properties.getDynamicConfig().isEnabled()) {
+            coordinator.startScheduled(properties.getDynamicConfig().getRefreshInterval());
+        }
+        return coordinator;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public AgentTemplate agentTemplate(AgentRegistry agentRegistry,
                                        ToolkitRegistry toolkitRegistry,
                                        DefaultModelFactory defaultModelFactory,
@@ -122,9 +161,32 @@ public class AgentScopeAutoConfiguration {
                                        SessionContextResolver sessionContextResolver,
                                        ToolApprovalHandler toolApprovalHandler,
                                        AgentScopeProperties properties,
-                                       ObjectMapper objectMapper) {
-        return new DefaultAgentTemplate(agentRegistry, toolkitRegistry, defaultModelFactory, agentSessionManager,
-                agentEventPublisher, sessionContextResolver, toolApprovalHandler, properties, objectMapper);
+                                       ObjectMapper objectMapper,
+                                       AgentModelResolver modelResolver,
+                                       SensitiveWordResolver sensitiveWordResolver,
+                                       DynamicConfigRefreshCoordinator refreshCoordinator) {
+        DefaultAgentTemplate template = new DefaultAgentTemplate(agentRegistry, toolkitRegistry,
+                defaultModelFactory, agentSessionManager, agentEventPublisher, sessionContextResolver,
+                toolApprovalHandler, properties, objectMapper, modelResolver, sensitiveWordResolver);
+        refreshCoordinator.addEvictionListener(template::evictAllAgentCache);
+        return template;
+    }
+
+    /**
+     * 多实例配置刷新广播订阅（Redis pub/sub，频道 {@link DynamicConfigRefreshCoordinator#REFRESH_CHANNEL}）。
+     */
+    @Bean
+    @ConditionalOnBean(RedisConnectionFactory.class)
+    @ConditionalOnProperty(prefix = "zhush.agentscope.dynamic-config", name = "broadcast",
+            havingValue = "true", matchIfMissing = true)
+    public RedisMessageListenerContainer agentConfigRefreshListenerContainer(
+            RedisConnectionFactory connectionFactory,
+            DynamicConfigRefreshCoordinator refreshCoordinator) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.addMessageListener((message, pattern) -> refreshCoordinator.refreshAll(),
+                new ChannelTopic(DynamicConfigRefreshCoordinator.REFRESH_CHANNEL));
+        return container;
     }
 
     /**

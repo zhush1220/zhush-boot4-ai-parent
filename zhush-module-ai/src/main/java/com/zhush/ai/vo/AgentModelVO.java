@@ -19,9 +19,18 @@ public class AgentModelVO implements Serializable {
     /** 逻辑名（如 dashscope / deepseek / local） */
     private String code;
 
+    /** 展示名 */
+    private String name;
+
     /** 供应商标识（dashscope / openai / ollama） */
     private String type;
 
     /** 默认模型名 */
     private String model;
+
+    /** 能力类型：text / image / video / audio */
+    private String capability;
+
+    /** 是否默认模型：0-否 1-是 */
+    private Integer isDefault;
 }

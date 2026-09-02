@@ -207,6 +207,10 @@ zhush:
       store: redis
       ttl: 24h
     request-timeout: 60s
+    dynamic-config:            # 模型/敏感词库表动态化（空库自动回退 yaml）
+      enabled: true
+      refresh-interval: 300s   # 定时兜底刷新周期
+      broadcast: true          # 多实例 Redis pub/sub 广播
     safety:
       approval-enabled: true
       sensitive-keywords: [删除, 转账, 下单, 退款]

@@ -80,6 +80,10 @@ public enum SystemErrorCode implements IErrorCode {
     // ================ 通知公告 1002 0xx ================
     NOTICE_NOT_FOUND(1002001, "公告不存在：{0}"),
 
+    // ================ 岗位 1002 2xx ================
+    POST_NOT_FOUND(1002201, "岗位不存在：{0}"),
+    POST_CODE_DUPLICATE(1002202, "岗位编码已存在：{0}"),
+
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
     JOB_SCHEDULER_DISABLED(2001002, "定时任务调度未启用，请开启 zhush.job.enabled"),

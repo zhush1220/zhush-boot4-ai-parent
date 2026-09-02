@@ -10,6 +10,7 @@ import com.zhush.system.vo.OperateLogVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +51,16 @@ public class OperateLogController {
     @Operation(summary = "操作日志详情")
     public Result<OperateLogVO> get(@Parameter(description = "日志ID") @PathVariable Long id) {
         return Result.success(operateLogService.getOperateLog(id));
+    }
+
+    /**
+     * 导出操作日志
+     */
+    @GetMapping("/export")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:operate-log:query")
+    @Operation(summary = "导出操作日志")
+    public void export(@Valid OperateLogQuery query, HttpServletResponse response) {
+        operateLogService.exportOperateLog(query, response);
     }
 
 }

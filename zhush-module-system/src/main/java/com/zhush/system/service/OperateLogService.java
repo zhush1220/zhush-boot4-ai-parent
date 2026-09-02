@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.exception.GlobalErrorCode;
 import com.zhush.common.response.PageResult;
+import com.zhush.excel.core.ExcelUtils;
 import com.zhush.mybatis.core.query.QueryWrapperX;
 import com.zhush.satoken.core.LoginTypeConstants;
 import com.zhush.satoken.core.StpAdminUtil;
@@ -15,11 +16,16 @@ import com.zhush.system.query.OperateLogQuery;
 import com.zhush.system.vo.OperateLogVO;
 import com.zhush.web.operatelog.core.OperateLogHandler;
 import com.zhush.web.operatelog.core.OperateLogRecord;
+import com.zhush.web.operatelog.enums.OperateTypeEnum;
 import io.github.linpeilie.Converter;
 import jakarta.annotation.PreDestroy;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,6 +46,17 @@ import static com.zhush.common.exception.ServiceExceptionUtil.assertNotNull;
 @Slf4j
 @Service
 public class OperateLogService implements OperateLogHandler {
+
+    /**
+     * 导出日志最大行数（防止一次性导出过大数据量）
+     */
+    private static final long MAX_EXPORT_ROWS = 10000;
+
+    /**
+     * 时间格式化（用于导出 Excel）
+     */
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
      * 异步落库线程池：单线程顺序写入，队列打满时丢弃并告警（日志不能拖垮业务）
@@ -86,6 +103,50 @@ public class OperateLogService implements OperateLogHandler {
      * 操作日志分页
      */
     public PageResult<OperateLogVO> getOperateLogPage(OperateLogQuery query) {
+        QueryWrapperX queryWrapper = buildQueryWrapper(query);
+        queryWrapper.orderBy("id", false);
+        Page<SysOperateLog> page = operateLogMapper.selectPageX(query, queryWrapper);
+        List<OperateLogVO> list = converter.convert(page.getRecords(), OperateLogVO.class);
+        return PageResult.of(list, page.getTotalRow());
+    }
+
+    /**
+     * 操作日志详情
+     */
+    public OperateLogVO getOperateLog(Long id) {
+        SysOperateLog operateLog = operateLogMapper.selectOneById(id);
+        assertNotNull(operateLog, SystemErrorCode.OPERATE_LOG_NOT_FOUND, id);
+        return converter.convert(operateLog, OperateLogVO.class);
+    }
+
+    /**
+     * 导出操作日志（当前查询条件下的数据，最多导出 {@link #MAX_EXPORT_ROWS} 条）
+     *
+     * <p>动态表头方式写出到响应流，操作类型/用户类型/时间已转为可读文案。
+     */
+    public void exportOperateLog(OperateLogQuery query, HttpServletResponse response) {
+        QueryWrapperX queryWrapper = buildQueryWrapper(query);
+        queryWrapper.orderBy("id", false);
+        queryWrapper.limit(MAX_EXPORT_ROWS);
+        List<SysOperateLog> records = operateLogMapper.selectListByQuery(queryWrapper);
+
+        List<List<String>> head = List.of(
+                List.of("日志ID"), List.of("链路追踪ID"), List.of("操作人ID"), List.of("操作人类型"),
+                List.of("所属模块"), List.of("操作名称"), List.of("操作类型"), List.of("请求方式"),
+                List.of("请求地址"), List.of("操作人IP"), List.of("操作时间"), List.of("耗时(ms)"),
+                List.of("结果码"), List.of("结果信息"));
+        List<List<Object>> data = records.stream().map(log -> List.<Object>of(
+                log.getId(), log.getTraceId(), log.getUserId(), userTypeLabel(log.getUserType()),
+                log.getModule(), log.getName(), operateTypeLabel(log.getType()), log.getRequestMethod(),
+                log.getRequestUrl(), log.getUserIp(), formatTime(log.getStartTime()), log.getDuration(),
+                log.getResultCode(), log.getResultMsg())).toList();
+        ExcelUtils.export(response, "操作日志", "操作日志", head, data);
+    }
+
+    /**
+     * 构建操作日志查询条件（分页与导出共用）
+     */
+    private QueryWrapperX buildQueryWrapper(OperateLogQuery query) {
         QueryWrapperX queryWrapper = QueryWrapperX.create()
                 .eq(SysOperateLog::getUserId, query.getUserId())
                 .eq(SysOperateLog::getUserType, query.getUserType())
@@ -101,19 +162,40 @@ public class OperateLogService implements OperateLogHandler {
         } else if (Boolean.FALSE.equals(query.getSuccess())) {
             queryWrapper.ne(SysOperateLog::getResultCode, GlobalErrorCode.SUCCESS.getCode());
         }
-        queryWrapper.orderBy("id", false);
-        Page<SysOperateLog> page = operateLogMapper.selectPageX(query, queryWrapper);
-        List<OperateLogVO> list = converter.convert(page.getRecords(), OperateLogVO.class);
-        return PageResult.of(list, page.getTotalRow());
+        return queryWrapper;
     }
 
     /**
-     * 操作日志详情
+     * 操作类型中文文案
      */
-    public OperateLogVO getOperateLog(Long id) {
-        SysOperateLog operateLog = operateLogMapper.selectOneById(id);
-        assertNotNull(operateLog, SystemErrorCode.OPERATE_LOG_NOT_FOUND, id);
-        return converter.convert(operateLog, OperateLogVO.class);
+    private static String operateTypeLabel(Integer type) {
+        if (type == null) {
+            return "";
+        }
+        return Arrays.stream(OperateTypeEnum.values())
+                .filter(e -> e.getType() == type)
+                .map(OperateTypeEnum::getDescription)
+                .findFirst()
+                .orElse(String.valueOf(type));
+    }
+
+    /**
+     * 用户类型中文文案
+     */
+    private static String userTypeLabel(String userType) {
+        if (userType == null) {
+            return "";
+        }
+        return "admin".equals(userType) ? "管理端"
+                : "member".equals(userType) ? "会员端"
+                : userType;
+    }
+
+    /**
+     * 时间格式化为字符串，避免 Excel 序列化 LocalDateTime 异常
+     */
+    private static String formatTime(LocalDateTime time) {
+        return time == null ? "" : time.format(DATE_TIME_FORMATTER);
     }
 
     // ================ 内部方法 ================

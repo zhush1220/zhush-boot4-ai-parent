@@ -29,11 +29,19 @@ public enum AiErrorCode implements IErrorCode {
     MODEL_NOT_FOUND(1003101, "模型不存在：{0}"),
     MODEL_NOT_SUPPORTED(1003102, "暂不支持该模型：{0}"),
     MODEL_QUOTA_EXCEED(1003103, "模型调用次数已用尽"),
+    MODEL_CODE_DUPLICATE(1003104, "模型编码已存在：{0}"),
+    MODEL_REFERENCED(1003105, "模型被启用智能体引用，不能停用/删除：{0}"),
+    MODEL_DEFAULT_CANNOT_DISABLE(1003106, "默认模型不能停用，请先切换默认模型"),
+    MODEL_TEST_FAIL(2003004, "模型连接测试失败：{0}"),
 
     // ================ 知识库 1003 2xx ================
     KNOWLEDGE_NOT_FOUND(1003201, "知识库不存在：{0}"),
     KNOWLEDGE_DOC_PARSE_FAIL(1003202, "知识文档解析失败：{0}"),
     EMBEDDING_FAIL(1003203, "向量化处理失败"),
+
+    // ================ 敏感词 1003 3xx ================
+    SENSITIVE_WORD_NOT_FOUND(1003301, "敏感词不存在：{0}"),
+    SENSITIVE_WORD_DUPLICATE(1003302, "敏感词已存在：{0}"),
 
     // ================ 上游调用 2003 0xx ================
     UPSTREAM_TIMEOUT(2003001, "AI 服务响应超时"),
