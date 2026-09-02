@@ -37,6 +37,9 @@ public class SysAdminUser extends BaseEntity implements Serializable {
     /** 头像地址 */
     private String avatar;
 
+    /** 性别：0-未知 1-男 2-女 */
+    private Integer sex;
+
     /** 手机号 */
     private String mobile;
 
