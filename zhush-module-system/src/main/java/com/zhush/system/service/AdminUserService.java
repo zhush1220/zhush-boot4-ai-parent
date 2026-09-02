@@ -78,9 +78,14 @@ public class AdminUserService {
         assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, param.getId());
 
         SysAdminUser update = converter.convert(param, SysAdminUser.class);
-        // 账号与密码不在此更新
+        // 账号不在此更新
         update.setUsername(null);
-        update.setPassword(null);
+        // 密码：传了（非空）才加密更新，修改资料时密码可选；为空置 null 则不更新原密码
+        if (StrUtil.isNotBlank(param.getPassword())) {
+            update.setPassword(BCrypt.hashpw(param.getPassword()));
+        } else {
+            update.setPassword(null);
+        }
         adminUserMapper.update(update);
 
         // roleIds 非 null 时覆盖更新用户角色

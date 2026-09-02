@@ -70,11 +70,19 @@ public enum SystemErrorCode implements IErrorCode {
     // ================ 登录日志 1001 9xx ================
     LOGIN_LOG_NOT_FOUND(1001901, "登录日志不存在：{0}"),
 
+    // ================ 定时任务 1002 1xx ================
+    JOB_NOT_FOUND(1002101, "定时任务不存在：{0}"),
+    JOB_NAME_DUPLICATE(1002102, "同名同组定时任务已存在：{0}"),
+    JOB_INVOKE_TARGET_INVALID(1002103, "调用目标无效：{0}"),
+    JOB_CRON_INVALID(1002104, "Cron 表达式非法：{0}"),
+    JOB_LOG_NOT_FOUND(1002105, "执行记录不存在：{0}"),
+
     // ================ 通知公告 1002 0xx ================
     NOTICE_NOT_FOUND(1002001, "公告不存在：{0}"),
 
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
+    JOB_SCHEDULER_DISABLED(2001002, "定时任务调度未启用，请开启 zhush.job.enabled"),
     ;
 
     private final int code;

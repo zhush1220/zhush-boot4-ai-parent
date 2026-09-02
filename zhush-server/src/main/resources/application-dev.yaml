@@ -44,6 +44,16 @@ spring:
         url-pattern: /druid/*
         login-username: admin
         login-password: your_password
+  # 定时任务调度器（Quartz JDBC 持久化；建表脚本：sql/07_quartz.sql）
+  quartz:
+    job-store-type: jdbc            # memory（内存，重启丢失）/ jdbc（持久化）
+    jdbc:
+      initialize-schema: never      # 表结构由 sql/07_quartz.sql 维护，不由框架自动建表
+    properties:
+      org.quartz.scheduler.instanceName: zhushScheduler
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.threadPool.threadCount: 10
+      # org.quartz.jobStore.isClustered: true   # 多实例集群部署时开启
 
 mybatis-flex:
   mapper-locations: classpath*:mapper/**/*.xml
@@ -164,10 +174,10 @@ zhush:
       exposed-headers: Content-Disposition   # 需要前端读取的响应头(如文件下载)
       allow-credentials: true
       max-age: 3600
-  # 定时任务（Quartz）：默认关闭；启用时改为 true 并放开下方 spring.quartz 配置
+  # 定时任务（Quartz）：任务管理模块（系统监控-定时任务）启用，持久化配置见下方 spring.quartz（需先执行 sql/07_quartz.sql）
   job:
-    enabled: false
-    # default-group: DEFAULT    # 未指定分组时的默认分组
+    enabled: true
+    # default-group: DEFAULT    # 未指定分组时的默认分组（与 sys_job.job_group 默认值一致）
   # 消息队列（RocketMQ）：默认关闭；启用时改为 true 并确认 namesrv-addr 指向实际地址
   mq:
     enabled: false
@@ -201,18 +211,7 @@ zhush:
       approval-enabled: true
       sensitive-keywords: [删除, 转账, 下单, 退款]
 
-# --- 启用定时任务（zhush.job.enabled=true）时同步放开：Quartz 持久化配置 ---
-# 建表脚本：sql/07_quartz.sql（MySQL InnoDB 16 张表）
-# spring:
-#   quartz:
-#     job-store-type: jdbc          # memory（内存，重启丢失）/ jdbc（持久化）
-#     jdbc:
-#       initialize-schema: never    # 表结构由 sql/07_quartz.sql 维护，不由框架自动建表
-#     properties:
-#       org.quartz.scheduler.instanceName: zhushScheduler
-#       org.quartz.scheduler.instanceId: AUTO
-#       org.quartz.threadPool.threadCount: 10
-#       org.quartz.jobStore.isClustered: true   # 多实例集群部署时开启
+# --- 定时任务（zhush.job.enabled=true）已启用：Quartz 持久化配置已合入上方 spring.quartz ---
 
 # ES 健康检查随搜索开关同步启停（启用搜索后改为 true）
 management:

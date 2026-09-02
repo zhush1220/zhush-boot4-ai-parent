@@ -19,6 +19,7 @@ CREATE TABLE `sys_admin_user` (
     `nickname`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '昵称',
     `real_name`   VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '真实姓名',
     `avatar`      VARCHAR(512) NOT NULL DEFAULT '' COMMENT '头像地址',
+    `sex`         TINYINT      NOT NULL DEFAULT 0 COMMENT '性别：0-未知 1-男 2-女',
     `mobile`      VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '手机号',
     `email`       VARCHAR(128) NOT NULL DEFAULT '' COMMENT '邮箱',
     `dept_id`     BIGINT           NULL COMMENT '部门ID（预留）',

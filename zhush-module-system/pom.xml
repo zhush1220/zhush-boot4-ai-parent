@@ -48,10 +48,16 @@
             <artifactId>zhush-spring-boot-starter-biz-ip</artifactId>
         </dependency>
 
-        <!-- 行为验证码（tianai-captcha 封装，登录验证码） -->
+        <!-- 行为验证码（tianai-captcha 封装，登录验证码）-->
         <dependency>
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-captcha</artifactId>
+        </dependency>
+        
+        <!-- 定时任务（Quartz 封装，任务管理页面调度） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-job</artifactId>
         </dependency>
 
         <dependency>
