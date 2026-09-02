@@ -46,8 +46,11 @@ public class SysAdminUser extends BaseEntity implements Serializable {
     /** 邮箱 */
     private String email;
 
-    /** 部门ID（预留） */
+    /** 部门ID */
     private Long deptId;
+
+    /** 岗位ID */
+    private Long postId;
 
     /** 状态：0-禁用 1-启用 */
     private Integer status;

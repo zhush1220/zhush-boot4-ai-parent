@@ -66,4 +66,16 @@ public interface AgentTemplate {
      * @param sessionId 会话 ID
      */
     void clearSession(String sessionId);
+
+    /**
+     * 失效指定智能体的运行时缓存（模型配置变更后需重建）。
+     *
+     * @param agentName 智能体名（null 时失效全部）
+     */
+    void evictAgentCache(String agentName);
+
+    /**
+     * 失效全部智能体运行时缓存。
+     */
+    void evictAllAgentCache();
 }

@@ -54,6 +54,12 @@
             <artifactId>zhush-spring-boot-starter-captcha</artifactId>
         </dependency>
         
+        <!-- Excel 导出（操作日志/登录日志导出）-->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-excel</artifactId>
+        </dependency>
+        
         <!-- 定时任务（Quartz 封装，任务管理页面调度） -->
         <dependency>
             <groupId>com.zhush</groupId>

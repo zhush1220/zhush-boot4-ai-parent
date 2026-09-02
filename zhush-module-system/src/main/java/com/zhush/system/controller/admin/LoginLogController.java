@@ -10,6 +10,7 @@ import com.zhush.system.vo.LoginLogVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +51,16 @@ public class LoginLogController {
     @Operation(summary = "登录日志详情")
     public Result<LoginLogVO> get(@Parameter(description = "日志ID") @PathVariable Long id) {
         return Result.success(loginLogService.getLoginLog(id));
+    }
+
+    /**
+     * 导出登录日志
+     */
+    @GetMapping("/export")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:login-log:query")
+    @Operation(summary = "导出登录日志")
+    public void export(@Valid LoginLogQuery query, HttpServletResponse response) {
+        loginLogService.exportLoginLog(query, response);
     }
 
 }

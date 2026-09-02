@@ -73,6 +73,11 @@ public class AgentScopeProperties {
     private Safety safety = new Safety();
 
     /**
+     * 动态配置（模型/敏感词库表化）
+     */
+    private DynamicConfig dynamicConfig = new DynamicConfig();
+
+    /**
      * 模型供应商配置项
      */
     @Data
@@ -119,5 +124,27 @@ public class AgentScopeProperties {
          * 触发审批的敏感关键词（命中工具名/入参即挂起）
          */
         private List<String> sensitiveKeywords = List.of();
+    }
+
+    /**
+     * 动态配置项（模型/敏感词从库表加载）
+     */
+    @Data
+    public static class DynamicConfig {
+
+        /**
+         * 动态配置总开关（false 时回退 yaml 配置）
+         */
+        private boolean enabled = true;
+
+        /**
+         * 定时兜底刷新周期（默认 5 分钟）
+         */
+        private Duration refreshInterval = Duration.ofMinutes(5);
+
+        /**
+         * 多实例 Redis pub/sub 广播开关
+         */
+        private boolean broadcast = true;
     }
 }

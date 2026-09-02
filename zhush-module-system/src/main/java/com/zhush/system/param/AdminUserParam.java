@@ -50,6 +50,9 @@ public class AdminUserParam {
     @Schema(description = "部门ID")
     private Long deptId;
 
+    @Schema(description = "岗位ID")
+    private Long postId;
+
     @Schema(description = "状态：0-禁用 1-启用（不传默认启用）")
     private Integer status;
 

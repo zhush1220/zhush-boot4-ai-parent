@@ -16,8 +16,11 @@ import com.zhush.agentscope.event.AgentFinishedEvent;
 import com.zhush.agentscope.event.AgentStartedEvent;
 import com.zhush.agentscope.event.AgentTextDeltaEvent;
 import com.zhush.agentscope.event.AgentToolCalledEvent;
+import com.zhush.agentscope.model.AgentModelResolver;
 import com.zhush.agentscope.model.DefaultModelFactory;
 import com.zhush.agentscope.safety.ApprovalRequest;
+import com.zhush.agentscope.safety.SensitiveWordMatch;
+import com.zhush.agentscope.safety.SensitiveWordResolver;
 import com.zhush.agentscope.safety.ToolApprovalHandler;
 import com.zhush.agentscope.session.AgentSessionManager;
 import com.zhush.agentscope.session.SessionMessage;
@@ -72,6 +75,8 @@ public class DefaultAgentTemplate implements AgentTemplate {
     private final ToolApprovalHandler approvalHandler;
     private final AgentScopeProperties properties;
     private final ObjectMapper objectMapper;
+    private final AgentModelResolver modelResolver;
+    private final SensitiveWordResolver sensitiveWordResolver;
 
     private final ConcurrentHashMap<String, HarnessAgent> harnessCache = new ConcurrentHashMap<>();
 
@@ -79,7 +84,8 @@ public class DefaultAgentTemplate implements AgentTemplate {
                                 DefaultModelFactory modelFactory, AgentSessionManager sessionManager,
                                 AgentEventPublisher eventPublisher, SessionContextResolver contextResolver,
                                 ToolApprovalHandler approvalHandler, AgentScopeProperties properties,
-                                ObjectMapper objectMapper) {
+                                ObjectMapper objectMapper, AgentModelResolver modelResolver,
+                                SensitiveWordResolver sensitiveWordResolver) {
         this.agentRegistry = agentRegistry;
         this.toolkitRegistry = toolkitRegistry;
         this.modelFactory = modelFactory;
@@ -89,6 +95,8 @@ public class DefaultAgentTemplate implements AgentTemplate {
         this.approvalHandler = approvalHandler;
         this.properties = properties;
         this.objectMapper = objectMapper;
+        this.modelResolver = modelResolver;
+        this.sensitiveWordResolver = sensitiveWordResolver;
     }
 
     @Override
@@ -179,6 +187,20 @@ public class DefaultAgentTemplate implements AgentTemplate {
         sessionManager.clearSession(sessionId);
     }
 
+    @Override
+    public void evictAgentCache(String agentName) {
+        if (agentName == null) {
+            harnessCache.clear();
+        } else {
+            harnessCache.remove(agentName);
+        }
+    }
+
+    @Override
+    public void evictAllAgentCache() {
+        harnessCache.clear();
+    }
+
     // ---------------------------------------------------------------------
     // 内部：构建 HarnessAgent / RuntimeContext / 历史
     // ---------------------------------------------------------------------
@@ -218,11 +240,12 @@ public class DefaultAgentTemplate implements AgentTemplate {
         if (model == null || model.isEmpty()) {
             model = properties.getDefaultModel();
         }
-        AgentScopeProperties.ModelProperties mp = properties.getModels().get(model);
+        AgentScopeProperties.ModelProperties mp = modelResolver.resolve(model);
         if (mp != null) {
             mp.setType(mp.getType() == null ? "dashscope" : mp.getType());
             return modelFactory.create(mp);
         }
+        log.warn("模型未命中动态池与 yaml 配置, 尝试按 type:model 解析: {}", model);
         return modelFactory.resolve(model);
     }
 
@@ -353,12 +376,24 @@ public class DefaultAgentTemplate implements AgentTemplate {
     private Function<ToolCallParam, Optional<ToolResultBlock>> approvalGate(AgentDefinition def, RegisteredTool rt) {
         AgentScopeProperties.Safety safety = properties.getSafety();
         String toolName = rt.getName();
-        boolean keywordHit = safety.getSensitiveKeywords().stream()
-                .anyMatch(k -> toolName.contains(k));
-        if (!safety.isApprovalEnabled() || (!rt.isRequiresApproval() && !keywordHit)) {
-            return p -> Optional.empty();
-        }
+        // 动态分级检测在调用时执行（敏感词库可运行期变更），命中词取最高级别
         return p -> {
+            String inputJson = toJson(p.getInput());
+            SensitiveWordMatch match = sensitiveWordResolver.match(toolName, inputJson);
+            if (match.isHit() && match.getLevel() == SensitiveWordMatch.LEVEL_BLOCK) {
+                log.warn("敏感词命中(拦截级), 拒绝执行, tool={}, words={}", toolName, match.getWords());
+                return Optional.of(ToolResultBlock.error(
+                        "操作被拦截：检测到敏感内容" + match.getWords() + "，请联系管理员"));
+            }
+            if (match.isHit() && match.getLevel() == SensitiveWordMatch.LEVEL_NOTICE) {
+                log.warn("敏感词命中(提示级), 放行留痕, tool={}, words={}", toolName, match.getWords());
+                return Optional.empty();
+            }
+            boolean needApproval = rt.isRequiresApproval()
+                    || (match.isHit() && match.getLevel() >= SensitiveWordMatch.LEVEL_APPROVAL);
+            if (!safety.isApprovalEnabled() || !needApproval) {
+                return Optional.empty();
+            }
             AgentContext ctx = contextResolver.resolve();
             String sessionId = p.getRuntimeContext() == null ? null : p.getRuntimeContext().getSessionId();
             ApprovalRequest request = ApprovalRequest.builder()
@@ -387,7 +422,7 @@ public class DefaultAgentTemplate implements AgentTemplate {
                     .time(Instant.now())
                     .approvalId(request.getApprovalId())
                     .toolName(toolName)
-                    .arguments(toJson(p.getInput()))
+                    .arguments(inputJson)
                     .build();
             publish(approvalEvent);
             log.info("敏感工具触发审批, approvalId={}, tool={}", request.getApprovalId(), toolName);
