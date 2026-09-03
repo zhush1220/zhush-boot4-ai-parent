@@ -39,11 +39,7 @@ spring:
           config:
             multi-statement-allow: true
       stat-view-servlet:
-        enabled: true
-        allow: # 设置白名单，不填则允许所有访问
-        url-pattern: /druid/*
-        login-username: admin
-        login-password: your_password
+        enabled: false   # 关闭 Druid Web 暴露，统计改由 /admin/system/monitor/druid/** 授权接口输出
   # 定时任务调度器（Quartz JDBC 持久化；建表脚本：sql/07_quartz.sql）
   quartz:
     job-store-type: jdbc            # memory（内存，重启丢失）/ jdbc（持久化）
