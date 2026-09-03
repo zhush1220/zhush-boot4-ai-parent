@@ -140,9 +140,10 @@ public class AgentScopeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public DynamicConfigRefreshCoordinator dynamicConfigRefreshCoordinator(AgentModelResolver modelResolver,
-                                                                           SensitiveWordResolver sensitiveWordResolver,
-                                                                           AgentScopeProperties properties) {
+    public DynamicConfigRefreshCoordinator dynamicConfigRefreshCoordinator(
+            ObjectProvider<AgentModelResolver> modelResolver,
+            ObjectProvider<SensitiveWordResolver> sensitiveWordResolver,
+            AgentScopeProperties properties) {
         DynamicConfigRefreshCoordinator coordinator =
                 new DynamicConfigRefreshCoordinator(modelResolver, sensitiveWordResolver);
         if (properties.getDynamicConfig().isEnabled()) {

@@ -84,6 +84,12 @@ public enum SystemErrorCode implements IErrorCode {
     POST_NOT_FOUND(1002201, "岗位不存在：{0}"),
     POST_CODE_DUPLICATE(1002202, "岗位编码已存在：{0}"),
 
+    // ================ 系统监控 1002 3xx ================
+    MONITOR_DRUID_DISABLED(1002301, "Druid 监控统计未启用：{0}"),
+    MONITOR_CACHE_KEY_NOT_FOUND(1002311, "缓存键不存在：{0}"),
+    MONITOR_CACHE_KEY_FORBIDDEN(1002312, "该缓存键为系统关键路径，禁止删除：{0}"),
+    MONITOR_CACHE_SCAN_FAILED(1002313, "缓存键扫描失败：{0}"),
+
     // ================ 系统级 2001 0xx ================
     SYSTEM_CONFIG_MISSING(2001001, "系统配置项缺失：{0}"),
     JOB_SCHEDULER_DISABLED(2001002, "定时任务调度未启用，请开启 zhush.job.enabled"),

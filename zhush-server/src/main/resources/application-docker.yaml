@@ -21,11 +21,7 @@ spring:
           config:
             multi-statement-allow: true
       stat-view-servlet:
-        enabled: true
-        allow: # 设置白名单，不填则允许所有访问
-        url-pattern: /druid/*
-        login-username: admin
-        login-password: your_password
+        enabled: false   # 关闭 Druid Web 暴露，统计改由 /admin/system/monitor/druid/** 授权接口输出
 
 mybatis-flex:
   mapper-locations: classpath*:mapper/**/*.xml
