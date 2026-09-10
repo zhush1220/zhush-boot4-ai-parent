@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 管理员用户管理接口
  *
@@ -78,6 +80,19 @@ public class AdminUserController {
     @Operation(summary = "删除管理员")
     public Result<Void> delete(@Parameter(description = "用户ID") @PathVariable Long id) {
         userService.deleteUser(id);
+        return Result.success();
+    }
+
+    /**
+     * 批量删除管理员
+     */
+    @DeleteMapping("/batch")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:user:delete")
+    @Idempotent
+    @OperateLog(module = "用户管理", type = OperateTypeEnum.DELETE)
+    @Operation(summary = "批量删除管理员")
+    public Result<Void> deleteBatch(@Parameter(description = "用户ID列表") @RequestBody List<Long> ids) {
+        userService.deleteUserBatch(ids);
         return Result.success();
     }
 

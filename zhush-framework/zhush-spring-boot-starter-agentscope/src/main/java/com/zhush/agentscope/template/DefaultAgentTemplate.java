@@ -238,15 +238,29 @@ public class DefaultAgentTemplate implements AgentTemplate {
     private Model resolveModel(AgentDefinition def) {
         String model = def.getModel();
         if (model == null || model.isEmpty()) {
-            model = properties.getDefaultModel();
+            model = modelResolver.resolveDefaultCode();
         }
         AgentScopeProperties.ModelProperties mp = modelResolver.resolve(model);
         if (mp != null) {
             mp.setType(mp.getType() == null ? "dashscope" : mp.getType());
             return modelFactory.create(mp);
         }
-        log.warn("模型未命中动态池与 yaml 配置, 尝试按 type:model 解析: {}", model);
-        return modelFactory.resolve(model);
+        // 引用模型不可用（未启用/未配置）→ 回退默认模型，避免裸解析硬编码失败
+        return resolveFallback(model);
+    }
+
+    private Model resolveFallback(String preferredModel) {
+        String defaultModel = modelResolver.resolveDefaultCode();
+        if (defaultModel != null && !defaultModel.isEmpty() && !defaultModel.equals(preferredModel)) {
+            AgentScopeProperties.ModelProperties mp = modelResolver.resolve(defaultModel);
+            if (mp != null) {
+                mp.setType(mp.getType() == null ? "dashscope" : mp.getType());
+                log.info("模型 {} 不可用, 回退默认模型 {}", preferredModel, defaultModel);
+                return modelFactory.create(mp);
+            }
+        }
+        log.warn("模型未命中动态池与 yaml 配置, 尝试按 type:model 解析: {}", preferredModel);
+        return modelFactory.resolve(preferredModel);
     }
 
     private RuntimeContext runtimeContext(AgentDefinition def, String sessionId, AgentContext ctx) {

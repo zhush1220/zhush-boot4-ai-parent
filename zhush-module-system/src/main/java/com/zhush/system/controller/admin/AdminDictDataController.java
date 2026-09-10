@@ -77,6 +77,18 @@ public class AdminDictDataController {
     }
 
     /**
+     * 批量删除字典数据
+     */
+    @DeleteMapping("/batch")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:dict-data:delete")
+    @Idempotent
+    @Operation(summary = "批量删除字典数据")
+    public Result<Void> deleteBatch(@Parameter(description = "字典数据ID列表") @RequestBody List<Long> ids) {
+        dictDataService.deleteDictDataBatch(ids);
+        return Result.success();
+    }
+
+    /**
      * 字典数据详情
      */
     @GetMapping("/{id}")

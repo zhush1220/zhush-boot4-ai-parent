@@ -77,6 +77,17 @@ public class AdminPostService {
     }
 
     /**
+     * 批量删除岗位（循环复用单条删除的校验与关联清理）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deletePostBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::deletePost);
+    }
+
+    /**
      * 岗位详情
      */
     public AdminPostVO getPost(Long id) {

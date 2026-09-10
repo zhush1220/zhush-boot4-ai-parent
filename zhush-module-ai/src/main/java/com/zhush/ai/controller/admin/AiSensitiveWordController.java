@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 管理端-AI 敏感词库管理接口。
  *
@@ -71,6 +73,14 @@ public class AiSensitiveWordController {
     @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:sensitive:delete")
     public Result<Void> delete(@PathVariable Long id) {
         wordService.delete(id);
+        return Result.success();
+    }
+
+    @DeleteMapping("/batch")
+    @Operation(summary = "批量删除敏感词")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:sensitive:delete")
+    public Result<Void> deleteBatch(@io.swagger.v3.oas.annotations.Parameter(description = "敏感词ID列表") @RequestBody List<Long> ids) {
+        wordService.deleteBatch(ids);
         return Result.success();
     }
 

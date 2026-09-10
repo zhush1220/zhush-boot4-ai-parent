@@ -48,6 +48,6 @@ public class AiChatMessageEntity extends BaseEntity implements Serializable {
     /** 状态：1-正常 2-流式中 3-已中断 4-失败 */
     private Integer status;
 
-    /** 失败/中断原因 */
-    private String errorMsg;
+    /** 失败/中断原因（列非空，默认空串避免显式 NULL 触发约束） */
+    private String errorMsg = "";
 }

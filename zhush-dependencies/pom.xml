@@ -26,6 +26,7 @@
         <oracle.jdbc.version>23.26.2.0.0</oracle.jdbc.version>
         <sa.token.version>1.46.0</sa.token.version>
         <commons.pool.version>2.13.1</commons.pool.version>
+        <commons-io.version>2.22.0</commons-io.version>
         <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
         <lombok.version>1.18.46</lombok.version>
         <mapstruct-plus.version>1.5.1</mapstruct-plus.version>
@@ -165,6 +166,14 @@
                 <version>${tika.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- commons-compress/Tika 需要 2.16.1+ 的 ChecksumInputStream，
+                 覆盖 weixin-java-common 直接声明的 2.14.0 避免 NoClassDefFoundError -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
             </dependency>
 
             <!-- 数据库相关 -->

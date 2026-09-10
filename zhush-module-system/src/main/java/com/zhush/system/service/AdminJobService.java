@@ -137,6 +137,16 @@ public class AdminJobService {
     }
 
     /**
+     * 批量删除定时任务（循环复用单条删除的校验与调度清理）
+     */
+    public void deleteJobBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::deleteJob);
+    }
+
+    /**
      * 启动 / 停止任务（幂等：状态未变化直接返回）
      */
     public void changeStatus(Long id, Integer status) {

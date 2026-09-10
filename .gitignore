@@ -51,3 +51,4 @@ build/
 application-my.yaml
 
 /logs/
+.agentscope

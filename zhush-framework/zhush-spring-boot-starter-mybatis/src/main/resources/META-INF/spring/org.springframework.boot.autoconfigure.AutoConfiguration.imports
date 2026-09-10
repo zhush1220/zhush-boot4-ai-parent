@@ -1,3 +1,4 @@
 com.zhush.mybatis.config.GlobalFlexAutoConfiguration
 com.zhush.mybatis.config.EncryptAutoConfiguration
 com.zhush.mybatis.config.ZhushDataSourceAutoConfiguration
+com.zhush.mybatis.config.SqlAuditAutoConfiguration

@@ -127,6 +127,17 @@ public class AiSensitiveWordService {
     }
 
     /**
+     * 批量删除（循环复用单条删除与词库刷新）。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::delete);
+    }
+
+    /**
      * 启停。
      */
     @Transactional(rollbackFor = Exception.class)

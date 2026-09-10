@@ -83,6 +83,14 @@ public class AiModelController {
         return Result.success();
     }
 
+    @DeleteMapping("/batch")
+    @Operation(summary = "批量删除模型")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:model:delete")
+    public Result<Void> deleteBatch(@io.swagger.v3.oas.annotations.Parameter(description = "模型ID列表") @RequestBody List<Long> ids) {
+        modelService.deleteBatch(ids);
+        return Result.success();
+    }
+
     @PutMapping("/{id}/toggle")
     @Operation(summary = "模型启停")
     @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:model:update")

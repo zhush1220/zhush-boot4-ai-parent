@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 字典类型管理接口
  *
@@ -70,6 +72,18 @@ public class AdminDictTypeController {
     @Operation(summary = "删除字典类型")
     public Result<Void> delete(@Parameter(description = "字典类型ID") @PathVariable Long id) {
         dictTypeService.deleteDictType(id);
+        return Result.success();
+    }
+
+    /**
+     * 批量删除字典类型
+     */
+    @DeleteMapping("/batch")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:dict-type:delete")
+    @Idempotent
+    @Operation(summary = "批量删除字典类型")
+    public Result<Void> deleteBatch(@Parameter(description = "字典类型ID列表") @RequestBody List<Long> ids) {
+        dictTypeService.deleteDictTypeBatch(ids);
         return Result.success();
     }
 

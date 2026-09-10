@@ -107,6 +107,17 @@ public class AdminUserService {
     }
 
     /**
+     * 批量删除管理员（循环复用单条删除的校验与关联清理）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteUserBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::deleteUser);
+    }
+
+    /**
      * 管理员详情
      */
     public AdminUserVO getUser(Long id) {

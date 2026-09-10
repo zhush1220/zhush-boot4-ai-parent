@@ -10,6 +10,7 @@ import com.zhush.agentscope.event.AgentEventType;
 import com.zhush.agentscope.event.AgentFinishedEvent;
 import com.zhush.agentscope.event.AgentStartedEvent;
 import com.zhush.agentscope.event.AgentToolCalledEvent;
+import org.apache.skywalking.apm.toolkit.trace.TraceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -67,12 +68,18 @@ public class AgentAuditEventListener implements AgentEventListener {
         entity.setUserId(event.getUserId());
         entity.setUserType("admin");
         entity.setTenantId(parseLong(event.getTenantId()));
+        // 链路追踪 ID：从 SkyWalking 上下文读取，无 agent/无链路时回退 "N/A"，避免 NOT NULL 约束被显式 null 触发
+        entity.setTraceId(blankToDefault(TraceContext.traceId(), "N/A"));
 
         try {
             auditLogMapper.insert(entity);
         } catch (Exception e) {
             log.warn("审计日志落库失败, eventType={}, error={}", event.getEventType(), e.getMessage());
         }
+    }
+
+    private String blankToDefault(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     private String truncate(String text, int max) {

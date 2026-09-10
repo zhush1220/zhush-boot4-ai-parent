@@ -154,6 +154,23 @@ public class AgentChatService {
         agentTemplate.clearSession(sessionId);
     }
 
+    /**
+     * 重命名会话标题。
+     */
+    public void renameSession(String sessionId, String title) {
+        AiChatSessionEntity session = sessionMapper.selectOneByQuery(
+                QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
+        if (session == null) {
+            throw ServiceExceptionUtil.exception(CONVERSATION_NOT_FOUND, sessionId);
+        }
+        String newTitle = title.trim();
+        if (newTitle.length() > 50) {
+            newTitle = newTitle.substring(0, 50);
+        }
+        session.setTitle(newTitle);
+        sessionMapper.update(session);
+    }
+
     // ================ 内部方法 ================
 
     private void ensureSessionRow(String sessionId, String agentName, String firstMessage) {

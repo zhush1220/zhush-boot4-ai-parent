@@ -70,6 +70,9 @@ public enum SystemErrorCode implements IErrorCode {
     // ================ 登录日志 1001 9xx ================
     LOGIN_LOG_NOT_FOUND(1001901, "登录日志不存在：{0}"),
 
+    // ================ SQL 审计 1001 9xx ================
+    SQL_AUDIT_LOG_NOT_FOUND(1001902, "SQL审计日志不存在：{0}"),
+
     // ================ 定时任务 1002 1xx ================
     JOB_NOT_FOUND(1002101, "定时任务不存在：{0}"),
     JOB_NAME_DUPLICATE(1002102, "同名同组定时任务已存在：{0}"),
