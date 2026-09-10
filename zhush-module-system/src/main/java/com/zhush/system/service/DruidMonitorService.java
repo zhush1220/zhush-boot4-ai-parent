@@ -45,7 +45,7 @@ public class DruidMonitorService {
      */
     public List<Map<String, Object>> getSqlList(String sql) {
         List<Map<String, Object>> list = safeList(
-                requireFacade().getSqlStatDataList((Object) null));
+                requireFacade().getSqlStatDataList((Integer) null));
         if (StrUtil.isBlank(sql)) {
             return list;
         }

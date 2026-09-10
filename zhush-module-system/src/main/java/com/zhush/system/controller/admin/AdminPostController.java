@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 岗位管理接口
  *
@@ -75,6 +77,19 @@ public class AdminPostController {
     @Operation(summary = "删除岗位")
     public Result<Void> delete(@Parameter(description = "岗位ID") @PathVariable Long id) {
         postService.deletePost(id);
+        return Result.success();
+    }
+
+    /**
+     * 批量删除岗位
+     */
+    @DeleteMapping("/batch")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:post:delete")
+    @Idempotent
+    @OperateLog(module = "岗位管理", type = OperateTypeEnum.DELETE)
+    @Operation(summary = "批量删除岗位")
+    public Result<Void> deleteBatch(@Parameter(description = "岗位ID列表") @RequestBody List<Long> ids) {
+        postService.deletePostBatch(ids);
         return Result.success();
     }
 

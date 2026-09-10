@@ -99,6 +99,17 @@ public class AdminDeptService {
     }
 
     /**
+     * 批量删除部门（循环复用单条删除的校验与关联清理）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteDeptBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::deleteDept);
+    }
+
+    /**
      * 部门详情
      */
     public AdminDeptVO getDept(Long id) {

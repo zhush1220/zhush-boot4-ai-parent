@@ -103,6 +103,16 @@ public class AdminDictDataService {
     }
 
     /**
+     * 批量删除字典数据（循环复用单条删除的校验与缓存清理）
+     */
+    public void deleteDictDataBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::deleteDictData);
+    }
+
+    /**
      * 字典数据详情
      */
     public AdminDictDataVO getDictData(Long id) {

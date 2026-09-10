@@ -24,7 +24,7 @@ public class AgentAuditLogEntity extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /** 链路追踪ID */
-    private String traceId;
+    private String traceId = "";
 
     /** 业务会话ID */
     private String sessionId;
@@ -35,8 +35,8 @@ public class AgentAuditLogEntity extends BaseEntity implements Serializable {
     /** 事件类型：STARTED FINISHED TOOL_CALLED ERROR APPROVAL */
     private String eventType;
 
-    /** 工具名（TOOL_CALLED/APPROVAL 时有值） */
-    private String toolName;
+    /** 工具名（TOOL_CALLED/APPROVAL 时有值，列非空默认空串） */
+    private String toolName = "";
 
     /** 工具入参（脱敏，JSON） */
     private String toolArgs;
@@ -44,14 +44,14 @@ public class AgentAuditLogEntity extends BaseEntity implements Serializable {
     /** 工具结果（JSON，超长截断） */
     private String toolResult;
 
-    /** 耗时（毫秒） */
-    private Integer duration;
+    /** 耗时（毫秒，列非空默认 0） */
+    private Integer duration = 0;
 
-    /** Token 消耗 */
-    private Integer tokenUsage;
+    /** Token 消耗（列非空默认 0） */
+    private Integer tokenUsage = 0;
 
-    /** 推理步数 */
-    private Integer stepCount;
+    /** 推理步数（列非空默认 0） */
+    private Integer stepCount = 0;
 
     /** 操作人ID */
     private Long userId;
@@ -62,9 +62,9 @@ public class AgentAuditLogEntity extends BaseEntity implements Serializable {
     /** 租户ID（审计必带，用于隔离查询） */
     private Long tenantId;
 
-    /** 结果码：0-成功，其余为错误码 */
-    private Integer resultCode;
+    /** 结果码：0-成功，其余为错误码（列非空默认 0） */
+    private Integer resultCode = 0;
 
-    /** 结果信息（失败时为异常信息） */
-    private String resultMsg;
+    /** 结果信息（失败时为异常信息，列非空默认空串） */
+    private String resultMsg = "";
 }

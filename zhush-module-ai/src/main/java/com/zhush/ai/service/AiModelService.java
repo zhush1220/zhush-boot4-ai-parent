@@ -160,6 +160,17 @@ public class AiModelService {
     }
 
     /**
+     * 批量删除（循环复用单条删除的校验与动态池刷新）。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::delete);
+    }
+
+    /**
      * 启停（停用校验引用与默认模型）。
      */
     @Transactional(rollbackFor = Exception.class)

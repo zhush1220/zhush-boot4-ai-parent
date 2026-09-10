@@ -78,6 +78,16 @@ public class AdminDictTypeService {
     }
 
     /**
+     * 批量删除字典类型（循环复用单条删除的校验与关联清理）
+     */
+    public void deleteDictTypeBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        ids.forEach(this::deleteDictType);
+    }
+
+    /**
      * 字典类型详情
      */
     public AdminDictTypeVO getDictType(Long id) {

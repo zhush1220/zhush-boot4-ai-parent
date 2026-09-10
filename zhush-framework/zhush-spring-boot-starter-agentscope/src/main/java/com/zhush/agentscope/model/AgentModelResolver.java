@@ -81,6 +81,21 @@ public class AgentModelResolver {
         return Collections.unmodifiableMap(cache);
     }
 
+    /**
+     * 解析运行时默认模型编码：动态池默认（is_default=1 且启用）优先，回退 yaml default-model。
+     *
+     * @return 默认模型编码，未配置时返回 null
+     */
+    public String resolveDefaultCode() {
+        String fallback = properties.getDefaultModel();
+        for (ModelConfig config : cache.values()) {
+            if (config.isDefault()) {
+                return config.getCode();
+            }
+        }
+        return fallback;
+    }
+
     private AgentScopeProperties.ModelProperties toProperties(ModelConfig config) {
         AgentScopeProperties.ModelProperties mp = new AgentScopeProperties.ModelProperties();
         mp.setType(config.getType() == null || config.getType().isEmpty() ? "dashscope" : config.getType());

@@ -1,7 +1,25 @@
 server:
-  port: 9166
+  port: ${SERVER_PORT:9166}
 
 spring:
+  # 文件上传大小限制（与 zhush.file.max-size 保持一致）
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+  # Redis 连接（starter-redis / Redisson / Sa-Token 共用）
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5s
+  # 全文搜索连接（仅 zhush.search.enabled=true 时实际使用）
+  elasticsearch:
+    uris: ${ES_URIS:http://localhost:9200}
+    connection-timeout: 5s
+    socket-timeout: 30s
   datasource:
     druid:
       initial-size: 5
@@ -22,6 +40,16 @@ spring:
             multi-statement-allow: true
       stat-view-servlet:
         enabled: false   # 关闭 Druid Web 暴露，统计改由 /admin/system/monitor/druid/** 授权接口输出
+  # 定时任务调度器（Quartz JDBC 持久化；建表脚本：sql/07_quartz.sql）
+  quartz:
+    job-store-type: jdbc            # memory（内存，重启丢失）/ jdbc（持久化）
+    jdbc:
+      initialize-schema: never      # 表结构由 sql/07_quartz.sql 维护，不由框架自动建表
+    properties:
+      org.quartz.scheduler.instanceName: zhushScheduler
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.threadPool.threadCount: 10
+      # org.quartz.jobStore.isClustered: true   # 多实例集群部署时开启
 
 mybatis-flex:
   mapper-locations: classpath*:mapper/**/*.xml
@@ -29,12 +57,12 @@ mybatis-flex:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   datasource:
-    # --- 主库（默认数据源）---
+    # --- 主库（默认数据源，业务库）---
     master:
       type: com.alibaba.druid.pool.DruidDataSource
-      url: jdbc:mysql://localhost:3306/zhush_main?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-      username: root
-      password: password
+      url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:zhush_main}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:password}
       # Druid 连接池属性（直接写 setter 对应的 key）
       initialSize: 5
       maxActive: 20
@@ -44,20 +72,180 @@ mybatis-flex:
       testWhileIdle: true
 
     # --- 从库（只读/报表库）---
-    slave:
-      type: com.alibaba.druid.pool.DruidDataSource
-      url: jdbc:mysql://localhost:3306/zhush_slave?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-      username: readonly
-      password: readonly_pass
-      initialSize: 3
-      maxActive: 10
-      minIdle: 3
-      maxWait: 60000
-      validationQuery: SELECT 1
-      testWhileIdle: true
+#    slave:
+#      type: com.alibaba.druid.pool.DruidDataSource
+#      url: jdbc:mysql://${SLAVE_HOST:localhost}:${SLAVE_PORT:3306}/${SLAVE_DATABASE:zhush_slave}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+#      username: ${SLAVE_USERNAME:readonly}
+#      password: ${SLAVE_PASSWORD:readonly_pass}
+#      initialSize: 3
+#      maxActive: 10
+#      minIdle: 3
+#      maxWait: 60000
+#      validationQuery: SELECT 1
+#      testWhileIdle: true
 
-# 启用加解密（默认 true）
+# Sa-Token 认证（管理端 / 会员端）
+# access-token 即 Sa-Token 令牌：从 Authorization: Bearer xxx 请求头读取，不写 Cookie（防 CSRF）；
+# 有效期 2 小时，由 /admin/auth/refresh 的 refresh-token 机制负责无感续期。
+sa-token:
+  token-name: Authorization      # 从 Authorization 请求头读取 token
+  token-prefix: Bearer           # 兼容 "Bearer xxx" 格式
+  timeout: 7200                  # access-token 有效期 2 小时（秒）
+  active-timeout: -1             # 不做活跃自动续期，严格 2 小时，靠 refresh-token 续期
+  is-concurrent: true            # 允许同账号多端并发登录（PC / APP / MINI 共存）
+  is-share: false                # 每次登录产生新 token（配合同端互踢）
+  is-read-cookie: false          # access-token 不读写 Cookie，防 CSRF
+  is-read-header: true           # 从请求头读取 token
+  token-style: uuid              # token 风格
+  is-log: false                  # 关闭 Sa-Token 操作日志（避免刷屏）
+
+logging:
+  level:
+    com.zhush: info
+    com.mybatisflex: info
+
+# 接口文档（Knife4j + SpringDoc）：生产环境默认关闭，排障时临时置 DOC_ENABLED=true 开启
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    path: /swagger-ui.html
+knife4j:
+  enable: false
+  setting:
+    language: zh_cn
+
+# 加解密 + 业务功能开关
 zhush:
   encrypt:
     enabled: true
-    sm4-key: your-16-char-key    # 可选，不配则走 SmUtils 默认密钥策略（必须16字节）
+    sm4-key: ${SM4_KEY:your-16-char-key}    # 可选，不配则走 SmUtils 默认密钥策略（必须16字节）
+  # 接口幂等（@Idempotent + Redis 去重）：默认开启，zhush.idempotent.enabled=false 可整体关闭
+  idempotent:
+    enabled: true
+  # 行为验证码（tianai-captcha 封装，管理端/会员端登录共用）
+  captcha:
+    enabled: true                    # 总开关：false 不装配验证码，登录自动跳过校验
+    login-required: true             # 登录是否强制校验验证码
+    type: SLIDER                     # SLIDER-滑块 ROTATE-旋转 CONCAT-拼图
+    image-format: JPEG_PNG           # 图片格式：WEBP / JPEG_PNG
+    expire-seconds: 120              # 验证码有效期（秒）
+  # IP 归属地查询
+  ip:
+    enabled: false                   # 启用 IP 归属地查询（默认 false）
+  # 文件存储（starter-file 自研多存储抽象）：切换存储只需修改 primary
+  file:
+    enabled: true
+    primary: local                       # local / aliyun-oss / qiniu / huawei-obs
+    max-size: 52428800                   # 单文件上限 50MB（字节）
+    # allowed-extensions: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,zip   # 扩展名白名单，不配则不限制
+    local:
+      enabled: true
+      base-path: ${FILE_BASE_PATH:/data/upload}   # 本地存储根目录
+      domain: ${FILE_DOMAIN:http://localhost:9166/files/}   # 文件访问 URL 前缀
+      url-path: /files/**                         # 静态资源映射路径
+    aliyun-oss:
+      enabled: false
+      endpoint: your-endpoint
+      access-key-id: your-access-key-id
+      access-key-secret: your-access-key-secret
+      bucket-name: your-bucket-name
+      domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+    qiniu:
+      enabled: false
+      access-key: your-access-key
+      secret-key: your-secret-key
+      bucket: your-bucket
+      domain: https://your-domain/
+    huawei-obs:
+      enabled: false
+      endpoint: your-endpoint
+      access-key: your-access-key
+      secret-key: your-secret-key
+      bucket-name: your-bucket-name
+      domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+  # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
+  search:
+    enabled: false
+  # 数据权限：默认关闭；启用后可通过 row-enabled / field-enabled 单独控制行级、字段级
+  data-permission:
+    enabled: false
+    # row-enabled: true    # 行级权限（@DataPermission 自动拼接 SQL 过滤）
+    # field-enabled: true  # 字段级权限（@FieldPermission 响应置空/脱敏）
+  # 监控（Spring Boot Admin）：默认关闭；启用时改为 true 并放开下方 management 配置
+  monitor:
+    enabled: false
+    # server-enabled: true   # 内嵌 Admin 服务端；已有独立 Admin Server 时设为 false 仅作客户端注册
+  # 跨域：生产建议收敛到实际域名，默认仅允许 zhush 主域
+  web:
+    cors:
+      enabled: true                  # 默认开启,false 整体关闭
+      path-pattern: /**
+      allowed-origin-patterns: ${CORS_ALLOWED_ORIGINS:https://*.zhush.com}   # 生产环境请收敛到实际域名
+      allowed-methods: "*"
+      allowed-headers: "*"
+      exposed-headers: Content-Disposition   # 需要前端读取的响应头(如文件下载)
+      allow-credentials: true
+      max-age: 3600
+  # 定时任务（Quartz）：任务管理模块启用，持久化配置见上方 spring.quartz（需先执行 sql/07_quartz.sql）
+  job:
+    enabled: true
+    # default-group: DEFAULT    # 未指定分组时的默认分组（与 sys_job.job_group 默认值一致）
+  # 消息队列（RocketMQ）：默认关闭；启用时改为 true 并确认 namesrv-addr 指向实际地址
+  mq:
+    enabled: false
+    # namesrv-addr: ${MQ_NAMESRV_ADDR:127.0.0.1:9876}
+    # access-key: ""              # 开启 ACL 时配置
+    # secret-key: ""
+    # producer:
+    #   enabled: true             # 仅需要消费时可关闭生产者
+    #   group: zhush_producer_group
+    #   send-timeout: 3000
+    #   retry-times: 2
+  # WebSocket 推送：默认关闭；启用后客户端通过 ws://host:port/ws?userId=xxx 连接
+  websocket:
+    enabled: false
+    # endpoint: /ws               # 端点路径
+    # allowed-origins: "*"        # 生产建议收敛来源
+  # 智能体（AgentScope）：模型供应商 api-key 经环境变量注入，未注入则对应模型不可用
+  agentscope:
+    enabled: true
+    default-model: deepseek-chat
+    models:
+      dashscope: { type: dashscope, api-key: "${DASHSCOPE_API_KEY:}", model: qwen-max }
+      deepseek:  { type: openai, api-key: "${DEEPSEEK_API_KEY:}", base-url: https://api.deepseek.com/v1, model: deepseek-chat }
+    session:
+      store: redis
+      ttl: 24h
+    request-timeout: 60s
+    dynamic-config:            # 模型/敏感词库表动态化（空库自动回退 yaml）
+      enabled: true
+      refresh-interval: 300s   # 定时兜底刷新周期
+      broadcast: true          # 多实例 Redis pub/sub 广播
+    safety:
+      approval-enabled: true
+      sensitive-keywords: [删除, 转账, 下单, 退款]
+
+# ES 健康检查随搜索开关同步启停（全文搜索默认关闭）
+management:
+  health:
+    elasticsearch:
+      enabled: false
+  # --- 启用监控（zhush.monitor.enabled=true）时同步放开：SBA 需读取全部 actuator 端点 ---
+  # endpoints:
+  #   web:
+  #     exposure:
+  #       include: "*"
+  # endpoint:
+  #   health:
+  #     show-details: always
+
+# --- 启用监控时同步放开：内嵌 SBA 服务端 UI 路径 + 客户端自注册 ---
+# spring:
+#   boot:
+#     admin:
+#       context-path: /monitor            # 监控 UI：http://localhost:9166/monitor
+#       client:
+#         url: http://localhost:9166/monitor   # 注册到内嵌服务端（独立部署时改为对应地址）
+#         instance:
+#           service-url: http://localhost:9166

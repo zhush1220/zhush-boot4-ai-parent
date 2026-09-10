@@ -75,6 +75,18 @@ public class AdminDeptController {
     }
 
     /**
+     * 批量删除部门
+     */
+    @DeleteMapping("/batch")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:dept:delete")
+    @Idempotent
+    @Operation(summary = "批量删除部门")
+    public Result<Void> deleteBatch(@Parameter(description = "部门ID列表") @RequestBody List<Long> ids) {
+        deptService.deleteDeptBatch(ids);
+        return Result.success();
+    }
+
+    /**
      * 部门详情
      */
     @GetMapping("/{id}")

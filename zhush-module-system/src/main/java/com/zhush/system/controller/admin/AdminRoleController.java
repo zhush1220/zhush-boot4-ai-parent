@@ -78,6 +78,18 @@ public class AdminRoleController {
     }
 
     /**
+     * 批量删除角色
+     */
+    @DeleteMapping("/batch")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:delete")
+    @Idempotent
+    @Operation(summary = "批量删除角色")
+    public Result<Void> deleteBatch(@Parameter(description = "角色ID列表") @RequestBody List<Long> ids) {
+        roleService.deleteRoleBatch(ids);
+        return Result.success();
+    }
+
+    /**
      * 角色详情
      */
     @GetMapping("/{id}")

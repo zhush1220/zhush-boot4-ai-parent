@@ -26,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * 通知公告接口
  *
@@ -77,6 +79,19 @@ public class AdminNoticeController {
     @Operation(summary = "删除公告")
     public Result<Void> delete(@Parameter(description = "公告ID") @PathVariable Long id) {
         noticeService.deleteNotice(id);
+        return Result.success();
+    }
+
+    /**
+     * 批量删除公告
+     */
+    @DeleteMapping("/batch")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:notice:delete")
+    @Idempotent
+    @OperateLog(module = "通知公告", type = OperateTypeEnum.DELETE)
+    @Operation(summary = "批量删除公告")
+    public Result<Void> deleteBatch(@Parameter(description = "公告ID列表") @RequestBody List<Long> ids) {
+        noticeService.deleteNoticeBatch(ids);
         return Result.success();
     }
 
