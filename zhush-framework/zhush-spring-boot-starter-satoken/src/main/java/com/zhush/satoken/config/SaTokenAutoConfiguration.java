@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 /**
@@ -21,8 +22,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 public class SaTokenAutoConfiguration {
 
     @Bean
-    public SaTokenConfigure saTokenConfigure(SecurityProperties properties) {
-        return new SaTokenConfigure(properties);
+    public SaTokenConfigure saTokenConfigure(SecurityProperties properties, Environment environment) {
+        return new SaTokenConfigure(properties, environment);
     }
 
     /**

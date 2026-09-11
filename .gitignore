@@ -51,4 +51,6 @@ build/
 application-my.yaml
 
 /logs/
-.agentscope
+
+# AgentScope 运行时工作区（会话 / 记忆 / 任务与日志，本地生成，不入库）
+.agentscope/
