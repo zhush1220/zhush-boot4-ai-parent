@@ -1,0 +1,46 @@
+services:
+  zhush-server:
+    build:
+      context: ./zhush-server
+    container_name: zhush-server
+    privileged: true
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+      # 端口
+      SERVER_PORT: 9199
+      # 文件上传大小限制
+      MAX_FILE_SIZE: 50MB
+      MAX_REQUEST_SIZE: 100MB
+      MAX_SIZE: 52428800 # MAX_FILE_SIZE保持一致 50 * 1024 * 1024L
+      # Redis
+      REDIS_HOST: 8.138.86.36
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 8
+      REDIS_PASSWORD: topfus&8956
+      # 数据库
+      MYSQL_HOST: 172.17.0.1
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: zhush_union
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: zhusH@950120
+      # Token有效期 2 小时（秒）
+      SA_TOKEN_TIMEOUT: 7200
+      # 本地存储根目录
+      FILE_BASE_PATH: /data/upload
+      # 文件访问 URL 前缀（后端 context-path=/api，静态资源实际暴露在 /api/files/）
+      FILE_DOMAIN: /api/files/
+      # 允许跨域配置
+      CORS_ALLOWED_ORIGINS: https://*.zhush.com
+      # 日志路径
+      LOG_DIR: /data/logs
+    hostname: zhush-server
+    extra_hosts:
+      - "zhush-server:127.0.0.1"
+    image: zhush-server
+    network_mode: "host"
+    volumes:
+      - ./logs:/data/logs
+      - ./upload:/data/upload
+      - /usr/share/fonts:/usr/share/fonts
+      - /app/skywalking-agent/:/app/skywalking-agent/
