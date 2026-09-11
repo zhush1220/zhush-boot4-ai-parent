@@ -10,8 +10,8 @@
     - 按天归档 + 单文件超过 fileSize 立即滚动新建文件（文件名以 .0/.1 递增）
     - 生产环境（prod）单文件 50MB，保留 30 天，总量上限 2GB
     - 其他环境（dev/test/docker/my 等）单文件 100MB，保留 7 天，总量上限 1GB
-    - 可通过 yaml 覆盖：logging.file.path（目录）、logging.file.max-history（保留天数）、
-      logging.file.total-size-cap（总量上限）
+    - 日志目录可通过 yaml 覆盖：logging.file.path
+    - 保留天数 / 总量上限可通过环境变量覆盖：LOG_FILE_MAX_HISTORY / LOG_FILE_TOTAL_SIZE_CAP
 
     logging.level.* 等 yaml 配置仍然生效
 -->
@@ -36,6 +36,30 @@
     </appender>
 
     <!-- ================ 生产环境：单文件 50MB，超过即新建日志文件 ================ -->
+    <springProfile name="docker">
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/${APP_NAME}.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <!-- 按天归档；单文件超过 50MB 滚动，%i 递增（app.log.2026-08-20.0/.1/...） -->
+                <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>50MB</maxFileSize>
+                <!-- 保留 30 天，全部归档总量上限 2GB，超限自动清理最旧归档 -->
+                <maxHistory>${LOG_FILE_MAX_HISTORY:-30}</maxHistory>
+                <totalSizeCap>${LOG_FILE_TOTAL_SIZE_CAP:-2GB}</totalSizeCap>
+                <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            </rollingPolicy>
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+
     <springProfile name="prod">
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_PATH}/${APP_NAME}.log</file>
@@ -55,12 +79,13 @@
         </appender>
 
         <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
         </root>
     </springProfile>
 
     <!-- ================ 非生产环境：控制台 + 文件（单文件 100MB） ================ -->
-    <springProfile name="!prod">
+    <springProfile name="dev">
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_PATH}/${APP_NAME}.log</file>
             <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
