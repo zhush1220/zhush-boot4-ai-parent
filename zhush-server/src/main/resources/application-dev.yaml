@@ -106,32 +106,34 @@ knife4j:
 
 # 启用加解密（默认 true）
 zhush:
-  # ---- 安全 / 鉴权（Sa-Token 拦截器规则；此处为 Servlet 路径，不含 context-path=/api）----
+  # ---- 安全 / 鉴权（Sa-Token 拦截器规则）----
+  # 注意：Sa-Token 的 SaRouter 使用原始 requestURI 匹配（ApplicationInfo.routePrefix 未被赋值，不会裁剪 context-path），
+  #      故 admin/member 前缀与白名单均需带 context-path 前缀 /api；未带前缀的写法由 SaTokenConfigure 自动补全。
   security:
-    admin-prefix: /admin/**        # 管理端路径：校验管理端登录态，接口权限由 @SaCheckPermission(type="admin") 按需校验
-    member-prefix: /member/**      # 会员端路径：仅校验会员端登录态
-    ignore-paths:                  # 免登录白名单（Servlet 路径，不含 context-path=/api；与代码内置白名单合并，追加不覆盖）
+    admin-prefix: /api/admin/**        # 管理端路径：校验管理端登录态，接口权限由 @SaCheckPermission(type="admin") 按需校验
+    member-prefix: /api/member/**      # 会员端路径：仅校验会员端登录态
+    ignore-paths:                      # 免登录白名单（与代码内置 DEFAULT_IGNORE_PATHS 合并，追加不覆盖）
       # --- 认证类：位于 admin/member 前缀内，必须放行 ---
-      - /admin/auth/login
-      - /admin/auth/refresh
-      - /admin/auth/social-login
-      - /admin/auth/captcha        # 管理端登录验证码（内置白名单未含，@IgnoreAuth 已放行，此处双保险）
-      - /member/auth/login
-      - /member/auth/wx-mini-login
-      - /member/auth/captcha       # 会员端登录验证码（同上）
+      - /api/admin/auth/login
+      - /api/admin/auth/refresh
+      - /api/admin/auth/social-login
+      - /api/admin/auth/captcha        # 管理端登录验证码（内置白名单未含，@IgnoreAuth 已放行，此处双保险）
+      - /api/member/auth/login
+      - /api/member/auth/wx-mini-login
+      - /api/member/auth/captcha       # 会员端登录验证码（同上）
       # --- 协议与开放接口 ---
-      - /oauth2/**
-      - /open/**
+      - /api/oauth2/**
+      - /api/open/**
       # --- 基础与静态资源 ---
-      - /error
-      - /favicon.ico
-      - /files/**                  # 本地存储文件访问（头像、上传文件预览）
-      # --- 接口文档（容器环境已关闭 springdoc/knife4j，保留以便临时开启排障）---
-      - /doc.html
-      - /swagger-ui/**
-      - /swagger-resources/**
-      - /v3/api-docs/**
-      - /webjars/**
+      - /api/error
+      - /api/favicon.ico
+      - /api/files/**                  # 本地存储文件访问（头像、上传文件预览）
+      # --- 接口文档 ---
+      - /api/doc.html
+      - /api/swagger-ui/**
+      - /api/swagger-resources/**
+      - /api/v3/api-docs/**
+      - /api/webjars/**
   encrypt:
     enabled: true
     sm4-key: your-16-char-key    # 可选，不配则走 SmUtils 默认密钥策略（必须16字节）

@@ -119,14 +119,13 @@ knife4j:
 
 # 加解密 + 业务功能开关
 zhush:
-  # ---- 安全 / 鉴权（Sa-Token 拦截器规则；此处为 Servlet 路径，不含 context-path=/api）----
-  security:
   # ---- 安全 / 鉴权（Sa-Token 拦截器规则）----
-  # 注意：Sa-Token 未设置 ApplicationInfo.routePrefix，路径匹配用完整 requestURI（含 context-path），故此处路径必须带 /api
+  # 注意：Sa-Token 的 SaRouter 使用原始 requestURI 匹配（ApplicationInfo.routePrefix 未被赋值，不会裁剪 context-path），
+  #      故 admin/member 前缀与白名单均需带 context-path 前缀 /api；未带前缀的写法由 SaTokenConfigure 自动补全。
   security:
-    admin-prefix: /api/admin/**    # 管理端路径：校验管理端登录态，接口权限由 @SaCheckPermission(type="admin") 按需校验
-    member-prefix: /api/member/**  # 会员端路径：仅校验会员端登录态
-    ignore-paths:                  # 免登录白名单（含 context-path=/api；与代码内置白名单合并，追加不覆盖）
+    admin-prefix: /api/admin/**        # 管理端路径：校验管理端登录态，接口权限由 @SaCheckPermission(type="admin") 按需校验
+    member-prefix: /api/member/**      # 会员端路径：仅校验会员端登录态
+    ignore-paths:                      # 免登录白名单（与代码内置 DEFAULT_IGNORE_PATHS 合并，追加不覆盖）
       # --- 认证类：位于 admin/member 前缀内，必须放行 ---
       - /api/admin/auth/login
       - /api/admin/auth/refresh
