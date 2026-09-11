@@ -14,10 +14,10 @@ services:
       MAX_REQUEST_SIZE: 100MB
       MAX_SIZE: 52428800 # MAX_FILE_SIZE保持一致 50 * 1024 * 1024L
       # Redis
-      REDIS_HOST: 8.138.86.36
+      REDIS_HOST: 172.17.0.1
       REDIS_PORT: 6379
       REDIS_DATABASE: 8
-      REDIS_PASSWORD: topfus&8956
+      REDIS_PASSWORD: zhush!735@6
       # 数据库
       MYSQL_HOST: 172.17.0.1
       MYSQL_PORT: 3306
@@ -31,7 +31,7 @@ services:
       # 文件访问 URL 前缀（后端 context-path=/api，静态资源实际暴露在 /api/files/）
       FILE_DOMAIN: /api/files/
       # 允许跨域配置
-      CORS_ALLOWED_ORIGINS: https://*.zhush.com
+      CORS_ALLOWED_ORIGINS: http://47.115.56.72:8086/
       # 日志路径
       LOG_DIR: /data/logs
     hostname: zhush-server
