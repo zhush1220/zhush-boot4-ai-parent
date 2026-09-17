@@ -1,8 +1,11 @@
 package com.zhush.union.entity;
 
+import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
 import com.mybatisflex.annotation.KeyType;
 import com.mybatisflex.annotation.Table;
+import com.zhush.common.annotation.EncryptField;
+import com.zhush.mybatis.core.handler.EncryptTypeHandler;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -81,14 +84,31 @@ public class UnionWithdrawApply implements Serializable {
     private Integer withdrawType;
 
     /**
-     * 收款账号（脱敏存储）
+     * 收款账号（脱敏展示值，如 622202******1234）
      */
     private String payAccount;
 
     /**
-     * 收款人姓名
+     * 收款账号密文全值（SM4 透明加解密：Java 侧为明文，DB 侧为密文）
+     *
+     * <p>出款时使用完整卡号（V2 企业付款到银行卡，由 SDK 内部再 RSA 加密上送）；
+     * {@link #payAccount} 仅作列表/详情脱敏展示。
+     */
+    @Column(value = "pay_account_cipher", typeHandler = EncryptTypeHandler.class)
+    @EncryptField
+    private String payAccountCipher;
+
+    /**
+     * 收款人姓名（脱敏展示值）
      */
     private String payAccountName;
+
+    /**
+     * 收款人姓名密文全值（SM4 透明加解密：Java 侧为明文，DB 侧为密文）
+     */
+    @Column(value = "pay_account_name_cipher", typeHandler = EncryptTypeHandler.class)
+    @EncryptField
+    private String payAccountNameCipher;
 
     /**
      * 开户银行名称（银行卡时必填）
@@ -99,6 +119,24 @@ public class UnionWithdrawApply implements Serializable {
      * 开户支行名称
      */
     private String payBankBranch;
+
+    /**
+     * 渠道银行编码（V2 企业付款到银行卡必填，如 ICBC）；为空时由渠道按银行名解析
+     */
+    private String payBankCode;
+
+    /**
+     * 支付渠道（协议）：WECHAT_V2 / WECHAT_V3 / ALIPAY
+     *
+     * <p>与 withdrawType 显式区分：withdrawType 表达业务方式（银行卡/支付宝/微信），
+     * 本字段表达实际采用的协议（如微信可走 V2 企业付款到银行卡 或 V3 商家转账）。
+     */
+    private String payChannel;
+
+    /**
+     * 微信零钱收款 openid（payChannel=WECHAT_V3 时必填，由服务端反查后写入）
+     */
+    private String payOpenid;
 
     /**
      * 状态：1-待审核 2-审核通过 3-已打款 4-已驳回 5-已取消 6-打款失败

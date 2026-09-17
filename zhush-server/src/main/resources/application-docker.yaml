@@ -143,6 +143,8 @@ zhush:
       - /api/error
       - /api/favicon.ico
       - /api/files/**                  # 本地存储文件访问（头像、上传文件预览）
+      # --- 渠道回调（免登录，强制验签；业务层 @IgnoreAuth 已放行，此处双保险）---
+      - /api/union/callback/**
       # --- 接口文档（容器环境已关闭 springdoc/knife4j，保留以便临时开启排障）---
       - /api/doc.html
       - /api/swagger-ui/**
@@ -150,7 +152,7 @@ zhush:
       - /api/v3/api-docs/**
       - /api/webjars/**
   encrypt:
-    enabled: false
+    enabled: true
     sm4-key: ${SM4_KEY:your-16-char-key}    # 可选，不配则走 SmUtils 默认密钥策略（必须16字节）
   # 接口幂等（@Idempotent + Redis 去重）：默认开启，zhush.idempotent.enabled=false 可整体关闭
   idempotent:
@@ -254,6 +256,49 @@ zhush:
     safety:
       approval-enabled: true
       sensitive-keywords: [删除, 转账, 下单, 退款]
+  # 统一支付底座（zhush-module-pay）：微信支付渠道
+  # 默认全部关闭：未启用时不装配任何支付 Bean；启用 V3/V2 前必须配齐凭证，缺失将启动失败（fail-fast）
+  # 凭证纪律：全部经环境变量外置，证书走挂载卷，禁止入库/入代码
+  pay:
+    wx:
+      enabled: ${WX_PAY_ENABLED:false}          # 总开关
+      primary-mch-id: ${WX_PAY_MCH_ID:}         # 默认商户号（多商户路由预留）
+      notify-url: ${WX_PAY_NOTIFY_URL:}         # 默认回调前缀（可被业务命令覆盖）
+      # --- 微信 V3：商家转账 transfer-bills（有回调、可撤销）---
+      v3:
+        enabled: ${WX_PAY_V3_ENABLED:false}
+        app-id: ${WX_PAY_V3_APP_ID:}
+        mch-id: ${WX_PAY_V3_MCH_ID:}
+        api-v3-key: ${WX_PAY_V3_API_KEY:}
+        cert-serial-no: ${WX_PAY_V3_CERT_SERIAL_NO:}
+        private-key-path: ${WX_PAY_V3_PRIVATE_KEY_PATH:}
+        public-key-id: ${WX_PAY_V3_PUBLIC_KEY_ID:}
+        public-key-path: ${WX_PAY_V3_PUBLIC_KEY_PATH:}
+        transfer-scene-id: ${WX_PAY_V3_TRANSFER_SCENE_ID:}    # 转账场景ID（商户平台申请）
+        transfer-remark: 佣金提现
+        user-recv-perception: ${WX_PAY_V3_RECV_PERCEPTION:}
+        receipt-authorization-mode: ${WX_PAY_V3_RECEIPT_AUTH_MODE:}
+        # transfer-scene-report-infos:                        # 转账场景报备信息（必填）
+        #   - info-type: transfer_scene_report_infos
+        #     info-content: xxx
+      # --- 微信 V2：企业付款到银行卡 ent-pay（无回调，靠定时查单收敛）---
+      v2:
+        enabled: ${WX_PAY_V2_ENABLED:false}
+        app-id: ${WX_PAY_V2_APP_ID:}
+        mch-id: ${WX_PAY_V2_MCH_ID:}
+        mch-key: ${WX_PAY_V2_MCH_KEY:}
+        ent-pay-key: ${WX_PAY_V2_ENT_PAY_KEY:}
+        key-path: ${WX_PAY_V2_KEY_PATH:}         # PKCS12 商户证书（口令由 SDK 以商户号解析）
+        sign-type: ${WX_PAY_V2_SIGN_TYPE:HMAC-SHA256}
+        use-sandbox-env: false
+      # --- 单笔出款限额（单位：分）---
+      limit:
+        wechat-v3:
+          min-amount: ${WX_PAY_V3_MIN_AMOUNT:1}
+          max-amount: ${WX_PAY_V3_MAX_AMOUNT:2000000}
+        wechat-v2:
+          min-amount: ${WX_PAY_V2_MIN_AMOUNT:1}
+          max-amount: ${WX_PAY_V2_MAX_AMOUNT:5000000}
 
 # ES 健康检查随搜索开关同步启停（全文搜索默认关闭）
 management:

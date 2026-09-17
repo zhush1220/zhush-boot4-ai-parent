@@ -75,6 +75,22 @@ public enum UnionErrorCode implements IErrorCode {
     WITHDRAW_RISK_RECORD_NOT_FOUND(1003704, "提现风控记录不存在：{0}"),
     WITHDRAW_WHITELIST_NOT_FOUND(1003705, "提现白名单不存在：{0}"),
     SETTLE_BATCH_NOT_FOUND(1003706, "结算批次不存在：{0}"),
+    WITHDRAW_STATUS_INVALID(1003707, "提现单当前状态不允许该操作：{0}"),
+    WITHDRAW_PAY_CHANNEL_INVALID(1003708, "提现单支付渠道非法或缺失：{0}"),
+    WITHDRAW_PAY_OPENID_MISSING(1003709, "微信零钱出款缺少收款人 openid：{0}"),
+    WITHDRAW_PAY_ACCOUNT_MISSING(1003710, "银行卡出款缺少收款账户信息：{0}"),
+    WITHDRAW_PAY_AMOUNT_INVALID(1003711, "提现打款金额非法：{0}"),
+    WITHDRAW_NOT_SUPPORT_CANCEL(1003712, "当前渠道不支持撤单：{0}"),
+    WITHDRAW_CONCURRENT_MODIFIED(1003713, "提现单已被并发处理，请刷新后重试：{0}"),
+    WITHDRAW_DAILY_LIMIT_EXCEEDED(1003714, "超出单日累计提现限额：{0}"),
+
+    // ================ 提现对账/差异处置 1003 7xx ================
+    WITHDRAW_RECONCILE_RECORD_NOT_FOUND(1003715, "提现对账差异记录不存在：{0}"),
+    WITHDRAW_RECONCILE_ALREADY_HANDLED(1003716, "对账差异记录已处置，不可重复操作：{0}"),
+    WITHDRAW_RECONCILE_HANDLE_STATUS_INVALID(1003717, "对账差异处置状态非法：{0}"),
+
+    // ================ 提现/结算 服务端错误 2003 7xx ================
+    WITHDRAW_PAY_FAILED(2003701, "提现打款失败：{0}"),
 
     // ================ 风控 1003 8xx ================
     RISK_BLACKLIST_NOT_FOUND(1003801, "风控黑名单不存在：{0}"),
