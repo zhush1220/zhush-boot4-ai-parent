@@ -1,5 +1,7 @@
 package com.zhush.union.service;
 
+import cn.hutool.core.util.DesensitizedUtil;
+import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.response.PageResult;
 import com.zhush.mybatis.core.query.QueryWrapperX;
@@ -39,6 +41,7 @@ public class UnionWithdrawApplyService {
     @Transactional(rollbackFor = Exception.class)
     public Long createWithdrawApply(UnionWithdrawApplyParam param) {
         UnionWithdrawApply entity = converter.convert(param, UnionWithdrawApply.class);
+        applySensitiveFields(entity, param);
         withdrawApplyMapper.insert(entity);
         return entity.getId();
     }
@@ -51,6 +54,7 @@ public class UnionWithdrawApplyService {
         UnionWithdrawApply existing = withdrawApplyMapper.selectOneById(param.getId());
         assertNotNull(existing, UnionErrorCode.WITHDRAW_APPLY_NOT_FOUND, param.getId());
         UnionWithdrawApply update = converter.convert(param, UnionWithdrawApply.class);
+        applySensitiveFields(update, param);
         withdrawApplyMapper.update(update);
     }
 
@@ -87,6 +91,8 @@ public class UnionWithdrawApplyService {
                 .like(UnionWithdrawApply::getPayAccountName, query.getPayAccountName())
                 .like(UnionWithdrawApply::getPayBankName, query.getPayBankName())
                 .like(UnionWithdrawApply::getPayBankBranch, query.getPayBankBranch())
+                .eq(UnionWithdrawApply::getPayChannel, query.getPayChannel())
+                .eq(UnionWithdrawApply::getPayOpenid, query.getPayOpenid())
                 .eq(UnionWithdrawApply::getStatus, query.getStatus())
                 .eq(UnionWithdrawApply::getAuditorId, query.getAuditorId())
                 .like(UnionWithdrawApply::getAuditorName, query.getAuditorName())
@@ -105,6 +111,27 @@ public class UnionWithdrawApplyService {
         Page<UnionWithdrawApply> page = withdrawApplyMapper.selectPageX(query, queryWrapper);
         List<UnionWithdrawApplyVO> list = converter.convert(page.getRecords(), UnionWithdrawApplyVO.class);
         return PageResult.of(list, page.getTotalRow());
+    }
+
+    /**
+     * 收款账户敏感信息落库处理
+     *
+     * <ul>
+     *     <li>完整卡号/姓名写入 {@code *_cipher}（由 SM4 TypeHandler 透明加密）；</li>
+     *     <li>{@code payAccount}/{@code payAccountName} 仅保留脱敏展示值，避免明文外泄。</li>
+     * </ul>
+     */
+    private void applySensitiveFields(UnionWithdrawApply entity, UnionWithdrawApplyParam param) {
+        String fullAccount = param.getPayAccount();
+        if (StrUtil.isNotBlank(fullAccount)) {
+            entity.setPayAccountCipher(fullAccount);
+            entity.setPayAccount(DesensitizedUtil.bankCard(fullAccount));
+        }
+        String fullName = param.getPayAccountName();
+        if (StrUtil.isNotBlank(fullName)) {
+            entity.setPayAccountNameCipher(fullName);
+            entity.setPayAccountName(DesensitizedUtil.chineseName(fullName));
+        }
     }
 
 }

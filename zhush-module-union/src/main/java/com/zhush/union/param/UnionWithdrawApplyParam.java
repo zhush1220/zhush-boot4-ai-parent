@@ -57,12 +57,12 @@ public class UnionWithdrawApplyParam {
     @NotNull(message = "提现方式：1-银行卡 2-支付宝 3-微信支付不能为空")
     private Integer withdrawType;
 
-    @Schema(description = "收款账号（脱敏存储）")
-    @NotBlank(message = "收款账号（脱敏存储）不能为空")
+    @Schema(description = "收款账号（完整值，如银行卡号；服务端 SM4 加密存储、脱敏展示）")
+    @NotBlank(message = "收款账号（完整值，如银行卡号；服务端 SM4 加密存储、脱敏展示）不能为空")
     private String payAccount;
 
-    @Schema(description = "收款人姓名")
-    @NotBlank(message = "收款人姓名不能为空")
+    @Schema(description = "收款人姓名（完整值，服务端 SM4 加密存储、脱敏展示）")
+    @NotBlank(message = "收款人姓名（完整值，服务端 SM4 加密存储、脱敏展示）不能为空")
     private String payAccountName;
 
     @Schema(description = "开户银行名称（银行卡时必填）")
@@ -70,6 +70,15 @@ public class UnionWithdrawApplyParam {
 
     @Schema(description = "开户支行名称")
     private String payBankBranch;
+
+    @Schema(description = "渠道银行编码（V2 企业付款到银行卡必填，如 ICBC；为空则按银行名解析）")
+    private String payBankCode;
+
+    @Schema(description = "支付渠道（协议）：WECHAT_V2 / WECHAT_V3 / ALIPAY")
+    private String payChannel;
+
+    @Schema(description = "微信零钱收款 openid（payChannel=WECHAT_V3 时必填）")
+    private String payOpenid;
 
     @Schema(description = "状态：1-待审核 2-审核通过 3-已打款 4-已驳回 5-已取消 6-打款失败")
     private Integer status;

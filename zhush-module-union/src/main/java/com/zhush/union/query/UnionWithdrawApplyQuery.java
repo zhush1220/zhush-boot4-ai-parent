@@ -43,6 +43,12 @@ public class UnionWithdrawApplyQuery extends BaseQuery {
     @Schema(description = "开户支行名称")
     private String payBankBranch;
 
+    @Schema(description = "支付渠道（协议）：WECHAT_V2 / WECHAT_V3 / ALIPAY")
+    private String payChannel;
+
+    @Schema(description = "微信零钱收款 openid")
+    private String payOpenid;
+
     @Schema(description = "状态：1-待审核 2-审核通过 3-已打款 4-已驳回 5-已取消 6-打款失败")
     private Integer status;
 

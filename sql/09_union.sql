@@ -1498,10 +1498,15 @@ CREATE TABLE `union_withdraw_apply`  (
   `tax_rate` decimal(5, 4) NULL DEFAULT 0.0000 COMMENT '税费率（如0.05表示5%）',
   `withdraw_type` tinyint NOT NULL COMMENT '提现方式：1-银行卡 2-支付宝 3-微信支付',
   `pay_account` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '收款账号（脱敏存储）',
+  `pay_account_cipher` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '收款账号密文全值（SM4；出款取完整卡号，展示用 pay_account）',
   `pay_account_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '收款人姓名',
+  `pay_account_name_cipher` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '收款人姓名密文全值（SM4）',
   `pay_bank_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '开户银行名称（银行卡时必填）',
+  `pay_bank_code` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '渠道银行编码（V2 企业付款到银行卡必填，如 ICBC；为空则按银行名解析）',
   `pay_bank_branch` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '开户支行名称',
-  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：1-待审核 2-审核通过 3-已打款 4-已驳回 5-已取消 6-打款失败',
+  `pay_channel` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '支付渠道（协议）：WECHAT_V2 / WECHAT_V3 / ALIPAY，与 withdraw_type 显式区分',
+  `pay_openid` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '微信零钱收款 openid（pay_channel=WECHAT_V3 时必填，服务端反查写入）',
+  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：1-待审核 2-审核通过 3-已打款 4-已驳回 5-已取消 6-打款失败 7-打款处理中',
   `auditor_id` bigint NULL DEFAULT NULL COMMENT '审核人ID',
   `auditor_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '审核人姓名（冗余）',
   `audit_time` datetime NULL DEFAULT NULL COMMENT '审核时间',
@@ -1525,6 +1530,7 @@ CREATE TABLE `union_withdraw_apply`  (
   INDEX `idx_member_id`(`member_id` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
+  INDEX `idx_pay_channel`(`pay_channel` ASC) USING BTREE,
   INDEX `idx_pay_channel_order`(`pay_channel_order_no` ASC) USING BTREE,
   INDEX `idx_transaction_id`(`transaction_id` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '提现申请表' ROW_FORMAT = Dynamic;
@@ -1581,6 +1587,38 @@ CREATE TABLE `union_withdraw_config`  (
 
 -- ----------------------------
 -- Records of union_withdraw_config
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for union_withdraw_reconcile_record
+-- ----------------------------
+DROP TABLE IF EXISTS `union_withdraw_reconcile_record`;
+CREATE TABLE `union_withdraw_reconcile_record`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `apply_id` bigint NOT NULL COMMENT '提现申请ID',
+  `apply_no` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '申请单号（渠道幂等键）',
+  `member_id` bigint NULL DEFAULT NULL COMMENT '推广者ID',
+  `pay_channel` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '支付渠道（协议）：WECHAT_V2 / WECHAT_V3 / ALIPAY',
+  `diff_type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '差异类型：QUERY_FAILED-查单失败；STUCK_TOO_LONG-超过 SLA 未收敛',
+  `local_status` tinyint NULL DEFAULT NULL COMMENT '本地提现单状态',
+  `channel_state` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '渠道原始状态（脱敏）',
+  `channel_order_no` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '渠道订单号',
+  `diff_desc` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '差异描述',
+  `handle_status` tinyint NOT NULL DEFAULT 0 COMMENT '处置状态：0-待处理 1-已处理 2-已忽略',
+  `handle_remark` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '处置备注',
+  `handler_id` bigint NULL DEFAULT NULL COMMENT '处置人ID',
+  `handler_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '处置人姓名',
+  `handle_time` datetime NULL DEFAULT NULL COMMENT '处置时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_apply_diff`(`apply_id` ASC, `diff_type` ASC) USING BTREE,
+  INDEX `idx_handle_status`(`handle_status` ASC) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '提现对账差异记录表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of union_withdraw_reconcile_record
 -- ----------------------------
 
 -- ----------------------------

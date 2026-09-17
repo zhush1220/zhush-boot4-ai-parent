@@ -29,6 +29,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- 统一支付底座（微信 V2/V3 渠道适配） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-module-pay</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.zhush</groupId>
             <artifactId>zhush-module-ai</artifactId>

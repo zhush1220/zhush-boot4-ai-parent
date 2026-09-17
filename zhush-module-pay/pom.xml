@@ -9,6 +9,7 @@
     </parent>
     <artifactId>zhush-module-pay</artifactId>
     <packaging>jar</packaging>
+    <description>统一支付底座：协议无关抽象层（core）+ 微信支付 V2/V3 渠道适配（wx）</description>
 
     <dependencies>
         <dependency>
@@ -16,12 +17,33 @@
             <artifactId>zhush-common</artifactId>
         </dependency>
 
+        <!-- 条件装配与配置绑定（@Configuration / @ConditionalOnProperty / @ConfigurationProperties） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>com.github.binarywang</groupId>
             <artifactId>weixin-java-pay</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
-
 
 </project>

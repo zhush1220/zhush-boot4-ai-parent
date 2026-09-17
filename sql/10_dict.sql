@@ -88,3 +88,16 @@ VALUES (1, 'common_status', '启用', '1', 1, 1),
        (3, 'system_user_sex', '男', '1', 1, 1),
        (4, 'system_user_sex', '女', '2', 2, 1),
        (5, 'system_user_sex', '未知', '0', 3, 1);
+
+-- ============================================================
+-- 联盟提现支付渠道字典（与 union_withdraw_apply.pay_channel 取值一一对应）
+-- dict_type = union_pay_channel；与提现方式(withdraw_type)显式区分，微信可走 V2 或 V3
+-- ============================================================
+INSERT INTO `sys_dict_type` (`id`, `name`, `type`, `status`, `remark`)
+VALUES (3, '提现支付渠道', 'union_pay_channel', 1,
+        '提现出款实际使用的支付协议；与提现方式(withdraw_type)区分，微信可走 V2 或 V3');
+
+INSERT INTO `sys_dict_data` (`id`, `dict_type`, `label`, `value`, `sort`, `status`)
+VALUES (6, 'union_pay_channel', '微信V2（企业付款到银行卡）', 'WECHAT_V2', 1, 1),
+       (7, 'union_pay_channel', '微信V3（商家转账）',        'WECHAT_V3', 2, 1),
+       (8, 'union_pay_channel', '支付宝',                    'ALIPAY',    3, 1);
