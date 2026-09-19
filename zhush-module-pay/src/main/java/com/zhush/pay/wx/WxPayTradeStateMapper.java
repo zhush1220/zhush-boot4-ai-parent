@@ -1,9 +1,9 @@
-package com.zhush.pay.wx.v3;
+package com.zhush.pay.wx;
 
 import com.zhush.pay.core.model.PayStatus;
 
 /**
- * 微信 V3 支付/退款状态 → 统一 {@link PayStatus} 映射
+ * 微信 V2/V3 支付/退款状态 → 统一 {@link PayStatus} 映射（两版共用，{@code trade_state}/{@code refund_status} 词表一致）
  *
  * <p>未知/中间态一律保守映射为 {@link PayStatus#PROCESSING}，<b>绝不</b>误判为成功或失败。
  *
@@ -36,7 +36,7 @@ public final class WxPayTradeStateMapper {
     /**
      * 退款 status → 统一状态
      *
-     * <p>取值：SUCCESS / CLOSED / PROCESSING / ABNORMAL
+     * <p>V3 取值：SUCCESS / CLOSED / PROCESSING / ABNORMAL；V2 refund_status：SUCCESS / CHANGE / REFUNDCLOSE
      */
     public static PayStatus toRefundStatus(String status) {
         if (status == null) {
@@ -44,7 +44,8 @@ public final class WxPayTradeStateMapper {
         }
         return switch (status.toUpperCase()) {
             case "SUCCESS" -> PayStatus.SUCCESS;
-            case "CLOSED", "ABNORMAL" -> PayStatus.FAIL;
+            // V2 退款态：REFUNDCLOSE 视为失败终态；CHANGE（退款到零钱异常）需人工，保守非终态
+            case "CLOSED", "ABNORMAL", "REFUNDCLOSE" -> PayStatus.FAIL;
             // PROCESSING / 其它：退款处理中，保持非终态
             default -> PayStatus.PROCESSING;
         };

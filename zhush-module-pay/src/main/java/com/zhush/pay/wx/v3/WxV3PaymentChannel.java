@@ -18,6 +18,7 @@ import com.zhush.pay.core.model.RefundCommand;
 import com.zhush.pay.core.model.RefundResult;
 import com.zhush.pay.enums.PayErrorCode;
 import com.zhush.pay.wx.WxPayProperties;
+import com.zhush.pay.wx.WxPayTradeStateMapper;
 import com.zhush.pay.wx.exception.WxPayExceptionTranslator;
 import lombok.extern.slf4j.Slf4j;
 
