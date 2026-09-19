@@ -417,6 +417,26 @@ V2 企业付款到银行卡**不推送结果通知**，必须：
 
 V2 统一下单 / V3 JSAPI、退款、支付宝渠道实现（替换现有 Mock 兜底）。
 
+**实施状态（本次已落地：微信 V3 收款/退款；支付宝按环境缺失延后）**
+
+1. ✅ `PayGateway`/`DefaultPayGateway` 扩展收款能力：`pay`/`queryPayment`/`refund`/`queryRefund`，聚合 `List<PaymentChannel>` 按 `channelType` 路由收款渠道；
+2. ✅ `PaymentChannel` SPI + 统一模型 `PaymentCommand`/`PaymentResult`/`RefundCommand`/`RefundResult`（一期预留转正式）；
+3. ✅ `wx/v3`：`WxPaymentClient`（JSAPI 下单 + 查单 + 退款 + 退款查单）、`WxV3PaymentChannel`、`WxPayTradeStateMapper`（trade_state/refund_status → `PayStatus`，未知态保守映射 `PROCESSING`）；
+4. ✅ **回调撞键解决**：微信 V3 转账/支付/退款通知同属 `WECHAT_V3`，引入 `PayNotifyType`（TRANSFER/PAYMENT/REFUND）与 `channelType` 组成复合键，`PayNotifyDispatcher` 按 `(channelType, notifyType)` 路由；新增 `WxV3PaymentNotifyParser`、`WxV3RefundNotifyParser`；
+5. ✅ `WxPayConfiguration` 在 `zhush.pay.wx.v3.enabled` 条件下装配 4 个收款 Bean；四环境已有 `zhush.pay.wx` 配置，无需新增必需项；
+6. ✅ 单测：`WxPayTradeStateMapperTest`/`WxV3PaymentChannelTest`/`WxV3PaymentNotifyParserTest`/`WxV3RefundNotifyParserTest`（pay 模块 24/24 通过），验证「下单成功仅受理非终态」「查单/退款按状态归一」「调用异常不伪装成功」「回调验签失败/串商户号拒绝」；
+7. ⏸ **支付宝渠道延后**：本地仓库无 `com.alipay` SDK、`PayChannelType.ALIPAY` 仅枚举占位、且无收款业务消费方；本期不引入，登记为待办；
+8. ⏸ **V2 统一下单延后**：见下方「master 分支现状」——二期 V2 出款源码未落在 master，收款侧本期只做 V3 JSAPI。
+
+> **资金安全红线沿用一期**：下单/退款同步返回仅代表「受理」，终态一律由查单或回调收敛。
+
+#### ⚠️ master 分支现状（三期排查发现，非三期引入）
+
+三期在 master 工作树推进时发现：master 分支存在**二期业务/协议源码缺失导致的编译不自洽**，与 union 分支为两套不同架构：
+
+- **pay 模块**：master 的 `WxPayConfiguration` 引用 `com.zhush.pay.wx.v2.*`（`WxBankPayClient`/`WxV2PayoutChannel`），但 v2 源码不在 master（仅存在于 union 的扁平 `wx/` 包且命名不同）→ 按决策**移除对 v2 的失效引用**，pay 模块恢复可编译；
+- **union 模块（三期未触碰，遗留）**：master 跟踪的 `UnionWithdrawPayoutService`/`UnionWithdrawReconcileTask` 引用 `UnionWithdrawLimitService`/`UnionWithdrawReconcileService`，而这两个二期业务类仅在 union 分支 → **union 模块在 master 上编译不过**，属二期分支完整性问题，超出三期范围，需单独立项决策（补齐二期到 master，或统一以 union 为业务基线）。
+
 ## 十二、验收标准
 
 - [ ] `PayGateway` 可编译、可通过 `channelType` 路由到正确渠道实现；未启用协议不装配 Bean。
