@@ -12,6 +12,7 @@ import com.zhush.pay.core.notify.PayNotifyParser;
 import com.zhush.pay.core.notify.PayNotifyType;
 import com.zhush.pay.enums.PayErrorCode;
 import com.zhush.pay.wx.WxPayProperties;
+import com.zhush.pay.wx.WxPayTradeStateMapper;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Map;

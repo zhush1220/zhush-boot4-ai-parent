@@ -3,6 +3,12 @@ package com.zhush.pay.wx;
 import com.github.binarywang.wxpay.config.WxPayConfig;
 import com.github.binarywang.wxpay.service.WxPayService;
 import com.github.binarywang.wxpay.service.impl.WxPayServiceImpl;
+import com.zhush.pay.wx.v2.WxV2PaymentChannel;
+import com.zhush.pay.wx.v2.WxV2PaymentClient;
+import com.zhush.pay.wx.v2.WxV2PaymentNotifyParser;
+import com.zhush.pay.wx.v2.WxV2PayoutChannel;
+import com.zhush.pay.wx.v2.WxV2PayoutClient;
+import com.zhush.pay.wx.v2.WxV2RefundNotifyParser;
 import com.zhush.pay.wx.v3.WxPaymentClient;
 import com.zhush.pay.wx.v3.WxTransferClient;
 import com.zhush.pay.wx.v3.WxTransferNotifyParser;
@@ -134,6 +140,62 @@ public class WxPayConfiguration {
     @ConditionalOnProperty(prefix = "zhush.pay.wx.v3", name = "enabled", havingValue = "true")
     public WxV3RefundNotifyParser wxV3RefundNotifyParser(WxPayService wxPayService, WxPayProperties properties) {
         return new WxV3RefundNotifyParser(wxPayService, properties);
+    }
+
+    // ================ V2（企业付款 + 统一支付 + 退款，XML 协议） ================
+
+    /**
+     * V2 收款/退款客户端（统一下单 + 查单 + 退款 + 退款查询）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
+    public WxV2PaymentClient wxV2PaymentClient(WxPayService wxPayService, WxPayProperties properties) {
+        return new WxV2PaymentClient(wxPayService, properties);
+    }
+
+    /**
+     * V2 出款客户端（企业付款到银行卡/零钱 + 查单 + 敏感字段加密）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
+    public WxV2PayoutClient wxV2PayoutClient(WxPayService wxPayService, WxPayProperties properties) {
+        return new WxV2PayoutClient(wxPayService, properties);
+    }
+
+    /**
+     * V2 收款/退款渠道实现（注册进 PayGateway 收款路由表，channelType=WECHAT_V2）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
+    public WxV2PaymentChannel wxV2PaymentChannel(WxV2PaymentClient wxV2PaymentClient, WxPayProperties properties) {
+        return new WxV2PaymentChannel(wxV2PaymentClient, properties);
+    }
+
+    /**
+     * V2 出款渠道实现（注册进 PayGateway 出款路由表，channelType=WECHAT_V2）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
+    public WxV2PayoutChannel wxV2PayoutChannel(WxV2PayoutClient wxV2PayoutClient, WxPayProperties properties) {
+        return new WxV2PayoutChannel(wxV2PayoutClient, properties);
+    }
+
+    /**
+     * V2 支付（收款）回调解析器（XML + 验签）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
+    public WxV2PaymentNotifyParser wxV2PaymentNotifyParser(WxPayService wxPayService, WxPayProperties properties) {
+        return new WxV2PaymentNotifyParser(wxPayService, properties);
+    }
+
+    /**
+     * V2 退款回调解析器（req_info 解密）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
+    public WxV2RefundNotifyParser wxV2RefundNotifyParser(WxPayService wxPayService, WxPayProperties properties) {
+        return new WxV2RefundNotifyParser(wxPayService, properties);
     }
 
 }

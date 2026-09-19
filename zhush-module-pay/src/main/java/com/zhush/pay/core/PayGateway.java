@@ -63,4 +63,27 @@ public interface PayGateway {
      */
     RefundResult queryRefund(PayChannelType channelType, String refundBizNo);
 
+    /**
+     * 退差价 / 部分退款：对同一原支付单退指定金额（单位：分）。
+     *
+     * <p>幂等以 {@code refundBizNo}（渠道 out_refund_no）为键，V2/V3 语义一致；底座内部查原单总额
+     * 并组装退款请求，业务侧无需重复查单。同一原单可多次退差价，累计不超过原单实付额（由业务侧账本校验）。
+     *
+     * @param channelType  渠道协议（与原支付同协议）
+     * @param originBizNo  原支付业务单号
+     * @param refundBizNo  本次退款业务单号（唯一）
+     * @param amountFen    本次退款额（分）
+     * @param reason       退款原因（用户可见）
+     */
+    default RefundResult refundDifference(PayChannelType channelType, String originBizNo,
+                                          String refundBizNo, int amountFen, String reason) {
+        return refund(RefundCommand.builder()
+                .channelType(channelType)
+                .originBizNo(originBizNo)
+                .bizNo(refundBizNo)
+                .amount(amountFen)
+                .reason(reason)
+                .build());
+    }
+
 }

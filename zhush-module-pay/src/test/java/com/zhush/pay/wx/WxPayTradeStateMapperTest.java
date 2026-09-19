@@ -1,4 +1,4 @@
-package com.zhush.pay.wx.v3;
+package com.zhush.pay.wx;
 
 import com.zhush.pay.core.model.PayStatus;
 import org.junit.jupiter.api.Test;
@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * 微信 V3 支付/退款状态映射契约测试
+ * 微信 V2/V3 支付/退款状态映射契约测试
  *
  * <p>资金安全红线：未知/中间态必须保守映射为 {@link PayStatus#PROCESSING}，绝不误判终态。
  */
@@ -40,11 +40,15 @@ class WxPayTradeStateMapperTest {
         assertEquals(PayStatus.SUCCESS, WxPayTradeStateMapper.toRefundStatus("SUCCESS"));
         assertEquals(PayStatus.FAIL, WxPayTradeStateMapper.toRefundStatus("CLOSED"));
         assertEquals(PayStatus.FAIL, WxPayTradeStateMapper.toRefundStatus("ABNORMAL"));
+        // V2 特有
+        assertEquals(PayStatus.FAIL, WxPayTradeStateMapper.toRefundStatus("REFUNDCLOSE"));
     }
 
     @Test
     void toRefundStatus_processingAndUnknownStayNonFinal() {
         assertEquals(PayStatus.PROCESSING, WxPayTradeStateMapper.toRefundStatus("PROCESSING"));
+        // V2 CHANGE（退款到零钱异常）需人工介入，保守非终态
+        assertEquals(PayStatus.PROCESSING, WxPayTradeStateMapper.toRefundStatus("CHANGE"));
         assertEquals(PayStatus.PROCESSING, WxPayTradeStateMapper.toRefundStatus("WEIRD"));
         assertEquals(PayStatus.PROCESSING, WxPayTradeStateMapper.toRefundStatus(null));
     }
