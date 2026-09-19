@@ -3,6 +3,7 @@ package com.zhush.union.service;
 import com.zhush.pay.core.model.PayChannelType;
 import com.zhush.pay.core.notify.PayNotifyHandler;
 import com.zhush.pay.core.notify.PayNotifyMessage;
+import com.zhush.pay.core.notify.PayNotifyType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -26,8 +27,9 @@ public class UnionPayNotifyHandler implements PayNotifyHandler {
     }
 
     @Override
-    public boolean supports(PayChannelType channelType) {
-        return channelType == PayChannelType.WECHAT_V3;
+    public boolean supports(PayChannelType channelType, PayNotifyType notifyType) {
+        // 仅处理出款（商家转账）结果回调；支付/退款回调归后续收款业务
+        return channelType == PayChannelType.WECHAT_V3 && notifyType == PayNotifyType.TRANSFER;
     }
 
     @Override

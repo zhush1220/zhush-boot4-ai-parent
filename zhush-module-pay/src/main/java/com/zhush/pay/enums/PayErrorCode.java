@@ -33,6 +33,7 @@ public enum PayErrorCode implements IErrorCode {
     WX_PAY_CALL_FAIL(2004001, "微信支付调用失败：{0}"),
     WX_PAY_NOTIFY_INVALID(2004002, "微信支付回调报文非法：{0}"),
     PAYOUT_FAILED(2004003, "渠道出款失败：{0}"),
+    PAY_ORIGINAL_ORDER_MISSING(2004004, "原支付订单不存在或状态不可退款：{0}"),
     ;
 
     private final int code;

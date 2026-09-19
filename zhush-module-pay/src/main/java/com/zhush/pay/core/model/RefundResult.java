@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 统一退款结果（协议无关）—— <b>一期仅预留</b>，不实现。
+ * 统一退款结果（协议无关）
  *
  * @author zhush
  */
@@ -23,5 +23,23 @@ public class RefundResult {
 
     /** 失败原因 */
     private String failReason;
+
+    /** 退款已受理/已查得明确状态（以 finalState 为准是否终态） */
+    public static RefundResult of(PayStatus state, String channelOrderNo) {
+        return RefundResult.builder()
+                .accepted(true)
+                .finalState(state)
+                .channelOrderNo(channelOrderNo)
+                .build();
+    }
+
+    /** 明确失败（未受理） */
+    public static RefundResult fail(String failReason) {
+        return RefundResult.builder()
+                .accepted(false)
+                .finalState(PayStatus.FAIL)
+                .failReason(failReason)
+                .build();
+    }
 
 }

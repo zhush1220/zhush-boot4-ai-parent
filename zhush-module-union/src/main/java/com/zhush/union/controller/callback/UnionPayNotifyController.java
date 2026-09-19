@@ -3,6 +3,7 @@ package com.zhush.union.controller.callback;
 import com.zhush.pay.core.model.PayChannelType;
 import com.zhush.pay.core.notify.PayNotifyDispatcher;
 import com.zhush.pay.core.notify.PayNotifyMessage;
+import com.zhush.pay.core.notify.PayNotifyType;
 import com.zhush.satoken.annotation.IgnoreAuth;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,18 +52,19 @@ public class UnionPayNotifyController {
     @IgnoreAuth
     @Operation(summary = "微信商家转账结果回调")
     public ResponseEntity<String> wechatTransfer(@RequestBody String body, HttpServletRequest request) {
-        return dispatch(PayChannelType.WECHAT_V3, body, request);
+        return dispatch(PayChannelType.WECHAT_V3, PayNotifyType.TRANSFER, body, request);
     }
 
-    private ResponseEntity<String> dispatch(PayChannelType channelType, String body, HttpServletRequest request) {
+    private ResponseEntity<String> dispatch(PayChannelType channelType, PayNotifyType notifyType,
+                                            String body, HttpServletRequest request) {
         try {
-            PayNotifyMessage message = payNotifyDispatcher.dispatch(channelType, body, collectHeaders(request));
-            log.info("[PayNotify] 回调处理完成 channel={}，bizNo={}，state={}",
-                    channelType, message.getBizNo(), message.getPayStatus());
+            PayNotifyMessage message = payNotifyDispatcher.dispatch(channelType, notifyType, body, collectHeaders(request));
+            log.info("[PayNotify] 回调处理完成 channel={}，notifyType={}，bizNo={}，state={}",
+                    channelType, notifyType, message.getBizNo(), message.getPayStatus());
             return ResponseEntity.ok(WX_V3_SUCCESS_ACK);
         } catch (Exception e) {
             // 失败返 500 触发渠道重试；业务收敛已幂等，重复通知安全
-            log.error("[PayNotify] 回调处理失败 channel={}", channelType, e);
+            log.error("[PayNotify] 回调处理失败 channel={}，notifyType={}", channelType, notifyType, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("FAIL");
         }
     }

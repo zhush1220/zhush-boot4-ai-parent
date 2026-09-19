@@ -15,9 +15,9 @@ import com.zhush.pay.core.model.PayChannelType;
 public interface PayNotifyHandler {
 
     /**
-     * 是否处理该渠道的回调
+     * 是否处理该渠道、该通知类型的回调
      */
-    boolean supports(PayChannelType channelType);
+    boolean supports(PayChannelType channelType, PayNotifyType notifyType);
 
     /**
      * 处理回调（幂等由实现方保证：按 bizNo + channelOrderNo 去重）
