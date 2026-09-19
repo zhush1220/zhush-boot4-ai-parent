@@ -7,7 +7,10 @@ import com.zhush.pay.core.model.RefundCommand;
 import com.zhush.pay.core.model.RefundResult;
 
 /**
- * 收款/退款渠道 SPI —— <b>一期仅预留接口</b>，不实现。
+ * 收款/退款渠道 SPI（三期）
+ *
+ * <p>与 {@link PayoutChannel} 对称：由 {@code PayGateway} 按 {@link #channelType()} 路由，
+ * 实现类注册为 Bean 即自动纳入路由表（无实现时调用抛不支持异常）。
  *
  * @author zhush
  */
@@ -32,5 +35,10 @@ public interface PaymentChannel {
      * 发起退款
      */
     RefundResult refund(RefundCommand command);
+
+    /**
+     * 退款查单（退款为异步，需据此收敛终态）
+     */
+    RefundResult queryRefund(String refundBizNo);
 
 }

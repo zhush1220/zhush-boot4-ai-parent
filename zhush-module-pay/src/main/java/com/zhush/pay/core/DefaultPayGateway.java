@@ -1,9 +1,14 @@
 package com.zhush.pay.core;
 
+import com.zhush.pay.core.channel.PaymentChannel;
 import com.zhush.pay.core.channel.PayoutChannel;
 import com.zhush.pay.core.model.PayChannelType;
+import com.zhush.pay.core.model.PaymentCommand;
+import com.zhush.pay.core.model.PaymentResult;
 import com.zhush.pay.core.model.PayoutCommand;
 import com.zhush.pay.core.model.PayoutResult;
+import com.zhush.pay.core.model.RefundCommand;
+import com.zhush.pay.core.model.RefundResult;
 import com.zhush.pay.enums.PayErrorCode;
 import java.util.EnumMap;
 import java.util.List;
@@ -28,12 +33,16 @@ import static com.zhush.common.exception.ServiceExceptionUtil.exception;
 public class DefaultPayGateway implements PayGateway {
 
     private final Map<PayChannelType, PayoutChannel> channelMap = new EnumMap<>(PayChannelType.class);
+    private final Map<PayChannelType, PaymentChannel> paymentChannelMap = new EnumMap<>(PayChannelType.class);
 
-    public DefaultPayGateway(List<PayoutChannel> channels) {
+    public DefaultPayGateway(List<PayoutChannel> channels, List<PaymentChannel> paymentChannels) {
         for (PayoutChannel channel : channels) {
             channelMap.put(channel.channelType(), channel);
         }
-        log.info("[PayGateway] 已注册出款渠道: {}", channelMap.keySet());
+        for (PaymentChannel channel : paymentChannels) {
+            paymentChannelMap.put(channel.channelType(), channel);
+        }
+        log.info("[PayGateway] 已注册出款渠道: {}, 收款渠道: {}", channelMap.keySet(), paymentChannelMap.keySet());
     }
 
     @Override
@@ -58,11 +67,42 @@ public class DefaultPayGateway implements PayGateway {
                 .orElse(false);
     }
 
+    @Override
+    public PaymentResult pay(PaymentCommand command) {
+        return resolvePayment(command.getChannelType()).pay(command);
+    }
+
+    @Override
+    public PaymentResult queryPayment(PayChannelType channelType, String bizNo) {
+        return resolvePayment(channelType).query(bizNo);
+    }
+
+    @Override
+    public RefundResult refund(RefundCommand command) {
+        return resolvePayment(command.getChannelType()).refund(command);
+    }
+
+    @Override
+    public RefundResult queryRefund(PayChannelType channelType, String refundBizNo) {
+        return resolvePayment(channelType).queryRefund(refundBizNo);
+    }
+
     /**
      * 路由到渠道实现；未启用/未实现时抛业务异常（红线：不得返回 accepted）
      */
     private PayoutChannel resolve(PayChannelType channelType) {
         PayoutChannel channel = channelType == null ? null : channelMap.get(channelType);
+        if (channel == null) {
+            throw exception(PayErrorCode.PAY_CHANNEL_UNSUPPORTED, channelType);
+        }
+        return channel;
+    }
+
+    /**
+     * 路由到收款渠道实现；未启用/未实现时抛业务异常（红线：不得返回受理）
+     */
+    private PaymentChannel resolvePayment(PayChannelType channelType) {
+        PaymentChannel channel = channelType == null ? null : paymentChannelMap.get(channelType);
         if (channel == null) {
             throw exception(PayErrorCode.PAY_CHANNEL_UNSUPPORTED, channelType);
         }

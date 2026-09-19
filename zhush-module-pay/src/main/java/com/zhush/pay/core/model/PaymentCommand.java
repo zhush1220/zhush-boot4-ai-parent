@@ -4,9 +4,9 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 统一收款命令（协议无关）—— <b>一期仅预留</b>，不实现。
+ * 统一收款命令（协议无关）
  *
- * <p>未来用于订单收款（V2 统一下单 / V3 JSAPI 等）。
+ * <p>用于订单收款（V3 JSAPI 等）。业务侧组装本命令调用 {@code PayGateway#pay}。
  *
  * @author zhush
  */
@@ -23,13 +23,16 @@ public class PaymentCommand {
     /** 渠道类型（协议） */
     private PayChannelType channelType;
 
-    /** 付款方标识（如 openid） */
+    /** 付款方标识（如 JSAPI 的 openid） */
     private String payerId;
 
     /** 商品描述 */
     private String description;
 
-    /** 结果回调地址 */
+    /** 结果回调地址（为空则用渠道默认配置） */
     private String notifyUrl;
+
+    /** 微信 AppID（为空则用渠道默认配置；JSAPI 需与 openid 同主体） */
+    private String appId;
 
 }

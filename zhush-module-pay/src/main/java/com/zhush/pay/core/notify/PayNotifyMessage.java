@@ -21,6 +21,9 @@ public class PayNotifyMessage {
     /** 渠道类型（协议） */
     private PayChannelType channelType;
 
+    /** 通知类型（转账/支付/退款） */
+    private PayNotifyType notifyType;
+
     /** 业务单号（渠道幂等键，与请求时一致） */
     private String bizNo;
 

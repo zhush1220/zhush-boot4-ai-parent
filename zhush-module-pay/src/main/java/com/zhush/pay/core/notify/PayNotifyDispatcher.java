@@ -22,12 +22,14 @@ import static com.zhush.common.exception.ServiceExceptionUtil.exception;
 @Component
 public class PayNotifyDispatcher {
 
-    private final Map<PayChannelType, PayNotifyParser> parserMap = new EnumMap<>(PayChannelType.class);
+    private final Map<PayChannelType, Map<PayNotifyType, PayNotifyParser>> parserMap =
+            new EnumMap<>(PayChannelType.class);
     private final List<PayNotifyHandler> handlers;
 
     public PayNotifyDispatcher(List<PayNotifyParser> parsers, List<PayNotifyHandler> handlers) {
         for (PayNotifyParser parser : parsers) {
-            parserMap.put(parser.channelType(), parser);
+            parserMap.computeIfAbsent(parser.channelType(), k -> new EnumMap<>(PayNotifyType.class))
+                    .put(parser.notifyType(), parser);
         }
         this.handlers = handlers;
         log.info("[PayNotify] 已注册回调解析器: {}, 处理器数量: {}", parserMap.keySet(), handlers.size());
@@ -38,14 +40,16 @@ public class PayNotifyDispatcher {
      *
      * @return 统一消息（供控制器记录）
      */
-    public PayNotifyMessage dispatch(PayChannelType channelType, String body, Map<String, String> headers) {
-        PayNotifyParser parser = parserMap.get(channelType);
+    public PayNotifyMessage dispatch(PayChannelType channelType, PayNotifyType notifyType,
+                                     String body, Map<String, String> headers) {
+        PayNotifyParser parser = notifyType == null ? null
+                : parserMap.getOrDefault(channelType, Map.of()).get(notifyType);
         if (parser == null) {
             throw exception(PayErrorCode.PAY_CHANNEL_UNSUPPORTED, channelType);
         }
         PayNotifyMessage message = parser.parse(body, headers);
         for (PayNotifyHandler handler : handlers) {
-            if (handler.supports(channelType)) {
+            if (handler.supports(channelType, notifyType)) {
                 handler.handle(message);
                 return message;
             }

@@ -19,6 +19,14 @@ public interface PayNotifyParser {
     PayChannelType channelType();
 
     /**
+     * 支持的通知类型（转账/支付/退款）。
+     * <p>同一渠道可能有多种通知（如 V3 的转账与支付），以此区分；默认按转账处理。
+     */
+    default PayNotifyType notifyType() {
+        return PayNotifyType.TRANSFER;
+    }
+
+    /**
      * 解析回调报文（验签 + 解密），并归一化为统一消息
      *
      * @param body    原始报文（V3 为 JSON 密文；V2 为 XML）

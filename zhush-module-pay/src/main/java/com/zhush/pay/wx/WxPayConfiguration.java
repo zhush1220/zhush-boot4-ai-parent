@@ -3,11 +3,13 @@ package com.zhush.pay.wx;
 import com.github.binarywang.wxpay.config.WxPayConfig;
 import com.github.binarywang.wxpay.service.WxPayService;
 import com.github.binarywang.wxpay.service.impl.WxPayServiceImpl;
-import com.zhush.pay.wx.v2.WxBankPayClient;
-import com.zhush.pay.wx.v2.WxV2PayoutChannel;
+import com.zhush.pay.wx.v3.WxPaymentClient;
 import com.zhush.pay.wx.v3.WxTransferClient;
 import com.zhush.pay.wx.v3.WxTransferNotifyParser;
+import com.zhush.pay.wx.v3.WxV3PaymentChannel;
 import com.zhush.pay.wx.v3.WxV3PayoutChannel;
+import com.zhush.pay.wx.v3.WxV3PaymentNotifyParser;
+import com.zhush.pay.wx.v3.WxV3RefundNotifyParser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -72,24 +74,6 @@ public class WxPayConfiguration {
     }
 
     /**
-     * V2 企业付款到银行卡客户端（pay_bank）
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
-    public WxBankPayClient wxBankPayClient(WxPayService wxPayService) {
-        return new WxBankPayClient(wxPayService);
-    }
-
-    /**
-     * V2 出款渠道实现（注册进 PayGateway 路由表）
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "zhush.pay.wx.v2", name = "enabled", havingValue = "true")
-    public WxV2PayoutChannel wxV2PayoutChannel(WxBankPayClient wxBankPayClient, WxPayProperties properties) {
-        return new WxV2PayoutChannel(wxBankPayClient, properties);
-    }
-
-    /**
      * V3 商家转账客户端（transfer-bills）
      */
     @Bean
@@ -114,6 +98,42 @@ public class WxPayConfiguration {
     @ConditionalOnProperty(prefix = "zhush.pay.wx.v3", name = "enabled", havingValue = "true")
     public WxTransferNotifyParser wxTransferNotifyParser(WxPayService wxPayService, WxPayProperties properties) {
         return new WxTransferNotifyParser(wxPayService, properties);
+    }
+
+    /**
+     * V3 收款/退款客户端（JSAPI 下单 + 查单 + 退款）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v3", name = "enabled", havingValue = "true")
+    public WxPaymentClient wxPaymentClient(WxPayService wxPayService, WxPayProperties properties) {
+        return new WxPaymentClient(wxPayService, properties);
+    }
+
+    /**
+     * V3 收款/退款渠道实现（注册进 PayGateway 收款路由表）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v3", name = "enabled", havingValue = "true")
+    public WxV3PaymentChannel wxV3PaymentChannel(WxPaymentClient wxPaymentClient, WxPayProperties properties) {
+        return new WxV3PaymentChannel(wxPaymentClient, properties);
+    }
+
+    /**
+     * V3 支付（收款）回调解析器
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v3", name = "enabled", havingValue = "true")
+    public WxV3PaymentNotifyParser wxV3PaymentNotifyParser(WxPayService wxPayService, WxPayProperties properties) {
+        return new WxV3PaymentNotifyParser(wxPayService, properties);
+    }
+
+    /**
+     * V3 退款回调解析器
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.pay.wx.v3", name = "enabled", havingValue = "true")
+    public WxV3RefundNotifyParser wxV3RefundNotifyParser(WxPayService wxPayService, WxPayProperties properties) {
+        return new WxV3RefundNotifyParser(wxPayService, properties);
     }
 
 }

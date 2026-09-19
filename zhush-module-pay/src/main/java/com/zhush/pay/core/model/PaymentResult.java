@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 统一收款结果（协议无关）—— <b>一期仅预留</b>，不实现。
+ * 统一收款结果（协议无关）
  *
  * @author zhush
  */
@@ -26,5 +26,24 @@ public class PaymentResult {
 
     /** 失败原因 */
     private String failReason;
+
+    /** 下单已受理（非终态），携带拉起支付参数 */
+    public static PaymentResult accepted(PayStatus state, String channelOrderNo, String payParams) {
+        return PaymentResult.builder()
+                .accepted(true)
+                .finalState(state)
+                .channelOrderNo(channelOrderNo)
+                .payParams(payParams)
+                .build();
+    }
+
+    /** 明确失败（未受理） */
+    public static PaymentResult fail(String failReason) {
+        return PaymentResult.builder()
+                .accepted(false)
+                .finalState(PayStatus.FAIL)
+                .failReason(failReason)
+                .build();
+    }
 
 }

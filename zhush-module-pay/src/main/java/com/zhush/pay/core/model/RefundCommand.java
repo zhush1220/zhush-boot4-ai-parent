@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 统一退款命令（协议无关）—— <b>一期仅预留</b>，不实现。
+ * 统一退款命令（协议无关）
  *
  * @author zhush
  */

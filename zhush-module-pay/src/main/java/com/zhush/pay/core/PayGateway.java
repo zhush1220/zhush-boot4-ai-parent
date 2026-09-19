@@ -1,8 +1,12 @@
 package com.zhush.pay.core;
 
 import com.zhush.pay.core.model.PayChannelType;
+import com.zhush.pay.core.model.PaymentCommand;
+import com.zhush.pay.core.model.PaymentResult;
 import com.zhush.pay.core.model.PayoutCommand;
 import com.zhush.pay.core.model.PayoutResult;
+import com.zhush.pay.core.model.RefundCommand;
+import com.zhush.pay.core.model.RefundResult;
 
 /**
  * 统一支付门面（协议无关）
@@ -35,5 +39,28 @@ public interface PayGateway {
      * 指定渠道是否支持撤单
      */
     boolean supportCancel(PayChannelType channelType);
+
+    // ==================== 收款 / 退款（三期） ====================
+
+    /**
+     * 发起收款（下单，幂等：同一 {@code bizNo} 只产生一笔渠道预支付）。
+     * <p>返回结果中的 {@code payParams} 为前端拉起支付所需参数（如 JSAPI 签名包）。
+     */
+    PaymentResult pay(PaymentCommand command);
+
+    /**
+     * 查询收款结果（终态收敛）
+     */
+    PaymentResult queryPayment(PayChannelType channelType, String bizNo);
+
+    /**
+     * 发起退款（幂等：同一退款业务单号）
+     */
+    RefundResult refund(RefundCommand command);
+
+    /**
+     * 查询退款结果（退款为异步，需查单收敛）
+     */
+    RefundResult queryRefund(PayChannelType channelType, String refundBizNo);
 
 }
