@@ -30,47 +30,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin/union/withdraw-payout")
 public class UnionWithdrawPayoutController {
 
-    private final UnionWithdrawPayoutService payoutService;
-
-    public UnionWithdrawPayoutController(UnionWithdrawPayoutService payoutService) {
-        this.payoutService = payoutService;
-    }
-
-    /**
-     * 发起打款（审核通过/打款失败可重试）
-     */
-    @PostMapping("/{id}/payout")
-    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:payout")
-    @OperateLog(module = "提现出款", type = OperateTypeEnum.UPDATE)
-    @Operation(summary = "发起打款")
-    public Result<Void> payout(@Parameter(description = "提现申请ID") @PathVariable Long id) {
-        Long operatorId = StpAdminUtil.getLoginIdDefaultNull();
-        payoutService.payout(id, operatorId, operatorId == null ? null : String.valueOf(operatorId));
-        return Result.success();
-    }
-
-    /**
-     * 撤销出款（仅渠道明确返回「已撤销」才置取消）
-     */
-    @PostMapping("/{id}/cancel")
-    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:cancel")
-    @OperateLog(module = "提现出款", type = OperateTypeEnum.UPDATE)
-    @Operation(summary = "撤销出款")
-    public Result<Void> cancel(@Parameter(description = "提现申请ID") @PathVariable Long id,
-                               @RequestBody(required = false) Map<String, String> body) {
-        String reason = body == null ? null : body.get("cancelReason");
-        payoutService.cancel(id, reason);
-        return Result.success();
-    }
-
-    /**
-     * 主动查单收敛（V2 无回调时唯一手段；V3 亦作回调兜底）
-     */
-    @PostMapping("/{id}/reconcile")
-    @SaCheckPermission(type = CommonConstant.TYPE, value = "union:withdraw-apply:query")
-    @Operation(summary = "主动查单收敛")
-    public Result<Boolean> reconcile(@Parameter(description = "提现申请ID") @PathVariable Long id) {
-        return Result.success(payoutService.reconcile(id));
-    }
 
 }

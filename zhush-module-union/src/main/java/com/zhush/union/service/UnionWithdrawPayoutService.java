@@ -63,13 +63,9 @@ public class UnionWithdrawPayoutService {
 
     private final PayGateway payGateway;
 
-    private final UnionWithdrawLimitService limitService;
-
-    public UnionWithdrawPayoutService(UnionWithdrawApplyMapper withdrawApplyMapper, PayGateway payGateway,
-                                      UnionWithdrawLimitService limitService) {
+    public UnionWithdrawPayoutService(UnionWithdrawApplyMapper withdrawApplyMapper, PayGateway payGateway) {
         this.withdrawApplyMapper = withdrawApplyMapper;
         this.payGateway = payGateway;
-        this.limitService = limitService;
     }
 
     /**
@@ -91,8 +87,6 @@ public class UnionWithdrawPayoutService {
         Integer amount = toFen(resolvePayAmount(apply));
         assertNotNull(amount, UnionErrorCode.WITHDRAW_PAY_AMOUNT_INVALID, apply.getApplyNo());
         assertTrue(amount > 0, UnionErrorCode.WITHDRAW_PAY_AMOUNT_INVALID, apply.getApplyNo());
-        // 业务侧单日累计限额（支付模块无 DB，累计口径在业务库统计）
-        limitService.validateDailyLimit(apply.getMemberId(), amount, apply.getApplyNo());
         Payee payee = buildPayee(apply, channelType);
 
         // ① 受理：CAS 置「打款处理中」（单语句提交，调渠道前状态已持久化）

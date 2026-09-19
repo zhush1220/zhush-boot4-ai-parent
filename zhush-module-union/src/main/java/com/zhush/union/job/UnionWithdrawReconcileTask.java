@@ -1,6 +1,5 @@
 package com.zhush.union.job;
 
-import com.zhush.union.service.UnionWithdrawReconcileService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -19,20 +18,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class UnionWithdrawReconcileTask {
 
-    private final UnionWithdrawReconcileService reconcileService;
-
-    public UnionWithdrawReconcileTask(UnionWithdrawReconcileService reconcileService) {
-        this.reconcileService = reconcileService;
-    }
-
-    /**
-     * 执行一轮对账拉单（单条失败不阻断其余单据）
-     */
-    public void reconcile() {
-        UnionWithdrawReconcileService.ReconcileSummary summary = reconcileService.reconcilePending();
-        log.info("[UnionWithdraw] 对账任务完成 收敛={} 滞留={} 异常={}",
-                summary.converged(), summary.flagged(), summary.failed());
-    }
 
 }
 
