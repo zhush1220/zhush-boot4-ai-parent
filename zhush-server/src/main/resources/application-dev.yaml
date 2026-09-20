@@ -62,7 +62,7 @@ mybatis-flex:
     # --- 主库（默认数据源）---
     master:
       type: com.alibaba.druid.pool.DruidDataSource
-      url: jdbc:mysql://localhost:3306/zhush_union?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      url: jdbc:mysql://localhost:3306/zhush?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
       username: root
       password: topfus@123
       # Druid 连接池属性（直接写 setter 对应的 key）
