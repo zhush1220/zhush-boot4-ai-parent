@@ -1,6 +1,7 @@
 package com.zhush.system.service;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.exception.GlobalErrorCode;
 import com.zhush.common.response.PageResult;
@@ -88,9 +89,15 @@ public class OperateLogService implements OperateLogHandler {
         fillOperator(record);
 
         SysOperateLog operateLog = BeanUtil.copyProperties(record, SysOperateLog.class);
+        // 入参/结果两个长文本列可能为 null：recordParams=false 时不填入参，异常链路下切面只写 resultMsg 不写 resultData。
+        // 而已部署环境的这两列常被改为 TEXT NOT NULL 且无法带默认值（MySQL 8.0.13 前 TEXT 不支持 DEFAULT），
+        // insertSelective 跳过 null 列会触发 "Field 'result_data' doesn't have a default value" 并丢失整条日志，故在此兜底空串
+        operateLog.setJavaMethodArgs(StrUtil.nullToEmpty(operateLog.getJavaMethodArgs()));
+        operateLog.setResultMsg(StrUtil.nullToEmpty(operateLog.getResultMsg()));
+        operateLog.setResultData(StrUtil.nullToEmpty(operateLog.getResultData()));
         logExecutor.execute(() -> {
             try {
-                // insertSelective：忽略 null 字段，由 DB 列默认值兜底（NOT NULL DEFAULT '' 列），
+                // insertSelective：忽略其余 null 字段，由 DB 列默认值兜底（如 trace_id、user_type 均带 DEFAULT ''），
                 // 避免 MyBatis-Flex 显式插入 null 触发 SQLIntegrityConstraintViolationException
                 operateLogMapper.insertSelective(operateLog);
             } catch (Exception e) {
