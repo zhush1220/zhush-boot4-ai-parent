@@ -25,10 +25,13 @@ CREATE TABLE `sys_notice` (
   `status`        TINYINT      NOT NULL DEFAULT 0 COMMENT '状态：0-草稿 1-已发布 2-已撤回',
   `content`       LONGTEXT     NOT NULL COMMENT '富文本HTML内容',
   `publish_time`  DATETIME     NULL COMMENT '发布时间（status=1 时写入）',
-  `create_by`     BIGINT       NOT NULL COMMENT '创建人ID',
-  `create_time`   DATETIME     NOT NULL COMMENT '创建时间',
-  `update_by`     BIGINT       NOT NULL COMMENT '更新人ID',
-  `update_time`   DATETIME     NOT NULL COMMENT '更新时间',
+  -- 审计列必须可空：MyBatis-Flex insert 会显式写入全部列，而 GlobalInsertListener 仅在插入时回填
+  -- create_by/create_time，update_by/update_time 由更新时回填；写成 NOT NULL 会导致新增直接报
+  -- "Column 'update_by' cannot be null"（与 01_admin_rbac.sql 等其余表保持一致）
+  `create_by`     BIGINT       NULL COMMENT '创建人ID',
+  `create_time`   DATETIME     NULL COMMENT '创建时间',
+  `update_by`     BIGINT       NULL COMMENT '更新人ID',
+  `update_time`   DATETIME     NULL COMMENT '更新时间',
   `is_delete`     TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-否 1-是',
   PRIMARY KEY (`id`),
   KEY `idx_notice_title` (`title`),
