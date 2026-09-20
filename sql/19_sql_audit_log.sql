@@ -15,7 +15,7 @@ SET NAMES utf8mb4;
 -- SQL 审计日志表
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `sys_sql_audit_log`;
-CREATE TABLE `sys_sql_audit_log` (
+    CREATE TABLE `sys_sql_audit_log` (
     `id`            BIGINT        NOT NULL COMMENT '主键ID（雪花算法）',
     `trace_id`      VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '链路追踪ID',
     `platform`      VARCHAR(16)   NOT NULL DEFAULT '' COMMENT '平台：admin-管理端 member-会员端',
