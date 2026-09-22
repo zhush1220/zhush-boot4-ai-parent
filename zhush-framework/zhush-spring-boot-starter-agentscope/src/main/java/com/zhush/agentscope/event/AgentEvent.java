@@ -55,4 +55,12 @@ public abstract class AgentEvent implements Serializable {
      * 事件发生时间
      */
     private Instant time;
+
+    /**
+     * 链路追踪 ID。
+     *
+     * <p>由 {@link AgentEventPublisher} 在<b>发布线程</b>（仍持有调用方链路上下文）统一回填，
+     * 使异步监听器落库时不因线程切换丢失 SkyWalking traceId。
+     */
+    private String traceId;
 }

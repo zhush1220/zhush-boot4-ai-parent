@@ -8,6 +8,7 @@ import com.zhush.agentscope.context.DefaultSessionContextResolver;
 import com.zhush.agentscope.context.SessionContextResolver;
 import com.zhush.agentscope.event.AgentEventListener;
 import com.zhush.agentscope.event.AgentEventPublisher;
+import com.zhush.agentscope.event.AgentTraceIdSupplier;
 import com.zhush.agentscope.model.AgentModelResolver;
 import com.zhush.agentscope.model.DefaultModelFactory;
 import com.zhush.agentscope.model.ModelConfigProvider;
@@ -92,8 +93,11 @@ public class AgentScopeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AgentEventPublisher agentEventPublisher(List<AgentEventListener> listeners) {
-        return new AgentEventPublisher(listeners);
+    public AgentEventPublisher agentEventPublisher(List<AgentEventListener> listeners,
+                                                  AgentScopeProperties properties,
+                                                  ObjectProvider<AgentTraceIdSupplier> traceIdProvider) {
+        // 默认异步分发：审计/用量监听器的落库不得阻塞 SSE 尾包（线程池随 Bean 关闭优雅停止）
+        return new AgentEventPublisher(listeners, properties, traceIdProvider.getIfAvailable());
     }
 
     @Bean

@@ -234,6 +234,13 @@ public class AiModelService {
         entity.setModel(param.getModel());
         entity.setCapability(param.getCapability() == null || param.getCapability().isBlank()
                 ? "text" : param.getCapability());
+        // 单价未传时保留原值（列 NOT NULL DEFAULT 0，新增时由默认值补 0），避免误清空已配价格
+        if (param.getInputPrice() != null) {
+            entity.setInputPrice(param.getInputPrice());
+        }
+        if (param.getOutputPrice() != null) {
+            entity.setOutputPrice(param.getOutputPrice());
+        }
         entity.setPriority(param.getPriority() == null ? 0 : param.getPriority());
         entity.setOptions(toOptionsJson(param.getOptions()));
         entity.setRemark(param.getRemark());
@@ -335,6 +342,8 @@ public class AiModelService {
         vo.setBaseUrl(entity.getBaseUrl());
         vo.setModel(entity.getModel());
         vo.setCapability(entity.getCapability());
+        vo.setInputPrice(entity.getInputPrice());
+        vo.setOutputPrice(entity.getOutputPrice());
         vo.setIsDefault(entity.getIsDefault());
         vo.setPriority(entity.getPriority());
         vo.setApiKeyMasked(cipher.mask(cipher.resolve(entity.getApiKey())));

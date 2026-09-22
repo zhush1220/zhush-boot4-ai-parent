@@ -42,6 +42,21 @@ public class AgentFinishedEvent extends AgentEvent {
     private int outputTokens;
 
     /**
+     * 总 Token 数（优先取供应商回传值，缺失时为输入+输出）
+     */
+    private int totalTokens;
+
+    /**
+     * 命中缓存的 Token 数（单独留存，不参与输入+输出合计）
+     */
+    private int cachedTokens;
+
+    /**
+     * 本次会话使用的模型编码（成本定价依据，对应 {@code ai_model.code}）
+     */
+    private String model;
+
+    /**
      * 耗时（毫秒）
      */
     private long durationMillis;

@@ -96,6 +96,20 @@ public class AgentModelResolver {
         return fallback;
     }
 
+    /**
+     * 按模型编码解析单价（仅动态模型池携带单价，yaml 回退路径无单价）。
+     *
+     * @param modelCode 模型编码
+     * @return 单价；未配置有效单价时返回 null（调用方按 0 成本处理）
+     */
+    public ModelPricing resolvePricing(String modelCode) {
+        if (modelCode == null || modelCode.isEmpty()) {
+            return null;
+        }
+        ModelConfig config = cache.get(modelCode);
+        return config == null ? null : config.pricing();
+    }
+
     private AgentScopeProperties.ModelProperties toProperties(ModelConfig config) {
         AgentScopeProperties.ModelProperties mp = new AgentScopeProperties.ModelProperties();
         mp.setType(config.getType() == null || config.getType().isEmpty() ? "dashscope" : config.getType());

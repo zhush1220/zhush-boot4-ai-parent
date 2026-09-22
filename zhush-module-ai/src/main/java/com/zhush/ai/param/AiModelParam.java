@@ -1,10 +1,13 @@
 package com.zhush.ai.param;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -45,6 +48,16 @@ public class AiModelParam implements Serializable {
 
     /** 能力类型：text / image / video / audio */
     private String capability;
+
+    /** 输入单价（元/千 token，空=不修改，0=不计价） */
+    @DecimalMin(value = "0", message = "输入单价不能为负")
+    @Digits(integer = 6, fraction = 6, message = "输入单价超出允许范围")
+    private BigDecimal inputPrice;
+
+    /** 输出单价（元/千 token，空=不修改，0=不计价） */
+    @DecimalMin(value = "0", message = "输出单价不能为负")
+    @Digits(integer = 6, fraction = 6, message = "输出单价超出允许范围")
+    private BigDecimal outputPrice;
 
     /** 是否默认模型：0-否 1-是 */
     private Integer isDefault;
