@@ -245,10 +245,15 @@ zhush:
     models:
       dashscope: { type: dashscope, api-key: "${DASHSCOPE_API_KEY:}", model: qwen-max }
       deepseek:  { type: openai, api-key: "${DEEPSEEK_API_KEY:}", base-url: https://api.deepseek.com/v1, model: deepseek-chat }
-    session:
-      store: redis
-      ttl: 24h
+    session-store: redis      # 会话存储：redis / memory
+    session-ttl: 24h          # 会话 TTL（Redis 过期回收）
     request-timeout: 60s
+    event-async: true           # 事件异步分发：审计/用量落库不阻塞 SSE 尾包
+    event-pool-size: 2          # 事件分发线程数
+    event-queue-capacity: 1000  # 分发队列容量（饱和退化同步，不丢事件）
+    usage:                      # Token 真实计量与日聚合（agent_token_usage）
+      enabled: true
+      cost-enabled: true        # 成本估算（单价取 ai_model.input_price/output_price，缺价记 0）
     dynamic-config:            # 模型/敏感词库表动态化（空库自动回退 yaml）
       enabled: true
       refresh-interval: 300s   # 定时兜底刷新周期

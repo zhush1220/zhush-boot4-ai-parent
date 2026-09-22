@@ -24,10 +24,12 @@ import com.zhush.agentscope.safety.SensitiveWordResolver;
 import com.zhush.agentscope.safety.ToolApprovalHandler;
 import com.zhush.agentscope.session.AgentSessionManager;
 import com.zhush.agentscope.session.SessionMessage;
+import com.zhush.agentscope.token.TokenUsageAccumulator;
 import com.zhush.agentscope.tool.ReflectiveAgentTool;
 import com.zhush.agentscope.tool.RegisteredTool;
 import com.zhush.agentscope.tool.ToolkitRegistry;
 import io.agentscope.core.agent.RuntimeContext;
+import io.agentscope.core.event.ModelCallEndEvent;
 import io.agentscope.core.event.ToolCallStartEvent;
 import io.agentscope.core.event.TextBlockDeltaEvent;
 import io.agentscope.core.message.Msg;
@@ -109,15 +111,20 @@ public class DefaultAgentTemplate implements AgentTemplate {
         RuntimeContext rc = runtimeContext(def, sid, ctx);
         List<Msg> history = toMsgs(sessionManager.loadHistory(sid));
         long start = System.currentTimeMillis();
+        String model = resolveModelCode(def);
         try {
             Msg reply = agent.call(history, rc).block(properties.getRequestTimeout());
             String text = reply == null ? "" : reply.getTextContent();
             sessionManager.appendMessage(sid, assistantMessage(text));
-            return reply(def, sid, text, start, true);
+            // 同步调用无事件流，用量直接取最终 Msg 携带的 usage
+            TokenUsageAccumulator usage = new TokenUsageAccumulator();
+            usage.accumulate(reply == null ? null : reply.getUsage());
+            publish(finishEvent(def, sid, ctx, text, start, usage, model));
+            return reply(def, sid, text, start, true, usage, model);
         } catch (Throwable t) {
             log.error("Agent 同步调用异常, agent={}, sessionId={}", agentName, sid, t);
             publish(errorEvent(def, sid, ctx, t.getMessage()));
-            return reply(def, sid, t.getMessage(), start, false);
+            return reply(def, sid, t.getMessage(), start, false, null, model);
         }
     }
 
@@ -134,13 +141,18 @@ public class DefaultAgentTemplate implements AgentTemplate {
 
         StringBuilder acc = new StringBuilder();
         boolean[] finished = {false};
+        // 用量累加器与文本累加器同属一次调用的闭包状态，两条 finish 出口均需读取，漏一处即恒为 0
+        TokenUsageAccumulator usage = new TokenUsageAccumulator();
+        String model = resolveModelCode(def);
 
         Flux<AgentEvent> base = agent.streamEvents(history, rc)
-                .mapNotNull(ev -> mapEvent(def, sid, ctx, ev, acc, finished, start))
+                .mapNotNull(ev -> mapEvent(def, sid, ctx, ev, acc, finished, start, usage, model))
                 .doOnNext(e -> eventPublisher.publish(e));
 
         return base
-                .concatWith(Mono.defer(() -> finished[0] ? Mono.empty() : Mono.just(finishEvent(def, sid, ctx, acc.toString(), start))))
+                .concatWith(Mono.defer(() -> finished[0]
+                        ? Mono.empty()
+                        : Mono.just(finishEvent(def, sid, ctx, acc.toString(), start, usage, model))))
                 .doOnNext(e -> eventPublisher.publish(e))
                 .doOnComplete(() -> {
                     String text = acc.toString();
@@ -167,13 +179,16 @@ public class DefaultAgentTemplate implements AgentTemplate {
         RuntimeContext rc = runtimeContext(def, null, ctx);
         Msg userMsg = Msg.builder().role(MsgRole.USER).textContent(userText).build();
         long start = System.currentTimeMillis();
+        String model = resolveModelCode(def);
         try {
             Msg reply = agent.call(userMsg, rc).block(properties.getRequestTimeout());
             String text = reply == null ? "" : reply.getTextContent();
-            return reply(def, null, text, start, true);
+            TokenUsageAccumulator usage = new TokenUsageAccumulator();
+            usage.accumulate(reply == null ? null : reply.getUsage());
+            return reply(def, null, text, start, true, usage, model);
         } catch (Throwable t) {
             log.error("Agent 一次性调用异常, agent={}", agentName, t);
-            return reply(def, null, t.getMessage(), start, false);
+            return reply(def, null, t.getMessage(), start, false, null, model);
         }
     }
 
@@ -263,6 +278,20 @@ public class DefaultAgentTemplate implements AgentTemplate {
         return modelFactory.resolve(preferredModel);
     }
 
+    /**
+     * 本次调用预期使用的模型编码（用量与成本的定价依据）。
+     *
+     * <p>与 {@link #resolveModel} 的选择链保持一致：定义未指定时取运行态默认模型；
+     * 极端情况下（引用模型不可用而回退）可能与实际调用模型不一致，仅影响成本归属。
+     */
+    private String resolveModelCode(AgentDefinition def) {
+        String model = def.getModel();
+        if (model != null && !model.isEmpty()) {
+            return model;
+        }
+        return modelResolver.resolveDefaultCode();
+    }
+
     private RuntimeContext runtimeContext(AgentDefinition def, String sessionId, AgentContext ctx) {
         return RuntimeContext.builder()
                 .sessionId(sessionId)
@@ -300,8 +329,13 @@ public class DefaultAgentTemplate implements AgentTemplate {
 
     private AgentEvent mapEvent(AgentDefinition def, String sessionId, AgentContext ctx,
                                 io.agentscope.core.event.AgentEvent ev, StringBuilder acc,
-                                boolean[] finished, long start) {
+                                boolean[] finished, long start, TokenUsageAccumulator usage, String model) {
         io.agentscope.core.event.AgentEventType type = ev.getType();
+        if (type == io.agentscope.core.event.AgentEventType.MODEL_CALL_END) {
+            // 每次模型调用结束回传 ChatUsage：累加而不产出前端事件（多步 ReAct 逐步累加）
+            usage.accumulate(((ModelCallEndEvent) ev).getUsage());
+            return null;
+        }
         if (type == io.agentscope.core.event.AgentEventType.TEXT_BLOCK_DELTA) {
             String delta = ((TextBlockDeltaEvent) ev).getDelta();
             if (delta != null) {
@@ -335,7 +369,7 @@ public class DefaultAgentTemplate implements AgentTemplate {
         }
         if (type == io.agentscope.core.event.AgentEventType.AGENT_END) {
             finished[0] = true;
-            return finishEvent(def, sessionId, ctx, acc.toString(), start);
+            return finishEvent(def, sessionId, ctx, acc.toString(), start, usage, model);
         }
         if (type == io.agentscope.core.event.AgentEventType.EXCEED_MAX_ITERS) {
             finished[0] = true;
@@ -345,7 +379,14 @@ public class DefaultAgentTemplate implements AgentTemplate {
     }
 
     private AgentFinishedEvent finishEvent(AgentDefinition def, String sessionId, AgentContext ctx,
-                                           String reply, long start) {
+                                           String reply, long start, TokenUsageAccumulator usage, String model) {
+        if (usage != null && usage.isEmpty()) {
+            // 部分供应商（如本地 Ollama）流式下不回填 usage：记 0 不估算，仅告警提示口径缺失
+            log.debug("未采集到模型 usage, agent={}, sessionId={}, model={}", def.getName(), sessionId, model);
+        }
+        int steps = usage == null ? 1 : Math.max(usage.getStepCount(), 1);
+        int inputTokens = usage == null ? 0 : usage.getInputTokens();
+        int outputTokens = usage == null ? 0 : usage.getOutputTokens();
         return AgentFinishedEvent.builder()
                 .eventType(AgentEventType.FINISHED)
                 .agentName(def.getName())
@@ -354,9 +395,12 @@ public class DefaultAgentTemplate implements AgentTemplate {
                 .userId(ctx.getUserId())
                 .time(Instant.now())
                 .reply(reply)
-                .stepCount(1)
-                .inputTokens(0)
-                .outputTokens(0)
+                .stepCount(steps)
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
+                .totalTokens(usage == null ? 0 : usage.getTotalTokens())
+                .cachedTokens(usage == null ? 0 : usage.getCachedTokens())
+                .model(model)
                 .durationMillis(System.currentTimeMillis() - start)
                 .build();
     }
@@ -373,12 +417,18 @@ public class DefaultAgentTemplate implements AgentTemplate {
                 .build();
     }
 
-    private AgentReply reply(AgentDefinition def, String sessionId, String text, long start, boolean finished) {
+    private AgentReply reply(AgentDefinition def, String sessionId, String text, long start, boolean finished,
+                             TokenUsageAccumulator usage, String model) {
         return AgentReply.builder()
                 .sessionId(sessionId)
                 .agentName(def.getName())
                 .reply(text)
                 .finished(finished)
+                .stepCount(usage == null ? 1 : Math.max(usage.getStepCount(), 1))
+                .inputTokens(usage == null ? 0 : usage.getInputTokens())
+                .outputTokens(usage == null ? 0 : usage.getOutputTokens())
+                .totalTokens(usage == null ? 0 : usage.getTotalTokens())
+                .model(model)
                 .durationMillis(System.currentTimeMillis() - start)
                 .build();
     }

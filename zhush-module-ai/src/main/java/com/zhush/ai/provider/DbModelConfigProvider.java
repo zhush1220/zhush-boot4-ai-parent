@@ -46,6 +46,9 @@ public class DbModelConfigProvider implements ModelConfigProvider {
             config.setBaseUrl(entity.getBaseUrl());
             config.setModel(entity.getModel());
             config.setCapability(entity.getCapability());
+            // 单价随模型池缓存，用量聚合时直接取用，不再回查 DB
+            config.setInputPrice(entity.getInputPrice());
+            config.setOutputPrice(entity.getOutputPrice());
             config.setDefault(entity.getIsDefault() != null && entity.getIsDefault() == 1);
             config.setPriority(entity.getPriority() == null ? 0 : entity.getPriority());
             config.setOptions(parseOptions(entity.getOptions()));

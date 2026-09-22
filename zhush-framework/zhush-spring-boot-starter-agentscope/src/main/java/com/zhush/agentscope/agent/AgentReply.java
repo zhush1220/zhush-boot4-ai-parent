@@ -58,6 +58,16 @@ public class AgentReply implements Serializable {
     private int outputTokens;
 
     /**
+     * 总 Token 数（优先取供应商回传值，缺失时为输入+输出）
+     */
+    private int totalTokens;
+
+    /**
+     * 本次使用的模型编码（成本定价依据）
+     */
+    private String model;
+
+    /**
      * 耗时（毫秒）
      */
     private long durationMillis;

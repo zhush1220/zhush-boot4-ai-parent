@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -37,6 +38,12 @@ public class AiModelVO implements Serializable {
 
     /** 能力类型：text / image / video / audio */
     private String capability;
+
+    /** 输入单价（元/千 token，0=未定价） */
+    private BigDecimal inputPrice;
+
+    /** 输出单价（元/千 token，0=未定价） */
+    private BigDecimal outputPrice;
 
     /** 是否默认模型：0-否 1-是 */
     private Integer isDefault;

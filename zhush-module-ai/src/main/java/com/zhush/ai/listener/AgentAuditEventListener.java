@@ -44,7 +44,10 @@ public class AgentAuditEventListener implements AgentEventListener {
         } else if (event instanceof AgentFinishedEvent finishedEvent) {
             entity.setEventType("FINISHED");
             entity.setDuration(safeInt(finishedEvent.getDurationMillis()));
-            entity.setTokenUsage(finishedEvent.getOutputTokens() + finishedEvent.getInputTokens());
+            // 优先取供应商回传的总 Token（权威值），缺失时回退输入+输出
+            int total = finishedEvent.getTotalTokens();
+            entity.setTokenUsage(total > 0 ? total
+                    : finishedEvent.getOutputTokens() + finishedEvent.getInputTokens());
             entity.setStepCount(finishedEvent.getStepCount());
         } else if (event instanceof AgentToolCalledEvent toolEvent) {
             entity.setEventType("TOOL_CALLED");
@@ -68,8 +71,8 @@ public class AgentAuditEventListener implements AgentEventListener {
         entity.setUserId(event.getUserId());
         entity.setUserType("admin");
         entity.setTenantId(parseLong(event.getTenantId()));
-        // 链路追踪 ID：从 SkyWalking 上下文读取，无 agent/无链路时回退 "N/A"，避免 NOT NULL 约束被显式 null 触发
-        entity.setTraceId(blankToDefault(TraceContext.traceId(), "N/A"));
+        // 链路追踪 ID：异步分发下取事件携带的值（发布线程采集），其次取当前线程上下文，无链路时回退 "N/A"
+        entity.setTraceId(blankToDefault(firstNonBlank(event.getTraceId(), TraceContext.traceId()), "N/A"));
 
         try {
             auditLogMapper.insert(entity);
@@ -80,6 +83,10 @@ public class AgentAuditEventListener implements AgentEventListener {
 
     private String blankToDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        return first != null && !first.isBlank() ? first : second;
     }
 
     private String truncate(String text, int max) {

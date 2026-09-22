@@ -21,9 +21,12 @@ import java.util.Map;
  *       dashscope: { type: dashscope, api-key: ${DASHSCOPE_API_KEY}, model: qwen-max }
  *       deepseek:  { type: openai, api-key: ${DEEPSEEK_API_KEY}, base-url: https://api.deepseek.com/v1, model: deepseek-chat }
  *       local:     { type: ollama, base-url: http://localhost:11434, model: qwen2.5:7b }
- *     session: { store: redis, ttl: 24h }
+ *     session-store: redis     # 会话存储：redis / memory
+ *     session-ttl: 24h         # 会话 TTL
  *     request-timeout: 60s
+ *     event-async: true        # 事件异步分发（避开审计/用量落库阻塞 SSE 尾包）
  *     safety: { approval-enabled: true, sensitive-keywords: [删除, 转账] }
+ *     usage: { enabled: true }  # 用量日聚合落库开关
  * </pre>
  *
  * @author zhush
@@ -68,6 +71,21 @@ public class AgentScopeProperties {
     private Duration requestTimeout = Duration.ofSeconds(60);
 
     /**
+     * 事件异步分发开关（默认开）：关闭后监听器在 SSE 推送线程上同步执行
+     */
+    private boolean eventAsync = true;
+
+    /**
+     * 事件分发线程数
+     */
+    private int eventPoolSize = 2;
+
+    /**
+     * 事件分发队列容量（饱和后退化为同步分发，不丢事件）
+     */
+    private int eventQueueCapacity = 1000;
+
+    /**
      * 安全审批配置
      */
     private Safety safety = new Safety();
@@ -76,6 +94,11 @@ public class AgentScopeProperties {
      * 动态配置（模型/敏感词库表化）
      */
     private DynamicConfig dynamicConfig = new DynamicConfig();
+
+    /**
+     * 用量计量配置
+     */
+    private Usage usage = new Usage();
 
     /**
      * 模型供应商配置项
@@ -146,5 +169,22 @@ public class AgentScopeProperties {
          * 多实例 Redis pub/sub 广播开关
          */
         private boolean broadcast = true;
+    }
+
+    /**
+     * 用量计量配置（Token 真实计量与日聚合）
+     */
+    @Data
+    public static class Usage {
+
+        /**
+         * 用量日聚合落库开关（{@code agent_token_usage}）
+         */
+        private boolean enabled = true;
+
+        /**
+         * 成本估算开关（依赖 {@code ai_model} 单价，缺价记 0）
+         */
+        private boolean costEnabled = true;
     }
 }

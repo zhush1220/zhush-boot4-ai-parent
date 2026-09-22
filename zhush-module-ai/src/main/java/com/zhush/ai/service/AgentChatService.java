@@ -1,5 +1,7 @@
 package com.zhush.ai.service;
 
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.zhush.ai.context.AiSessionContextResolver;
@@ -28,7 +30,9 @@ import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.zhush.ai.enums.AiErrorCode.CONVERSATION_NOT_FOUND;
 import static com.zhush.ai.enums.AiErrorCode.MESSAGE_CONTENT_EMPTY;
@@ -52,15 +56,17 @@ public class AgentChatService {
     private final AiSessionContextResolver contextResolver;
     private final AiChatSessionMapper sessionMapper;
     private final AiChatMessageMapper messageMapper;
+    private final ObjectMapper objectMapper;
 
     public AgentChatService(AgentTemplate agentTemplate, AgentRegistry agentRegistry,
                             AiSessionContextResolver contextResolver, AiChatSessionMapper sessionMapper,
-                            AiChatMessageMapper messageMapper) {
+                            AiChatMessageMapper messageMapper, ObjectMapper objectMapper) {
         this.agentTemplate = agentTemplate;
         this.agentRegistry = agentRegistry;
         this.contextResolver = contextResolver;
         this.sessionMapper = sessionMapper;
         this.messageMapper = messageMapper;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -78,7 +84,9 @@ public class AgentChatService {
         ensureSessionRow(sessionId, param.getAgentName(), param.getMessage());
         AgentReply reply = agentTemplate.chat(param.getAgentName(), sessionId, param.getMessage());
         saveMessage(sessionId, "user", param.getMessage());
-        saveMessage(sessionId, "assistant", reply.getReply());
+        // 同步路径的 Token 由 AgentReply 携带（与事件流同源），一并累加到会话累计消耗
+        saveMessage(sessionId, "assistant", reply.getReply(),
+                reply.getInputTokens(), reply.getOutputTokens(), reply.getTotalTokens());
         return reply;
     }
 
@@ -97,7 +105,9 @@ public class AgentChatService {
         return agentTemplate.stream(param.getAgentName(), finalSessionId, param.getMessage())
                 .doOnNext(event -> {
                     if (event.getEventType() == AgentEventType.FINISHED && event instanceof AgentFinishedEvent finishedEvent) {
-                        saveMessage(finalSessionId, "assistant", finishedEvent.getReply());
+                        saveMessage(finalSessionId, "assistant", finishedEvent.getReply(),
+                                finishedEvent.getInputTokens(), finishedEvent.getOutputTokens(),
+                                finishedEvent.getTotalTokens());
                         updateSessionStatus(finalSessionId, STATUS_FINISHED);
                     } else if (event.getEventType() == AgentEventType.ERROR) {
                         updateSessionStatus(finalSessionId, 4);
@@ -200,11 +210,23 @@ public class AgentChatService {
     }
 
     private void saveMessage(String sessionId, String role, String content) {
+        saveMessage(sessionId, role, content, 0, 0, 0);
+    }
+
+    /**
+     * 落库消息；assistant 消息携带 Token 用量时写入 {@code token_usage}，并累加会话 {@code token_cost}。
+     *
+     * <p>会话行此处按「读-改-写」更新（与 messageCount 同一处），用量日聚合表另由监听器原子累加，
+     * 两者不双写同一列。
+     */
+    private void saveMessage(String sessionId, String role, String content,
+                             int inputTokens, int outputTokens, int totalTokens) {
         AiChatSessionEntity session = sessionMapper.selectOneByQuery(
                 QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
         if (session == null) {
             return;
         }
+        int total = totalTokens > 0 ? totalTokens : Math.max(inputTokens, 0) + Math.max(outputTokens, 0);
         AiChatMessageEntity entity = new AiChatMessageEntity();
         entity.setSessionId(sessionId);
         entity.setSeq(session.getMessageCount() == null ? 1 : session.getMessageCount() + 1);
@@ -212,10 +234,30 @@ public class AgentChatService {
         entity.setContentType("text");
         entity.setContent(content);
         entity.setStatus(STATUS_MESSAGE_NORMAL);
+        if (total > 0) {
+            entity.setTokenUsage(buildTokenUsage(inputTokens, outputTokens, total));
+            long cost = session.getTokenCost() == null ? 0L : session.getTokenCost();
+            session.setTokenCost(cost + total);
+        }
         messageMapper.insert(entity);
         session.setMessageCount(session.getMessageCount() == null ? 1 : session.getMessageCount() + 1);
         session.setLastActiveTime(LocalDateTime.now());
         sessionMapper.update(session);
+    }
+
+    /**
+     * Token 用量 JSON（列类型为 JSON，供应商未回传时不写入即保持 NULL，不写 0 值误导统计）。
+     */
+    private String buildTokenUsage(int inputTokens, int outputTokens, int totalTokens) {
+        Map<String, Object> usage = new LinkedHashMap<>();
+        usage.put("input", Math.max(inputTokens, 0));
+        usage.put("output", Math.max(outputTokens, 0));
+        usage.put("total", totalTokens);
+        try {
+            return objectMapper.writeValueAsString(usage);
+        } catch (JacksonException e) {
+            return null;
+        }
     }
 
     private void updateSessionStatus(String sessionId, int status) {

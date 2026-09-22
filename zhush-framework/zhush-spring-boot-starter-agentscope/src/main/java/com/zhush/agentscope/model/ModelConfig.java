@@ -1,5 +1,6 @@
 package com.zhush.agentscope.model;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -38,6 +39,12 @@ public class ModelConfig {
 
     /** 透传参数 */
     private Map<String, Object> options;
+
+    /** 输入单价（元/千 token，空或 0 表示不计价） */
+    private BigDecimal inputPrice;
+
+    /** 输出单价（元/千 token，空或 0 表示不计价） */
+    private BigDecimal outputPrice;
 
     public String getCode() {
         return code;
@@ -117,5 +124,29 @@ public class ModelConfig {
 
     public void setOptions(Map<String, Object> options) {
         this.options = options;
+    }
+
+    public BigDecimal getInputPrice() {
+        return inputPrice;
+    }
+
+    public void setInputPrice(BigDecimal inputPrice) {
+        this.inputPrice = inputPrice;
+    }
+
+    public BigDecimal getOutputPrice() {
+        return outputPrice;
+    }
+
+    public void setOutputPrice(BigDecimal outputPrice) {
+        this.outputPrice = outputPrice;
+    }
+
+    /**
+     * 单价快照（无有效单价时返回 null，调用方按 0 成本处理）。
+     */
+    public ModelPricing pricing() {
+        ModelPricing pricing = new ModelPricing(inputPrice, outputPrice);
+        return pricing.hasPrice() ? pricing : null;
     }
 }

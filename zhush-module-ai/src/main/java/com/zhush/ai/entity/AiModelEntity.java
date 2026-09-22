@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * AI 模型配置实体（ai_model）
@@ -44,6 +45,12 @@ public class AiModelEntity extends BaseEntity implements Serializable {
 
     /** 能力类型：text-文本 image-图片 video-视频 audio-语音 */
     private String capability;
+
+    /** 输入单价（元/千 token，0=未定价） */
+    private BigDecimal inputPrice;
+
+    /** 输出单价（元/千 token，0=未定价） */
+    private BigDecimal outputPrice;
 
     /** 是否默认模型：0-否 1-是（全局唯一） */
     private Integer isDefault;
