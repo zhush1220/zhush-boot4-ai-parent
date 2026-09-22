@@ -148,9 +148,8 @@ zhush:
       dashscope: { type: dashscope, api-key: ${DASHSCOPE_API_KEY:}, model: qwen-max }
       deepseek:  { type: openai, api-key: ${DEEPSEEK_API_KEY:}, base-url: https://api.deepseek.com/v1, model: deepseek-chat }
       local:     { type: ollama, base-url: http://localhost:11434, model: qwen2.5:7b }
-    session:
-      store: redis                # redis / memory
-      ttl: 24h
+    session-store: redis          # redis / memory
+    session-ttl: 24h
     request-timeout: 60s
     safety:
       approval-enabled: true

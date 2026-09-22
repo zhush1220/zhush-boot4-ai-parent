@@ -466,9 +466,8 @@ zhush:
         type: ollama
         base-url: http://localhost:11434
         model: qwen2.5:7b
-    session:
-      store: redis                   # redis | memory
-      ttl: 24h
+    session-store: redis             # redis | memory
+    session-ttl: 24h
     request-timeout: 60s
     safety:
       approval-enabled: true         # 敏感工具人工审批

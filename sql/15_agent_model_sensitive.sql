@@ -19,6 +19,8 @@ CREATE TABLE `ai_model` (
     `base_url`      VARCHAR(256)  NOT NULL DEFAULT '' COMMENT '服务地址（openai 兼容服务）',
     `model`         VARCHAR(128)  NOT NULL COMMENT '实际模型名（如 qwen-max、wanx2.1-t2i）',
     `capability`    VARCHAR(16)   NOT NULL DEFAULT 'text' COMMENT '能力类型：text-文本 image-图片 video-视频 audio-语音',
+    `input_price`   DECIMAL(12, 6) NOT NULL DEFAULT 0 COMMENT '输入单价（元/千 token，0=未定价）',
+    `output_price`  DECIMAL(12, 6) NOT NULL DEFAULT 0 COMMENT '输出单价（元/千 token，0=未定价）',
     `is_default`    TINYINT       NOT NULL DEFAULT 0 COMMENT '是否默认模型：0-否 1-是（全局唯一）',
     `priority`      INT           NOT NULL DEFAULT 0 COMMENT '优先级（下拉排序，越大越靠前）',
     `options`       JSON          NULL COMMENT '透传参数（JSON：temperature/top_p/size 等）',
