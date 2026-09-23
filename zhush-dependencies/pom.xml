@@ -47,6 +47,10 @@
         <tianai-captcha.version>1.5.5</tianai-captcha.version>
         <rocketmq.version>5.5.0</rocketmq.version>
         <agentscope.version>2.0.2</agentscope.version>
+        <!-- 与 Tika 3.3.1 传递的 POI 版本对齐，避免文档解析/生成双版本冲突 -->
+        <poi.version>5.5.1</poi.version>
+        <!-- Word/PDF 确定性渲染（文档生成）：OpenPDF 为 iText 2.1.7 分支，LGPL/MPL 许可，内置 CJK 字体支持 -->
+        <openpdf.version>2.0.3</openpdf.version>
     </properties>
 
     <dependencyManagement>
@@ -162,6 +166,20 @@
                 <version>${tika.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- Word 生成（POI XWPF，与 Tika 传递版本对齐） -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
+            <!-- PDF 生成（OpenPDF，文档生成能力） -->
+            <dependency>
+                <groupId>com.github.librepdf</groupId>
+                <artifactId>openpdf</artifactId>
+                <version>${openpdf.version}</version>
             </dependency>
 
             <!-- commons-compress/Tika 需要 2.16.1+ 的 ChecksumInputStream，

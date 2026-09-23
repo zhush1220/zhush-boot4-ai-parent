@@ -101,6 +101,11 @@ public class AgentScopeProperties {
     private Usage usage = new Usage();
 
     /**
+     * 原生会话状态（路线 B / P4 会话事实源收敛）
+     */
+    private NativeState nativeState = new NativeState();
+
+    /**
      * 模型供应商配置项
      */
     @Data
@@ -147,6 +152,38 @@ public class AgentScopeProperties {
          * 触发审批的敏感关键词（命中工具名/入参即挂起）
          */
         private List<String> sensitiveKeywords = List.of();
+
+        /**
+         * 原生确认门禁（路线 B）：敏感工具改由权限层 REQUIRE_USER_CONFIRM 拦截，
+         * 禁用工具层 {@code ToolResultBlock.suspended}。仅在 {@code nativeState.enabled=true} 时生效，
+         * 二者必须同时开启（默认 false，保持现有工具层挂起行为）。
+         */
+        private boolean nativeConfirm = false;
+
+        /**
+         * 无审批状态存储（无 Redis）时是否 fail-fast 抛错而非静默放行敏感工具。
+         * 生产建议置 true；置 false 时降级为直接放行（与 {@code NullToolApprovalHandler} 语义一致）。
+         */
+        private boolean failOnApprovalStoreUnavailable = false;
+    }
+
+    /**
+     * 原生会话状态配置（AgentScope AgentState 作为运行态唯一事实源）
+     */
+    @Data
+    public static class NativeState {
+
+        /**
+         * 总开关（默认 false）：true 时新会话启用 AgentScope 原生状态持久化，
+         * 停止每轮 {@code toMsgs} 全量重发历史（改为只发本轮增量），由框架从 state 恢复上下文。
+         * 存量会话按其创建时的来源位继续走旧路径（会话级灰度隔离）。
+         */
+        private boolean enabled = false;
+
+        /**
+         * Redis 状态键前缀
+         */
+        private String keyPrefix = "agentscope:state:";
     }
 
     /**

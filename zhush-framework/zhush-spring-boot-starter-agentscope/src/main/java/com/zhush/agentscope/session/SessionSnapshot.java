@@ -66,4 +66,10 @@ public class SessionSnapshot implements Serializable {
      * 累计 Token 消耗
      */
     private long tokenCost;
+
+    /**
+     * 会话来源位（路线 B 会话级灰度）：true=本会话创建时已启用 AgentScope 原生状态（只发增量、由 state 恢复）；
+     * false=旧路径（每轮 toMsgs 全量重发）。创建时按全局开关钉定，之后不随全局开关变化，避免同一会话双事实源。
+     */
+    private boolean nativeState;
 }

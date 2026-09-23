@@ -67,6 +67,16 @@ public class AgentChatController {
     }
 
     /**
+     * 会话续跑流（SSE）：审批跨请求完成后，订阅该会话的原生续跑增量（路线 B）。
+     */
+    @GetMapping(value = "/session/{sessionId}/resume-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "会话续跑流（SSE）")
+    public Flux<AgentEvent> resumeStream(
+            @Parameter(description = "会话ID") @PathVariable String sessionId) {
+        return chatService.resumeChannel(sessionId);
+    }
+
+    /**
      * 智能体列表
      */
     @GetMapping("/list")

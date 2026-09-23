@@ -25,4 +25,10 @@ public class NullToolApprovalHandler implements ToolApprovalHandler {
     public void reject(String approvalId, String reason) {
         // 无需处理
     }
+
+    @Override
+    public boolean persistent() {
+        // 无 Redis：审批状态不可持久化，触发降级护栏
+        return false;
+    }
 }

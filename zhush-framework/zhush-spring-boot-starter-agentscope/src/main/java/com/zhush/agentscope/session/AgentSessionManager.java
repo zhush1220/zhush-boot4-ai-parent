@@ -25,14 +25,33 @@ public class AgentSessionManager {
      * @return 会话 ID
      */
     public String newSession(String agentName) {
+        return newSession(agentName, false);
+    }
+
+    /**
+     * 新建会话并钉定来源位（路线 B 会话级灰度）。
+     *
+     * @param agentName   智能体名
+     * @param nativeState 创建时是否启用原生状态（按当时全局开关）
+     * @return 会话 ID
+     */
+    public String newSession(String agentName, boolean nativeState) {
         String sessionId = UUID.randomUUID().toString().replace("-", "");
         SessionSnapshot snapshot = SessionSnapshot.builder()
                 .sessionId(sessionId)
                 .agentName(agentName)
+                .nativeState(nativeState)
                 .messageCount(0)
                 .build();
         store.save(sessionId, snapshot);
         return sessionId;
+    }
+
+    /**
+     * 该会话是否为原生状态会话（不存在时按旧路径返回 false）。
+     */
+    public boolean isNativeState(String sessionId) {
+        return store.load(sessionId).map(SessionSnapshot::isNativeState).orElse(false);
     }
 
     /**

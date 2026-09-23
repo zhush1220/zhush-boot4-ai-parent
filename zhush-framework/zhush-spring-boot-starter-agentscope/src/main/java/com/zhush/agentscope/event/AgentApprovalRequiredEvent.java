@@ -35,4 +35,9 @@ public class AgentApprovalRequiredEvent extends AgentEvent {
      * 工具入参（JSON 字符串，脱敏）
      */
     private String arguments;
+
+    /**
+     * AgentScope require-confirm 本轮标识（路线 B 续跑关联，路线 A 为空）
+     */
+    private String replyId;
 }

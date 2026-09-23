@@ -8,11 +8,13 @@ import com.zhush.agentscope.context.DefaultSessionContextResolver;
 import com.zhush.agentscope.context.SessionContextResolver;
 import com.zhush.agentscope.event.AgentEventListener;
 import com.zhush.agentscope.event.AgentEventPublisher;
+import com.zhush.agentscope.event.AgentResumeChannels;
 import com.zhush.agentscope.event.AgentTraceIdSupplier;
 import com.zhush.agentscope.model.AgentModelResolver;
 import com.zhush.agentscope.model.DefaultModelFactory;
 import com.zhush.agentscope.model.ModelConfigProvider;
 import com.zhush.agentscope.safety.DefaultToolApprovalHandler;
+import com.zhush.agentscope.safety.ApprovalPersister;
 import com.zhush.agentscope.safety.NullToolApprovalHandler;
 import com.zhush.agentscope.safety.SensitiveWordProvider;
 import com.zhush.agentscope.safety.SensitiveWordResolver;
@@ -27,6 +29,9 @@ import com.zhush.agentscope.tool.AgentToolScanner;
 import com.zhush.agentscope.tool.DefaultToolkitRegistry;
 import com.zhush.agentscope.tool.ToolkitRegistry;
 import com.zhush.redis.core.RedisCache;
+import io.agentscope.core.state.AgentStateStore;
+import io.agentscope.extensions.redis.state.redisson.RedissonAgentStateStore;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -158,6 +163,13 @@ public class AgentScopeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public AgentResumeChannels agentResumeChannels() {
+        // 路线 A/B 共用的会话续跑 SSE 通道（单实例内存；多实例需替换为 Redis pub/sub）
+        return new AgentResumeChannels();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public AgentTemplate agentTemplate(AgentRegistry agentRegistry,
                                        ToolkitRegistry toolkitRegistry,
                                        DefaultModelFactory defaultModelFactory,
@@ -169,12 +181,41 @@ public class AgentScopeAutoConfiguration {
                                        ObjectMapper objectMapper,
                                        AgentModelResolver modelResolver,
                                        SensitiveWordResolver sensitiveWordResolver,
+                                       ObjectProvider<ApprovalPersister> approvalPersisterProvider,
+                                       ObjectProvider<RedissonClient> redissonClientProvider,
+                                       AgentResumeChannels resumeChannels,
                                        DynamicConfigRefreshCoordinator refreshCoordinator) {
+        // 路线 B 状态存储：仅 nativeState.enabled 且 Redisson 可用时装配，否则为 null
+        // （buildHarness 检测到 null 会回退旧版无状态实例，新会话自动降级为 toMsgs 全量重发）
+        AgentStateStore stateStore = buildAgentStateStore(properties, redissonClientProvider.getIfAvailable());
         DefaultAgentTemplate template = new DefaultAgentTemplate(agentRegistry, toolkitRegistry,
                 defaultModelFactory, agentSessionManager, agentEventPublisher, sessionContextResolver,
-                toolApprovalHandler, properties, objectMapper, modelResolver, sensitiveWordResolver);
+                toolApprovalHandler, properties, objectMapper, modelResolver, sensitiveWordResolver,
+                approvalPersisterProvider.getIfAvailable(), stateStore, resumeChannels);
         refreshCoordinator.addEvictionListener(template::evictAllAgentCache);
         return template;
+    }
+
+    /**
+     * 构建 AgentScope 原生状态存储（Redisson）。未开启 {@code nativeState.enabled} 或无 Redisson 时返回 null，
+     * 由 {@link DefaultAgentTemplate} 按会话来源位降级，不影响旧会话。
+     */
+    private AgentStateStore buildAgentStateStore(AgentScopeProperties properties, RedissonClient redissonClient) {
+        AgentScopeProperties.NativeState nativeState = properties.getNativeState();
+        if (nativeState == null || !nativeState.isEnabled()) {
+            return null;
+        }
+        if (redissonClient == null) {
+            if (properties.getSafety().isFailOnApprovalStoreUnavailable()) {
+                throw new IllegalStateException("nativeState.enabled=true 但 RedissonClient 未装配，"
+                        + "failOnApprovalStoreUnavailable=true 要求 fail-fast，请启用 Redis 或关闭原生状态");
+            }
+            return null;
+        }
+        return RedissonAgentStateStore.builder()
+                .redissonClient(redissonClient)
+                .keyPrefix(nativeState.getKeyPrefix() == null ? "agentscope:state:" : nativeState.getKeyPrefix())
+                .build();
     }
 
     /**

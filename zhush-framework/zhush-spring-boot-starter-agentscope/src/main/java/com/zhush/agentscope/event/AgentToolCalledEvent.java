@@ -22,6 +22,11 @@ public class AgentToolCalledEvent extends AgentEvent {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 工具调用 ID（AgentScope toolCallId，供与 {@link AgentToolResultEvent} 配对）
+     */
+    private String id;
+
+    /**
      * 工具名
      */
     private String toolName;

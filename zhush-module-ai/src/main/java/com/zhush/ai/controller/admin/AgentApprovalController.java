@@ -1,9 +1,11 @@
 package com.zhush.ai.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.zhush.ai.param.AgentApprovalParam;
 import com.zhush.ai.query.AgentApprovalQuery;
 import com.zhush.ai.service.AgentApprovalService;
 import com.zhush.ai.vo.AgentApprovalVO;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,12 +36,14 @@ public class AgentApprovalController {
 
     @GetMapping("/page")
     @Operation(summary = "审批任务分页")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "agent:approval:list")
     public Result<PageResult<AgentApprovalVO>> page(@Valid AgentApprovalQuery query) {
         return Result.success(approvalService.page(query));
     }
 
     @PostMapping("/approve")
     @Operation(summary = "通过（可改参）")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "agent:approval:approve")
     public Result<Void> approve(@RequestBody @Valid AgentApprovalParam param) {
         approvalService.approve(param.getApprovalId(), param.getModifiedArgs());
         return Result.success();
@@ -47,6 +51,7 @@ public class AgentApprovalController {
 
     @PostMapping("/reject")
     @Operation(summary = "驳回")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "agent:approval:reject")
     public Result<Void> reject(@RequestBody @Valid AgentApprovalParam param) {
         approvalService.reject(param.getApprovalId(), param.getReason());
         return Result.success();

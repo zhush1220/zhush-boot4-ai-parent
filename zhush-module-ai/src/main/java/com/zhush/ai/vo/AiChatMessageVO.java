@@ -32,6 +32,9 @@ public class AiChatMessageVO implements Serializable {
 
     private String toolCalls;
 
+    /** 产物附件（JSON 数组：type/format/name/url/size） */
+    private String attachments;
+
     private String tokenUsage;
 
     private Integer status;

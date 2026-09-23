@@ -33,6 +33,31 @@
             <groupId>com.zhush</groupId>
             <artifactId>zhush-spring-boot-starter-agentscope</artifactId>
         </dependency>
+
+        <!-- 文件存储门面与文档解析（对话多能力：产物上传 / parseDocument） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-file</artifactId>
+        </dependency>
+
+        <!-- Word 生成（XWPF）：版本与 Tika 传递的 POI 对齐 -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
+
+        <!-- PDF 生成（OpenPDF，内置 CJK 字体） -->
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+        </dependency>
+
+        <!-- 测试基础设施（JUnit5 + Mockito + AssertJ） -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

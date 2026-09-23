@@ -43,10 +43,17 @@ public enum AiErrorCode implements IErrorCode {
     SENSITIVE_WORD_NOT_FOUND(1003301, "敏感词不存在：{0}"),
     SENSITIVE_WORD_DUPLICATE(1003302, "敏感词已存在：{0}"),
 
+    // ================ 文档生成/解析 1003 4xx ================
+    DOCUMENT_CONTENT_EMPTY(1003401, "文档内容不能为空"),
+    DOCUMENT_FORMAT_UNSUPPORTED(1003402, "不支持的文档格式：{0}"),
+    DOCUMENT_PARSE_TARGET_EMPTY(1003403, "文件地址不能为空，请提供上传后返回的 URL"),
+
     // ================ 上游调用 2003 0xx ================
     UPSTREAM_TIMEOUT(2003001, "AI 服务响应超时"),
     UPSTREAM_ERROR(2003002, "AI 服务调用异常：{0}"),
     UPSTREAM_RATE_LIMITED(2003003, "AI 服务限流，请稍后再试"),
+    DOCUMENT_RENDER_FAIL(2003005, "文档渲染失败：{0}"),
+    DOCUMENT_FETCH_FAIL(2003006, "文件获取失败：{0}"),
     ;
 
     private final int code;
