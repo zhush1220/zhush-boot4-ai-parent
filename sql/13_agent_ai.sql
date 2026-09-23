@@ -108,6 +108,7 @@ CREATE TABLE `ai_chat_message` (
     `content`       TEXT         NOT NULL COMMENT '消息正文',
     `thinking`      TEXT         NULL COMMENT '思考过程（assistant，流式累积）',
     `tool_calls`    JSON         NULL COMMENT '工具调用（assistant，JSON 数组：name/arguments/result/status）',
+    `attachments`   JSON         NULL COMMENT '产物附件（assistant，JSON 数组：type/format/name/url/size）',
     `token_usage`   JSON         NULL COMMENT 'Token 用量（JSON：input/output/total）',
     `status`        TINYINT      NOT NULL DEFAULT 1 COMMENT '状态：1-正常 2-流式中 3-已中断 4-失败',
     `error_msg`     VARCHAR(512) NOT NULL DEFAULT '' COMMENT '失败/中断原因',
@@ -141,6 +142,9 @@ CREATE TABLE `agent_approval` (
     `approve_time`    DATETIME         NULL COMMENT '审批时间',
     `reject_reason`   VARCHAR(512) NOT NULL DEFAULT '' COMMENT '驳回原因',
     `expire_time`     DATETIME         NULL COMMENT '过期时间（对齐 Redis TTL）',
+    `reply_id`        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT 'AgentScope require-confirm replyId（路线B恢复用，A 留空）',
+    `resumed`         TINYINT      NOT NULL DEFAULT 0 COMMENT '是否已续跑：0-未 1-已（幂等，一次审批仅续跑一次）',
+    `resume_time`     DATETIME         NULL COMMENT '续跑时间',
     `create_by`       BIGINT           NULL COMMENT '创建人ID',
     `create_time`     DATETIME         NULL COMMENT '创建时间',
     `update_by`       BIGINT           NULL COMMENT '更新人ID',
@@ -217,7 +221,12 @@ CREATE TABLE `agent_token_usage` (
 INSERT INTO `agent_definition`
     (`id`, `name`, `description`, `system_prompt`, `model`, `tool_names`, `streaming`, `max_steps`, `skills`, `group_code`, `source`, `version`, `status`)
 VALUES
-    (90001, 'ai-chat', '通用对话助手', '你是一位专业的智能助手，请友好、准确地回答用户问题。', 'qwen-max', NULL, 1, 6, NULL, 'common', 2, 1, 1),
+    (90001, 'ai-chat', '通用对话助手', '你是一位专业的智能助手，请友好、准确地回答用户问题。
+
+【能力与工具约定】
+1. 生成文档：当用户要求导出/生成 Word、PDF 或下载文档时，先产出结构完整的 Markdown 正文（标题/段落/列表/表格），再调用 generateDocument 工具（content=正文，format=docx|pdf，缺省 docx），将返回结果中 artifact 的链接以 Markdown 文件链接形式附在回复末尾，勿自行编造下载地址。
+2. 解析附件：当用户消息含【附件】name: url 时，如需了解文件内容调用 parseDocument（fileUrl=url）；未上传附件时不要调用。
+3. 选工具还是直答由你按意图判断；与工具无关的请求不要调用工具。', 'qwen-max', '["generateDocument", "parseDocument"]', 1, 8, NULL, 'common', 2, 1, 1),
     (90002, 'ai-translator', '多语言翻译', '你是一位多语言翻译专家，翻译需准确、地道、保留原文语气。', 'qwen-max', NULL, 1, 4, NULL, 'common', 2, 1, 1),
     (90003, 'ai-summary', '长文本摘要', '你是一位文本摘要专家，请提炼核心要点，输出简洁有条理的摘要。', 'qwen-max', NULL, 1, 4, NULL, 'common', 2, 1, 1);
 

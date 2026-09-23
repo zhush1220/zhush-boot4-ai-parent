@@ -23,6 +23,11 @@ public enum AgentEventType {
     TOOL_CALLED,
 
     /**
+     * 工具执行结果（桥接 AgentScope TOOL_RESULT 流，携带聚合后的结果文本，供前端产物提取）
+     */
+    TOOL_RESULT,
+
+    /**
      * 会话结束（含耗时/Token 消耗）
      */
     FINISHED,

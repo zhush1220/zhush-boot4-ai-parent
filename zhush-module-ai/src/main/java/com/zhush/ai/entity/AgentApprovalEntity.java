@@ -63,4 +63,13 @@ public class AgentApprovalEntity extends BaseEntity implements Serializable {
 
     /** 过期时间（对齐 Redis TTL） */
     private LocalDateTime expireTime;
+
+    /** AgentScope require-confirm replyId（路线 B 恢复用，A 留空） */
+    private String replyId;
+
+    /** 是否已续跑：0-未 1-已（幂等，一次审批仅续跑一次） */
+    private Integer resumed;
+
+    /** 续跑时间 */
+    private LocalDateTime resumeTime;
 }

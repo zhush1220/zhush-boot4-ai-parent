@@ -279,6 +279,28 @@ sessionId (ai_chat_session/Redis会话)
 
 **建议顺序**：先以 **A 修复可用性与审批闭环**（同时补 P0 写入链路），待 **P4 会话事实源收敛**完成后，再评估 B 是否仍需落地——若 A 的回注保真度已满足业务，B 可只保留 `PermissionRule` 免重复审批与多工具链保真两项增量收益，按需开启。
 
+### 4.8 本次落地记录（S1–S5，续跑路线 B 全链接线，默认关闭）
+
+> 按用户指令「从 S1 到 S5 实现功能」落地。所有路线 B 能力经**双重开关**默认关闭——`zhush.agentscope.native-state.enabled=false`（P4/B 总开关）与 `zhush.agentscope.safety.native-confirm=false`（权限层确认），关闭时行为与落地前完全一致。**代码已接线且 `mvn compile` 全绿，但跨请求 SSE 续跑、`ConfirmResult` 喂回的确切 metadata 语义、ASK 规则与动态敏感词的取舍均需真实环境集成测试后方可开启，本报告不声称生产可用。**
+
+| 切片 | 对应分期 | 落地内容 | 状态 |
+|---|---|---|---|
+| **S1** | P0 | `sql/24_agent_approval_resume.sql` 为 `agent_approval` 增列 `reply_id/resumed/resume_time`（`sql/13` 建表同步）；新增 starter SPI `ApprovalPersister` + module-ai 实现 `AgentApprovalPersister`（映射 `ApprovalRequest→agent_approval` insert，status=0）；`approvalGate` 命中挂起前 `persistApproval`；`AgentApprovalController` 三处补 `@SaCheckPermission`（list/approve/reject） | 编译通过 |
+| **S2** | B 前置核实 | `javap` 取证：`HarnessAgent$Builder.build()` 在 `stateStoreOverride==null` 且未 `disableSessionPersistence()` 时默认 `new JsonFileAgentStateStore(defaultStateDir(agentId))` **写本地磁盘**（与旧类注释「已关闭内部持久化」相反，注释已纠正）；设 `stateStore` 后走 override 分支跳过 JsonFile，**接 Redis 为替换非叠加** | 结论确定 |
+| **S3** | P3 通道 | 新增 starter `AgentResumeChannels`（按 sessionId 的 `Sinks.Many` 多播通道，**单实例内存**）；`AgentChatController` 新增 `GET /session/{id}/resume-stream`（SSE）；`AgentChatService.resumeChannel/resumeNative`；无 Redis 降级护栏：`ToolApprovalHandler.persistent()`（`Null` 返回 false）+ `approvalGate` 按 `safety.failOnApprovalStoreUnavailable` fail-fast，否则降级放行并 `log.warn` 留痕 | 编译通过 |
+| **S4** | P4 | 会话事实源按来源位双轨：`SessionSnapshot.nativeState` 来源位 + `AgentSessionManager.newSession(agentName,nativeState)/isNativeState`；`chat/stream` 原生会话**只发本轮增量 `List.of(userMsg)`、历史由框架从 `AgentState` 恢复**，旧会话仍 `toMsgs` 全量重发（`toMsgs` 降为存量兼容分支）；`buildHarness(def,nativeState)` 双变体 + 缓存键含来源标志（`name#native/#legacy`），`evictAgentCache` 按前缀清；session key 三方统一（`RuntimeContext.sessionId`↔`AgentStateStore`↔审批记录同一 `sid`）；`AgentScopeAutoConfiguration.buildAgentStateStore`：`native-state.enabled` 且 Redisson 可用时装配 `RedissonAgentStateStore`，否则 null 降级 | 编译通过 |
+| **S5** | P6 | `mapEvent` 新增 `REQUIRE_USER_CONFIRM` 分支 `handleRequireConfirm`：落 `agent_approval`（携 `replyId`）+ 发 `APPROVAL_REQUIRED` + 内存缓存 `pendingConfirms`；`nativeConfirm` 时 `buildHarness` 加 `.stateStore().enablePendingToolRecovery(true).permissionContext(敏感工具 ASK 规则).stopOnReject(true)`，且 `approvalGate` 对静态敏感工具**跳过工具层 suspended**（互斥，防双门禁）；`AgentTemplate.resumeConfirm` 以 `Msg.METADATA_CONFIRM_RESULTS=List<ConfirmResult>` 同 `(userId,sid)` key `streamEvents` 续跑；`AgentApprovalService.approve/reject` 对 `reply_id` 非空的记录以 `resumed` 列 CAS 0→1 做幂等闸门、事务提交后触发 `resumeNative` | 编译通过 |
+
+**关键取证（`javap` 确认的真实 API 全限定名）**：Redis 状态存储为 `io.agentscope.extensions.redis.state.redisson.RedissonAgentStateStore`（`builder().redissonClient(org.redisson.api.RedissonClient).keyPrefix(String).build()`），**并非部分资料误写的 `io.agentscope.extensions.redis.RedissonAgentStateStore`**；核心确认链路：`RequireUserConfirmEvent.getReplyId()/getToolCalls():List<ToolUseBlock>`、`ConfirmResult(boolean,ToolUseBlock[,List<PermissionRule>])`、`Msg.METADATA_CONFIRM_RESULTS="agentscope_confirm_results"`（`Msg` 上**无** `METADATA_CONFIRM_REQUEST_REPLY_ID` 常量，续跑靠挂起态中工具 `id` 匹配）、`ReActAgent.CONFIRM_SINK_KEY`。
+
+**已知局限与后续项（开启前必读）**：
+
+1. **续跑通道为单实例内存**（`AgentResumeChannels` / `pendingConfirms`）：多实例水平扩展或重启后，跨请求续跑会丢订阅/丢挂起工具调用——生产化需将二者外置（Redis pub/sub + 把挂起 `ToolUseBlock` 存入 `AgentState`）。`resumeConfirm` 在缓存缺失时返回 `ERROR` 事件而非静默失败。
+2. **`ConfirmResult` 喂回的确切 metadata/role 语义未经运行期验证**：现取 `role=USER` + `METADATA_CONFIRM_RESULTS`，需在真实 AgentScope 2.0.2 运行时校准（4.7 判定「恢复在同一类内实现」，但喂回格式属实现细节）。
+3. **`nativeConfirm` 的能力回退**：权限层 ASK 按 `toolName` 静态匹配，无法表达运行期动态敏感词命中即升级审批；此类动态命中仍由工具层 `approvalGate` 兜底（与静态 ASK 互不冲突）。
+4. **续跑事件归属**：`resumeConfirm` 内 `contextResolver.resolve()` 取的是审批人（admin）上下文，故续跑产出的审计事件按审批人归属；state key 仍用首轮提交人 `userId`（正确），仅事件元数据归属需知晓。
+5. **路线 A 的 P3 代理执行（`ApprovalResumeService`）本期未实现**：`approve/reject` 的旧版分支维持「更新 Redis 快路 + DB」，工具层 `suspended` 的后端代理重放留待后续按业务需要补。
+
 ---
 
 ## 五、风险与注意事项

@@ -45,6 +45,11 @@ public class ApprovalRequest implements Serializable {
     private String toolName;
 
     /**
+     * AgentScope require-confirm 本轮标识（路线 B 续跑关联键，路线 A 为空）
+     */
+    private String replyId;
+
+    /**
      * 原始入参（JSON 字符串，脱敏后落库）
      */
     private Map<String, Object> arguments;

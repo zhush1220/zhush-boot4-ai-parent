@@ -40,6 +40,12 @@ public class AgentApprovalVO implements Serializable {
 
     private Integer status;
 
+    /** AgentScope require-confirm replyId：非空表示路线 B 原生会话，前端据此订阅 resume-stream */
+    private String replyId;
+
+    /** 续跑幂等闸门：0-未续跑 1-已续跑 */
+    private Integer resumed;
+
     private String rejectReason;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

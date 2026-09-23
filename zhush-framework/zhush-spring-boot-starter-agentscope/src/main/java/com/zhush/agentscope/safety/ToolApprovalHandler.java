@@ -35,4 +35,14 @@ public interface ToolApprovalHandler {
      * @param reason 驳回原因
      */
     void reject(String approvalId, String reason);
+
+    /**
+     * 审批状态是否可持久化（默认 {@code true}）。
+     *
+     * <p>无 Redis 降级实现（{@link NullToolApprovalHandler}）返回 {@code false}：审批无法落库、
+     * 续跑无从谈起，据此触发降级护栏（放行留痕或按开关 fail-fast）。
+     */
+    default boolean persistent() {
+        return true;
+    }
 }

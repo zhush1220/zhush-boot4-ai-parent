@@ -4,6 +4,7 @@ import com.zhush.agentscope.agent.AgentReply;
 import com.zhush.agentscope.event.AgentEvent;
 import reactor.core.publisher.Flux;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -78,4 +79,18 @@ public interface AgentTemplate {
      * 失效全部智能体运行时缓存。
      */
     void evictAllAgentCache();
+
+    /**
+     * 审批确认后续跑（路线 B）：在同一会话 key 上嗂回 {@code ConfirmResult}，由 AgentScope 从
+     * 持久化的 {@code AgentState} 恢复，跳过已确认工具、继续 ReAct 直到结束。
+     *
+     * @param agentName    智能体名
+     * @param sessionId    业务会话 ID（与首轮一致）
+     * @param replyId      require-confirm 本轮标识
+     * @param confirmed    同意（true）/ 驳回（false）
+     * @param modifiedArgs 改参后的入参（为 null 表示不改）
+     * @return 续跑事件流
+     */
+    Flux<AgentEvent> resumeConfirm(String agentName, String sessionId, String replyId, boolean confirmed,
+                                    Map<String, Object> modifiedArgs);
 }

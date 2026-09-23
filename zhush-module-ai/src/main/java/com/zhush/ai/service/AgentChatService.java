@@ -1,6 +1,7 @@
 package com.zhush.ai.service;
 
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
@@ -20,16 +21,21 @@ import com.zhush.agentscope.context.AgentContext;
 import com.zhush.agentscope.event.AgentEvent;
 import com.zhush.agentscope.event.AgentEventType;
 import com.zhush.agentscope.event.AgentFinishedEvent;
+import com.zhush.agentscope.event.AgentResumeChannels;
+import com.zhush.agentscope.event.AgentToolResultEvent;
 import com.zhush.agentscope.template.AgentTemplate;
 import com.zhush.common.exception.ServiceException;
 import com.zhush.common.exception.ServiceExceptionUtil;
 import com.zhush.common.response.PageResult;
 import com.zhush.mybatis.core.query.QueryWrapperX;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +53,8 @@ import static com.zhush.ai.enums.AiErrorCode.MESSAGE_CONTENT_EMPTY;
 @Service
 public class AgentChatService {
 
+    private static final Logger log = LoggerFactory.getLogger(AgentChatService.class);
+
     private static final int STATUS_ACTIVE = 1;
     private static final int STATUS_FINISHED = 2;
     private static final int STATUS_MESSAGE_NORMAL = 1;
@@ -57,16 +65,19 @@ public class AgentChatService {
     private final AiChatSessionMapper sessionMapper;
     private final AiChatMessageMapper messageMapper;
     private final ObjectMapper objectMapper;
+    private final AgentResumeChannels resumeChannels;
 
     public AgentChatService(AgentTemplate agentTemplate, AgentRegistry agentRegistry,
                             AiSessionContextResolver contextResolver, AiChatSessionMapper sessionMapper,
-                            AiChatMessageMapper messageMapper, ObjectMapper objectMapper) {
+                            AiChatMessageMapper messageMapper, ObjectMapper objectMapper,
+                            AgentResumeChannels resumeChannels) {
         this.agentTemplate = agentTemplate;
         this.agentRegistry = agentRegistry;
         this.contextResolver = contextResolver;
         this.sessionMapper = sessionMapper;
         this.messageMapper = messageMapper;
         this.objectMapper = objectMapper;
+        this.resumeChannels = resumeChannels;
     }
 
     /**
@@ -86,7 +97,7 @@ public class AgentChatService {
         saveMessage(sessionId, "user", param.getMessage());
         // 同步路径的 Token 由 AgentReply 携带（与事件流同源），一并累加到会话累计消耗
         saveMessage(sessionId, "assistant", reply.getReply(),
-                reply.getInputTokens(), reply.getOutputTokens(), reply.getTotalTokens());
+                reply.getInputTokens(), reply.getOutputTokens(), reply.getTotalTokens(), null);
         return reply;
     }
 
@@ -102,17 +113,54 @@ public class AgentChatService {
         ensureSessionRow(sessionId, param.getAgentName(), param.getMessage());
         saveMessage(sessionId, "user", param.getMessage());
         final String finalSessionId = sessionId;
+        // 产物收集：从 generateDocument 工具结果事件提取 artifact，随 assistant 消息落 attachments
+        final List<String> artifacts = Collections.synchronizedList(new ArrayList<>());
         return agentTemplate.stream(param.getAgentName(), finalSessionId, param.getMessage())
                 .doOnNext(event -> {
+                    if (event instanceof AgentToolResultEvent toolResult) {
+                        collectArtifact(artifacts, toolResult);
+                    }
                     if (event.getEventType() == AgentEventType.FINISHED && event instanceof AgentFinishedEvent finishedEvent) {
                         saveMessage(finalSessionId, "assistant", finishedEvent.getReply(),
                                 finishedEvent.getInputTokens(), finishedEvent.getOutputTokens(),
-                                finishedEvent.getTotalTokens());
+                                finishedEvent.getTotalTokens(), buildAttachments(artifacts));
                         updateSessionStatus(finalSessionId, STATUS_FINISHED);
                     } else if (event.getEventType() == AgentEventType.ERROR) {
                         updateSessionStatus(finalSessionId, 4);
                     }
                 });
+    }
+
+    /**
+     * 订阅会话续跑 SSE 通道（路线 B）：审批跨请求完成后，续跑增量经此通道流回前端。
+     */
+    public Flux<AgentEvent> resumeChannel(String sessionId) {
+        return resumeChannels.subscribe(sessionId);
+    }
+
+    /**
+     * 触发路线 B 原生续跑：审批后同会话 key 喂回 {@code ConfirmResult}，异步驱动续跑事件流，
+     * 完成后落 {@code ai_chat_message} 并回写会话状态。事件推送由 starter 侧统一写入续跑通道。
+     *
+     * <p>fire-and-forget：不阻塞审批接口线程；异常仅记日志（已挂起的会话可由用户重新发起）。
+     */
+    public void resumeNative(String agentName, String sessionId, String replyId, boolean confirmed,
+                             Map<String, Object> modifiedArgs) {
+        final List<String> artifacts = Collections.synchronizedList(new ArrayList<>());
+        agentTemplate.resumeConfirm(agentName, sessionId, replyId, confirmed, modifiedArgs)
+                .subscribe(event -> {
+                    if (event instanceof AgentToolResultEvent toolResult) {
+                        collectArtifact(artifacts, toolResult);
+                    }
+                    if (event.getEventType() == AgentEventType.FINISHED && event instanceof AgentFinishedEvent finished) {
+                        saveMessage(sessionId, "assistant", finished.getReply(),
+                                finished.getInputTokens(), finished.getOutputTokens(), finished.getTotalTokens(),
+                                buildAttachments(artifacts));
+                        updateSessionStatus(sessionId, STATUS_FINISHED);
+                    } else if (event.getEventType() == AgentEventType.ERROR) {
+                        updateSessionStatus(sessionId, 4);
+                    }
+                }, err -> log.error("原生续跑异常, agent={}, sessionId={}, replyId={}", agentName, sessionId, replyId, err));
     }
 
     /**
@@ -210,17 +258,18 @@ public class AgentChatService {
     }
 
     private void saveMessage(String sessionId, String role, String content) {
-        saveMessage(sessionId, role, content, 0, 0, 0);
+        saveMessage(sessionId, role, content, 0, 0, 0, null);
     }
 
     /**
-     * 落库消息；assistant 消息携带 Token 用量时写入 {@code token_usage}，并累加会话 {@code token_cost}。
+     * 落库消息；assistant 消息携带 Token 用量时写入 {@code token_usage}，并累加会话 {@code token_cost}；
+     * 可选 attachments 写入产物附件 JSON（对话生成文件回链）。
      *
      * <p>会话行此处按「读-改-写」更新（与 messageCount 同一处），用量日聚合表另由监听器原子累加，
      * 两者不双写同一列。
      */
     private void saveMessage(String sessionId, String role, String content,
-                             int inputTokens, int outputTokens, int totalTokens) {
+                             int inputTokens, int outputTokens, int totalTokens, String attachments) {
         AiChatSessionEntity session = sessionMapper.selectOneByQuery(
                 QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
         if (session == null) {
@@ -233,6 +282,7 @@ public class AgentChatService {
         entity.setRole(role);
         entity.setContentType("text");
         entity.setContent(content);
+        entity.setAttachments(attachments);
         entity.setStatus(STATUS_MESSAGE_NORMAL);
         if (total > 0) {
             entity.setTokenUsage(buildTokenUsage(inputTokens, outputTokens, total));
@@ -243,6 +293,38 @@ public class AgentChatService {
         session.setMessageCount(session.getMessageCount() == null ? 1 : session.getMessageCount() + 1);
         session.setLastActiveTime(LocalDateTime.now());
         sessionMapper.update(session);
+    }
+
+    /**
+     * 从工具结果事件提取产物：仅处理成功执行的 generateDocument，
+     * 结果 JSON 形如 {@code {"ok":true,"artifact":{...}}}；解析失败静默忽略（不影响主流程）。
+     */
+    private void collectArtifact(List<String> artifacts, AgentToolResultEvent event) {
+        if (!event.isOk() || !"generateDocument".equals(event.getName())
+                || event.getResult() == null || event.getResult().isBlank()) {
+            return;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(event.getResult());
+            JsonNode artifact = root.path("artifact");
+            if (root.path("ok").asBoolean(false) && artifact.isObject()) {
+                artifacts.add(artifact.toString());
+            }
+        } catch (JacksonException e) {
+            log.debug("[collectArtifact] 工具结果非 JSON，忽略: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 产物列表 → attachments 列 JSON（无产物时保持 NULL）。
+     */
+    private String buildAttachments(List<String> artifacts) {
+        if (artifacts.isEmpty()) {
+            return null;
+        }
+        synchronized (artifacts) {
+            return "[" + String.join(",", artifacts) + "]";
+        }
     }
 
     /**
@@ -311,6 +393,7 @@ public class AgentChatService {
         vo.setContent(entity.getContent());
         vo.setThinking(entity.getThinking());
         vo.setToolCalls(entity.getToolCalls());
+        vo.setAttachments(entity.getAttachments());
         vo.setTokenUsage(entity.getTokenUsage());
         vo.setStatus(entity.getStatus());
         vo.setCreateTime(entity.getCreateTime());
