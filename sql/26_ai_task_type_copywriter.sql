@@ -9,7 +9,8 @@
 --   ai-copywriter —— 文案方法论专用 Agent，供前端「文案生成」能力下拉显式选择；
 --                仅注入 instruction、不自动切换会话归属（与 docx/pdf/parse 一致）。
 -- 口径：task_type 默认 chat，存量行自动回填为 chat（旧数据均为纯对话，语义正确）；
---       Agent seed 幂等（先删后插）；菜单权限复用 ai:assistant（无需新增权限点）。
+--       Agent seed 幂等（先删后插）；会话列表查全部收紧为独立权限点 ai:session:query-all（31011），
+--       未授予该点的管理端账号也只能查本人会话（方案 §4.4.2，与配额同批交付）。
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -37,8 +38,23 @@ VALUES
 仅输出文案本身，不要解释方法论。', 'deepseek-chat', '[]', 1, 3, NULL, 'common', 2, 1, 1);
 
 -- ------------------------------------------------------------
--- 3. 校验
+-- 3. 会话查全部独立权限点（挂在会话记录菜单 3101 下，按钮型）
+--    后端 AgentChatService.sessionPage 据此判定：无此点则强制注入本人 userId/userType。
+-- ------------------------------------------------------------
+DELETE FROM `sys_role_menu` WHERE `menu_id` = 31011;
+DELETE FROM `sys_menu` WHERE `id` = 31011;
+INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `type`, `permission`, `sort`)
+VALUES (31011, 3101, '会话查全部', 3, 'ai:session:query-all', 2);
+
+-- 授权给超级管理员（role_id=1，super_admin）：显式记录，不依赖超管通配
+DELETE FROM `sys_role_menu` WHERE `id` = 99029;
+INSERT INTO `sys_role_menu` (`id`, `role_id`, `menu_id`) VALUES (99029, 1, 31011);
+
+-- ------------------------------------------------------------
+-- 4. 校验
 -- ------------------------------------------------------------
 -- SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS
 --   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ai_chat_message' AND COLUMN_NAME = 'task_type';
 -- SELECT id, name, model, max_steps, status FROM agent_definition WHERE id = 90004;
+-- SELECT id, permission FROM sys_menu WHERE id = 31011;
+-- SELECT id, menu_id FROM sys_role_menu WHERE menu_id = 31011;

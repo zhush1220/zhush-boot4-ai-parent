@@ -30,6 +30,7 @@ import com.zhush.common.exception.ServiceException;
 import com.zhush.common.exception.ServiceExceptionUtil;
 import com.zhush.common.response.PageResult;
 import com.zhush.mybatis.core.query.QueryWrapperX;
+import com.zhush.satoken.core.StpAdminUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -215,11 +216,13 @@ public class AgentChatService {
 
     /**
      * 会话分页。
+     *
+     * <p>归属强制（方案 §4.4.2）：查全部需独立权限点 {@code ai:session:query-all}（菜单 31011），
+     * 未授予者（含管理端普通角色）服务端强制覆盖为本人 userId/userType，防越权列举。
      */
     public PageResult<AiSessionVO> sessionPage(AiSessionQuery query) {
-        // 归属强制：非管理员只能看自己的会话（服务端覆盖 userId/userType，前端不再传，防越权列举）
         AgentContext ctx = contextResolver.resolve();
-        if (ctx == null || !"admin".equals(ctx.getUserType())) {
+        if (!hasQueryAllPermission()) {
             query.setUserId(ctx == null ? 0L : ctx.getUserId());
             query.setUserType(ctx == null ? "member" : ctx.getUserType());
         }
@@ -232,7 +235,35 @@ public class AgentChatService {
         queryWrapper.orderBy("last_active_time", false);
         Page<AiChatSessionEntity> page = sessionMapper.selectPageX(query, queryWrapper);
         List<AiSessionVO> list = toSessionVOs(page.getRecords());
+        fillTaskStats(list);
         return PageResult.of(list, page.getTotalRow());
+    }
+
+    /**
+     * 列表行补任务类型/产物数聚合（一次 IN 查询，避免逐会话 N+1）。
+     */
+    private void fillTaskStats(List<AiSessionVO> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        List<String> sessionIds = list.stream()
+                .map(AiSessionVO::getSessionId)
+                .filter(sessionId -> sessionId != null && !sessionId.isBlank())
+                .toList();
+        if (sessionIds.isEmpty()) {
+            return;
+        }
+        Map<String, com.zhush.ai.vo.SessionTaskStatVO> statMap = new LinkedHashMap<>();
+        for (var stat : messageMapper.selectTaskStatsBySessionIds(sessionIds)) {
+            statMap.put(stat.getSessionId(), stat);
+        }
+        for (AiSessionVO vo : list) {
+            var stat = statMap.get(vo.getSessionId());
+            if (stat != null) {
+                vo.setTaskTypes(stat.getTaskTypes());
+                vo.setAttachmentCount(stat.getAttachmentCount());
+            }
+        }
     }
 
     /**
@@ -413,6 +444,13 @@ public class AgentChatService {
         if (max > 0 && message.length() > max) {
             throw ServiceExceptionUtil.exception(MESSAGE_TOO_LONG, max);
         }
+    }
+
+    /**
+     * 是否持有会话查全部权限点（仅管理端登录态可能持有；member/未登录一律 false）。
+     */
+    private boolean hasQueryAllPermission() {
+        return StpAdminUtil.isLogin() && StpAdminUtil.hasPermission("ai:session:query-all");
     }
 
     /**

@@ -20,8 +20,13 @@ public class AiSessionQuery extends BaseQuery {
 
     private String agentName;
 
+    /** 用户类型：无 query-all 时被服务端覆盖为当前登录人 */
     private String userType;
 
+    /**
+     * 目标用户：仅持有 {@code ai:session:query-all} 时生效；
+     * 否则服务端强制覆盖为当前登录人（防越权列举，前端无需传）。
+     */
     private Long userId;
 
     private Integer status;
