@@ -17,6 +17,12 @@ import lombok.NoArgsConstructor;
 public class FileUploadResult {
 
     /**
+     * 文件记录主键（infra_file.id）；仅经 {@link FileRecordStore} 上传时有值，
+     * 直连 {@link FileClient} 上传不写库则为 {@code null}
+     */
+    private Long id;
+
+    /**
      * 存储类型（见 {@link FileStorageType}）
      */
     private String storageType;

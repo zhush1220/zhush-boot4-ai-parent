@@ -1,7 +1,7 @@
 package com.zhush.ai.generation;
 
 import com.zhush.common.exception.ServiceException;
-import com.zhush.file.core.FileClient;
+import com.zhush.file.core.FileRecordStore;
 import com.zhush.file.core.FileUploadResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 /**
  * {@link AgentDocumentService} 渲染链路测试：
  * docx（PK _zip 签名）/ pdf（%PDF 头）字节有效性、文件名规范与参数校验；
- * 文件服务以 Mock 替代，不依赖真实上传。
+ * 文件记录存储以 Mock 替代，不依赖真实上传与落库。
  *
  * <p>注：OpenPDF 中文（STSongStd-Light 非嵌入 CJK）在真实阅读器的显示效果需人工验证，
  * 本用例仅断言产物字节头与大小。
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 class AgentDocumentServiceTest {
 
     @Mock
-    private FileClient fileClient;
+    private FileRecordStore fileRecordStore;
 
     private static final String MARKDOWN = """
             # 测试报告
@@ -49,12 +49,13 @@ class AgentDocumentServiceTest {
             """;
 
     private AgentDocumentService service() {
-        return new AgentDocumentService(fileClient);
+        return new AgentDocumentService(fileRecordStore);
     }
 
     private void mockUpload() {
-        when(fileClient.upload(any(byte[].class), anyString(), anyString()))
+        when(fileRecordStore.upload(any(byte[].class), anyString(), anyString(), any(), any()))
                 .thenReturn(FileUploadResult.builder()
+                        .id(9001L)
                         .url("http://localhost:9166/files/2026/08/test.docx")
                         .size(1024L)
                         .build());
@@ -69,9 +70,11 @@ class AgentDocumentServiceTest {
         assertThat(artifact.getName()).isEqualTo("测试报告.docx");
         assertThat(artifact.getUrl()).isNotBlank();
         assertThat(artifact.getType()).isEqualTo("file");
+        // 产物已落文件记录，回链携带 infra_file.id
+        assertThat(artifact.getFileId()).isEqualTo(9001L);
 
         ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
-        verify(fileClient).upload(bytes.capture(), eq("测试报告.docx"), anyString());
+        verify(fileRecordStore).upload(bytes.capture(), eq("测试报告.docx"), anyString(), any(), any());
         // docx 为 zip 容器，PK\x03\x04 签名
         byte[] content = bytes.getValue();
         assertThat(content.length).isGreaterThan(1000);
@@ -89,7 +92,7 @@ class AgentDocumentServiceTest {
         assertThat(artifact.getName()).matches("document-\\d+\\.pdf");
 
         ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
-        verify(fileClient).upload(bytes.capture(), anyString(), eq("application/pdf"));
+        verify(fileRecordStore).upload(bytes.capture(), anyString(), eq("application/pdf"), any(), any());
         assertThat(new String(bytes.getValue(), 0, 5, StandardCharsets.US_ASCII)).isEqualTo("%PDF-");
     }
 

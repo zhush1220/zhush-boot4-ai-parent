@@ -1,6 +1,9 @@
 package com.zhush.ai.listener;
 
+import com.mybatisflex.core.query.QueryWrapper;
+import com.zhush.ai.entity.AiChatSessionEntity;
 import com.zhush.ai.entity.AgentAuditLogEntity;
+import com.zhush.ai.mapper.AiChatSessionMapper;
 import com.zhush.ai.mapper.AgentAuditLogMapper;
 import com.zhush.agentscope.event.AgentApprovalRequiredEvent;
 import com.zhush.agentscope.event.AgentErrorEvent;
@@ -10,6 +13,7 @@ import com.zhush.agentscope.event.AgentEventType;
 import com.zhush.agentscope.event.AgentFinishedEvent;
 import com.zhush.agentscope.event.AgentStartedEvent;
 import com.zhush.agentscope.event.AgentToolCalledEvent;
+import com.zhush.agentscope.event.AgentToolResultEvent;
 import org.apache.skywalking.apm.toolkit.trace.TraceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +32,11 @@ public class AgentAuditEventListener implements AgentEventListener {
     private static final Logger log = LoggerFactory.getLogger(AgentAuditEventListener.class);
 
     private final AgentAuditLogMapper auditLogMapper;
+    private final AiChatSessionMapper sessionMapper;
 
-    public AgentAuditEventListener(AgentAuditLogMapper auditLogMapper) {
+    public AgentAuditEventListener(AgentAuditLogMapper auditLogMapper, AiChatSessionMapper sessionMapper) {
         this.auditLogMapper = auditLogMapper;
+        this.sessionMapper = sessionMapper;
     }
 
     @Override
@@ -52,8 +58,14 @@ public class AgentAuditEventListener implements AgentEventListener {
         } else if (event instanceof AgentToolCalledEvent toolEvent) {
             entity.setEventType("TOOL_CALLED");
             entity.setToolName(toolEvent.getToolName());
-            entity.setToolArgs(toolEvent.getArguments());
-            entity.setToolResult(toolEvent.getResult());
+            entity.setToolArgs(truncate(toolEvent.getArguments(), 4000));
+            entity.setToolResult(truncate(toolEvent.getResult(), 4000));
+        } else if (event instanceof AgentToolResultEvent resultEvent) {
+            entity.setEventType("TOOL_RESULT");
+            entity.setToolName(resultEvent.getName());
+            entity.setToolResult(truncate(resultEvent.getResult(), 4000));
+            entity.setResultCode(resultEvent.isOk() ? 0 : 1);
+            entity.setResultMsg(resultEvent.isOk() ? "" : "工具执行失败");
         } else if (event instanceof AgentErrorEvent errorEvent) {
             entity.setEventType("ERROR");
             entity.setResultCode(1);
@@ -69,7 +81,8 @@ public class AgentAuditEventListener implements AgentEventListener {
         entity.setSessionId(event.getSessionId());
         entity.setAgentName(event.getAgentName());
         entity.setUserId(event.getUserId());
-        entity.setUserType("admin");
+        // userType 事件不携带（AgentEvent 仅有 userId），异步线程无 Sa-Token 上下文，按会话归属回查
+        entity.setUserType(resolveUserType(event.getSessionId()));
         entity.setTenantId(parseLong(event.getTenantId()));
         // 链路追踪 ID：异步分发下取事件携带的值（发布线程采集），其次取当前线程上下文，无链路时回退 "N/A"
         entity.setTraceId(blankToDefault(firstNonBlank(event.getTraceId(), TraceContext.traceId()), "N/A"));
@@ -79,6 +92,22 @@ public class AgentAuditEventListener implements AgentEventListener {
         } catch (Exception e) {
             log.warn("审计日志落库失败, eventType={}, error={}", event.getEventType(), e.getMessage());
         }
+    }
+
+    private String resolveUserType(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            return "admin";
+        }
+        try {
+            AiChatSessionEntity session = sessionMapper.selectOneByQuery(
+                    QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
+            if (session != null && session.getUserType() != null && !session.getUserType().isBlank()) {
+                return session.getUserType();
+            }
+        } catch (Exception e) {
+            log.debug("[AgentAudit] 回查会话 userType 失败, sessionId={}, error={}", sessionId, e.getMessage());
+        }
+        return "admin";
     }
 
     private String blankToDefault(String value, String defaultValue) {

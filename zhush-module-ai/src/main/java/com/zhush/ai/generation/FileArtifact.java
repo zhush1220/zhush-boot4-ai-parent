@@ -22,10 +22,10 @@ public class FileArtifact implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    /** 附件类型：file 文件 / image 图片 / video 视频（后两者为多模态生成预留） */
+    /** 附件类型：file 文件 / image 图片 / video 视频 */
     private String type;
 
-    /** 产物格式：docx / pdf */
+    /** 产物格式：docx / pdf / png / mp4 等 */
     private String format;
 
     /** 展示文件名（含扩展名） */
@@ -36,4 +36,10 @@ public class FileArtifact implements Serializable {
 
     /** 字节大小 */
     private Long size;
+
+    /**
+     * 文件记录主键（{@code infra_file.id}）；产物已落库时有值，
+     * 供文件管理/清理与生成任务关联，旧数据可为 {@code null}
+     */
+    private Long fileId;
 }

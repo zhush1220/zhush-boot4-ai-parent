@@ -1,5 +1,7 @@
 package com.zhush.ai.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaMode;
 import com.zhush.ai.param.AgentChatParam;
 import com.zhush.ai.param.AgentSessionRenameParam;
 import com.zhush.ai.query.AiSessionQuery;
@@ -10,6 +12,7 @@ import com.zhush.ai.vo.AiSessionVO;
 import com.zhush.agentscope.agent.AgentDefinition;
 import com.zhush.agentscope.agent.AgentRegistry;
 import com.zhush.agentscope.event.AgentEvent;
+import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.PageResult;
 import com.zhush.common.response.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,6 +56,7 @@ public class AgentChatController {
      */
     @PostMapping("/chat")
     @Operation(summary = "同步对话")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Result<com.zhush.agentscope.agent.AgentReply> chat(@RequestBody @Valid AgentChatParam param) {
         return Result.success(chatService.chat(param));
     }
@@ -62,6 +66,7 @@ public class AgentChatController {
      */
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "流式对话（SSE）")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Flux<AgentEvent> stream(@RequestBody @Valid AgentChatParam param) {
         return chatService.stream(param);
     }
@@ -71,6 +76,7 @@ public class AgentChatController {
      */
     @GetMapping(value = "/session/{sessionId}/resume-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "会话续跑流（SSE）")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Flux<AgentEvent> resumeStream(
             @Parameter(description = "会话ID") @PathVariable String sessionId) {
         return chatService.resumeChannel(sessionId);
@@ -81,6 +87,7 @@ public class AgentChatController {
      */
     @GetMapping("/list")
     @Operation(summary = "智能体列表")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Result<List<AgentVO>> list() {
         List<AgentVO> result = new ArrayList<>();
         for (AgentDefinition def : agentRegistry.all()) {
@@ -101,6 +108,7 @@ public class AgentChatController {
      */
     @PostMapping("/session/new")
     @Operation(summary = "新建会话")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Result<String> newSession(@RequestBody @Valid AgentChatParam param) {
         return Result.success(chatService.newSession(param.getAgentName(), param.getMessage()));
     }
@@ -110,6 +118,8 @@ public class AgentChatController {
      */
     @GetMapping("/session/page")
     @Operation(summary = "会话分页")
+    // 助手自用（ai:assistant）与管理端会话记录页（ai:session:list）共用，取 OR
+    @SaCheckPermission(type = CommonConstant.TYPE, mode = SaMode.OR, value = {"ai:assistant", "ai:session:list"})
     public Result<PageResult<AiSessionVO>> sessionPage(@Valid AiSessionQuery query) {
         return Result.success(chatService.sessionPage(query));
     }
@@ -119,6 +129,7 @@ public class AgentChatController {
      */
     @GetMapping("/session/{sessionId}/messages")
     @Operation(summary = "会话消息")
+    @SaCheckPermission(type = CommonConstant.TYPE, mode = SaMode.OR, value = {"ai:assistant", "ai:session:list"})
     public Result<List<AiChatMessageVO>> messages(
             @Parameter(description = "会话ID") @PathVariable String sessionId) {
         return Result.success(chatService.sessionMessages(sessionId));
@@ -129,6 +140,7 @@ public class AgentChatController {
      */
     @DeleteMapping("/session/{sessionId}")
     @Operation(summary = "删除会话")
+    @SaCheckPermission(type = CommonConstant.TYPE, mode = SaMode.OR, value = {"ai:assistant", "ai:session:delete"})
     public Result<Void> delete(@Parameter(description = "会话ID") @PathVariable String sessionId) {
         chatService.deleteSession(sessionId);
         return Result.success();
@@ -139,6 +151,7 @@ public class AgentChatController {
      */
     @PutMapping("/session/{sessionId}")
     @Operation(summary = "重命名会话")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Result<Void> rename(@Parameter(description = "会话ID") @PathVariable String sessionId,
                                @RequestBody @Valid AgentSessionRenameParam param) {
         chatService.renameSession(sessionId, param.getTitle());

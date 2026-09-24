@@ -42,8 +42,11 @@ public class AiChatMessageEntity extends BaseEntity implements Serializable {
     /** 工具调用（JSON 数组：name/arguments/result/status） */
     private String toolCalls;
 
-    /** 产物附件（JSON 数组：type/format/name/url/size，对话生成文件回链） */
+    /** 产物附件（JSON 数组：type/format/name/url/size/fileId，对话生成文件回链） */
     private String attachments;
+
+    /** 任务类型：chat/copywriting/docx/pdf/parse/image/video（见 {@code AiTaskType}，配额与用量统计维度） */
+    private String taskType;
 
     /** Token 用量（JSON：input/output/total） */
     private String tokenUsage;

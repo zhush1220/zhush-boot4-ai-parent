@@ -8,6 +8,7 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.zhush.ai.context.AiSessionContextResolver;
 import com.zhush.ai.entity.AiChatMessageEntity;
 import com.zhush.ai.entity.AiChatSessionEntity;
+import com.zhush.ai.enums.AiTaskType;
 import com.zhush.ai.mapper.AiChatMessageMapper;
 import com.zhush.ai.mapper.AiChatSessionMapper;
 import com.zhush.ai.param.AgentChatParam;
@@ -24,6 +25,7 @@ import com.zhush.agentscope.event.AgentFinishedEvent;
 import com.zhush.agentscope.event.AgentResumeChannels;
 import com.zhush.agentscope.event.AgentToolResultEvent;
 import com.zhush.agentscope.template.AgentTemplate;
+import com.zhush.agentscope.config.AgentScopeProperties;
 import com.zhush.common.exception.ServiceException;
 import com.zhush.common.exception.ServiceExceptionUtil;
 import com.zhush.common.response.PageResult;
@@ -40,8 +42,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.zhush.ai.enums.AiErrorCode.CONVERSATION_NOT_FOUND;
+import static com.zhush.ai.enums.AiErrorCode.CONVERSATION_LIMIT_EXCEED;
 import static com.zhush.ai.enums.AiErrorCode.MESSAGE_CONTENT_EMPTY;
+import static com.zhush.ai.enums.AiErrorCode.MESSAGE_TOO_LONG;
 
 /**
  * AI 对话服务：统一封装 {@link AgentTemplate}，并把会话/消息持久化到 DB（ai_chat_session / ai_chat_message）。
@@ -66,11 +69,18 @@ public class AgentChatService {
     private final AiChatMessageMapper messageMapper;
     private final ObjectMapper objectMapper;
     private final AgentResumeChannels resumeChannels;
+    private final AgentScopeProperties properties;
+    private final AiRateLimiter rateLimiter;
+    private final ComplianceGuard complianceGuard;
+    private final AiQuotaService quotaService;
+    private final AgentChatOwnershipGuard ownershipGuard;
 
     public AgentChatService(AgentTemplate agentTemplate, AgentRegistry agentRegistry,
                             AiSessionContextResolver contextResolver, AiChatSessionMapper sessionMapper,
                             AiChatMessageMapper messageMapper, ObjectMapper objectMapper,
-                            AgentResumeChannels resumeChannels) {
+                            AgentResumeChannels resumeChannels, AgentScopeProperties properties,
+                            AiRateLimiter rateLimiter, ComplianceGuard complianceGuard,
+                            AiQuotaService quotaService, AgentChatOwnershipGuard ownershipGuard) {
         this.agentTemplate = agentTemplate;
         this.agentRegistry = agentRegistry;
         this.contextResolver = contextResolver;
@@ -78,6 +88,11 @@ public class AgentChatService {
         this.messageMapper = messageMapper;
         this.objectMapper = objectMapper;
         this.resumeChannels = resumeChannels;
+        this.properties = properties;
+        this.rateLimiter = rateLimiter;
+        this.complianceGuard = complianceGuard;
+        this.quotaService = quotaService;
+        this.ownershipGuard = ownershipGuard;
     }
 
     /**
@@ -87,17 +102,26 @@ public class AgentChatService {
         if (param.getMessage() == null || param.getMessage().isBlank()) {
             throw ServiceExceptionUtil.exception(MESSAGE_CONTENT_EMPTY);
         }
+        validateMessageLength(param.getMessage());
         AgentContext ctx = contextResolver.resolve();
+        AiTaskType taskType = AiTaskType.of(param.getTaskType());
+        // P5 闸门：限流（QPS）→ 内容合规 → 次数配额，任一不过即拒，不进入模型调用
+        rateLimiter.acquire(ctx.getUserId(), ctx.getUserType());
+        complianceGuard.check(param.getMessage());
+        quotaService.assertAllowed(ctx.getUserId(), ctx.getUserType(), taskType);
         String sessionId = param.getSessionId();
         if (sessionId == null || sessionId.isBlank()) {
+            assertSessionLimit(ctx);
             sessionId = agentTemplate.newSession(param.getAgentName());
         }
-        ensureSessionRow(sessionId, param.getAgentName(), param.getMessage());
+        ensureSessionRow(sessionId, param.getAgentName(), param.getMessage(), ctx);
         AgentReply reply = agentTemplate.chat(param.getAgentName(), sessionId, param.getMessage());
-        saveMessage(sessionId, "user", param.getMessage());
+        saveMessage(sessionId, "user", param.getMessage(), taskType);
         // 同步路径的 Token 由 AgentReply 携带（与事件流同源），一并累加到会话累计消耗
-        saveMessage(sessionId, "assistant", reply.getReply(),
+        saveMessage(sessionId, "assistant", reply.getReply(), taskType,
                 reply.getInputTokens(), reply.getOutputTokens(), reply.getTotalTokens(), null);
+        quotaService.record(ctx.getUserId(), ctx.getUserType(), taskType,
+                reply.getInputTokens(), reply.getOutputTokens());
         return reply;
     }
 
@@ -105,15 +129,27 @@ public class AgentChatService {
      * 流式对话：返回事件流（SSE），消息落库在流结束时执行。
      */
     public Flux<AgentEvent> stream(AgentChatParam param) {
+        if (param.getMessage() == null || param.getMessage().isBlank()) {
+            throw ServiceExceptionUtil.exception(MESSAGE_CONTENT_EMPTY);
+        }
+        validateMessageLength(param.getMessage());
         AgentContext ctx = contextResolver.resolve();
+        AiTaskType taskType = AiTaskType.of(param.getTaskType());
+        // P5 闸门：与同步路径同口径，进入流式前先过限流/合规/配额
+        rateLimiter.acquire(ctx.getUserId(), ctx.getUserType());
+        complianceGuard.check(param.getMessage());
+        quotaService.assertAllowed(ctx.getUserId(), ctx.getUserType(), taskType);
         String sessionId = param.getSessionId();
         if (sessionId == null || sessionId.isBlank()) {
+            assertSessionLimit(ctx);
             sessionId = agentTemplate.newSession(param.getAgentName());
         }
-        ensureSessionRow(sessionId, param.getAgentName(), param.getMessage());
-        saveMessage(sessionId, "user", param.getMessage());
+        ensureSessionRow(sessionId, param.getAgentName(), param.getMessage(), ctx);
+        saveMessage(sessionId, "user", param.getMessage(), taskType);
         final String finalSessionId = sessionId;
-        // 产物收集：从 generateDocument 工具结果事件提取 artifact，随 assistant 消息落 attachments
+        final Long quotaUserId = ctx.getUserId();
+        final String quotaUserType = ctx.getUserType();
+        // 产物收集：从生成类工具结果事件提取 artifact，随 assistant 消息落 attachments
         final List<String> artifacts = Collections.synchronizedList(new ArrayList<>());
         return agentTemplate.stream(param.getAgentName(), finalSessionId, param.getMessage())
                 .doOnNext(event -> {
@@ -121,10 +157,12 @@ public class AgentChatService {
                         collectArtifact(artifacts, toolResult);
                     }
                     if (event.getEventType() == AgentEventType.FINISHED && event instanceof AgentFinishedEvent finishedEvent) {
-                        saveMessage(finalSessionId, "assistant", finishedEvent.getReply(),
+                        saveMessage(finalSessionId, "assistant", finishedEvent.getReply(), taskType,
                                 finishedEvent.getInputTokens(), finishedEvent.getOutputTokens(),
                                 finishedEvent.getTotalTokens(), buildAttachments(artifacts));
                         updateSessionStatus(finalSessionId, STATUS_FINISHED);
+                        quotaService.record(quotaUserId, quotaUserType, taskType,
+                                finishedEvent.getInputTokens(), finishedEvent.getOutputTokens());
                     } else if (event.getEventType() == AgentEventType.ERROR) {
                         updateSessionStatus(finalSessionId, 4);
                     }
@@ -147,13 +185,15 @@ public class AgentChatService {
     public void resumeNative(String agentName, String sessionId, String replyId, boolean confirmed,
                              Map<String, Object> modifiedArgs) {
         final List<String> artifacts = Collections.synchronizedList(new ArrayList<>());
+        // 续跑消息延续会话当前任务类型（无法回溯原轮次意图，统一记 chat 以免误统计）
+        final AiTaskType taskType = AiTaskType.CHAT;
         agentTemplate.resumeConfirm(agentName, sessionId, replyId, confirmed, modifiedArgs)
                 .subscribe(event -> {
                     if (event instanceof AgentToolResultEvent toolResult) {
                         collectArtifact(artifacts, toolResult);
                     }
                     if (event.getEventType() == AgentEventType.FINISHED && event instanceof AgentFinishedEvent finished) {
-                        saveMessage(sessionId, "assistant", finished.getReply(),
+                        saveMessage(sessionId, "assistant", finished.getReply(), taskType,
                                 finished.getInputTokens(), finished.getOutputTokens(), finished.getTotalTokens(),
                                 buildAttachments(artifacts));
                         updateSessionStatus(sessionId, STATUS_FINISHED);
@@ -167,8 +207,9 @@ public class AgentChatService {
      * 新建会话。
      */
     public String newSession(String agentName, String message) {
+        assertSessionLimit(contextResolver.resolve());
         String sessionId = agentTemplate.newSession(agentName);
-        ensureSessionRow(sessionId, agentName, message);
+        ensureSessionRow(sessionId, agentName, message, contextResolver.resolve());
         return sessionId;
     }
 
@@ -176,6 +217,12 @@ public class AgentChatService {
      * 会话分页。
      */
     public PageResult<AiSessionVO> sessionPage(AiSessionQuery query) {
+        // 归属强制：非管理员只能看自己的会话（服务端覆盖 userId/userType，前端不再传，防越权列举）
+        AgentContext ctx = contextResolver.resolve();
+        if (ctx == null || !"admin".equals(ctx.getUserType())) {
+            query.setUserId(ctx == null ? 0L : ctx.getUserId());
+            query.setUserType(ctx == null ? "member" : ctx.getUserType());
+        }
         QueryWrapperX queryWrapper = QueryWrapperX.create()
                 .eq(AiChatSessionEntity::getAgentName, query.getAgentName())
                 .eq(AiChatSessionEntity::getUserType, query.getUserType())
@@ -192,6 +239,7 @@ public class AgentChatService {
      * 会话消息列表。
      */
     public List<AiChatMessageVO> sessionMessages(String sessionId) {
+        ownershipGuard.assertSessionOwner(sessionId);
         List<AiChatMessageEntity> list = messageMapper.selectBySessionId(sessionId);
         List<AiChatMessageVO> result = new ArrayList<>(list.size());
         for (AiChatMessageEntity entity : list) {
@@ -204,11 +252,8 @@ public class AgentChatService {
      * 删除会话。
      */
     public void deleteSession(String sessionId) {
-        AiChatSessionEntity session = sessionMapper.selectOneByQuery(
-                QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
-        if (session != null) {
-            sessionMapper.deleteById(session.getId());
-        }
+        AiChatSessionEntity session = ownershipGuard.assertSessionOwner(sessionId);
+        sessionMapper.deleteById(session.getId());
         agentTemplate.clearSession(sessionId);
     }
 
@@ -216,11 +261,7 @@ public class AgentChatService {
      * 重命名会话标题。
      */
     public void renameSession(String sessionId, String title) {
-        AiChatSessionEntity session = sessionMapper.selectOneByQuery(
-                QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
-        if (session == null) {
-            throw ServiceExceptionUtil.exception(CONVERSATION_NOT_FOUND, sessionId);
-        }
+        AiChatSessionEntity session = ownershipGuard.assertSessionOwner(sessionId);
         String newTitle = title.trim();
         if (newTitle.length() > 50) {
             newTitle = newTitle.substring(0, 50);
@@ -231,7 +272,7 @@ public class AgentChatService {
 
     // ================ 内部方法 ================
 
-    private void ensureSessionRow(String sessionId, String agentName, String firstMessage) {
+    private void ensureSessionRow(String sessionId, String agentName, String firstMessage, AgentContext ctx) {
         AiChatSessionEntity existing = sessionMapper.selectOneByQuery(
                 QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
         if (existing != null) {
@@ -246,8 +287,8 @@ public class AgentChatService {
         entity.setAgentDesc(def == null ? "" : def.getDescription());
         entity.setModel(def == null ? "" : (def.getModel() == null ? "" : def.getModel()));
         entity.setTitle(buildTitle(firstMessage));
-        entity.setUserId(contextResolver.resolve().getUserId());
-        entity.setUserType(contextResolver.resolve().getUserType());
+        entity.setUserId(ctx == null ? null : ctx.getUserId());
+        entity.setUserType(ctx == null ? null : ctx.getUserType());
         entity.setTenantId(0L);
         entity.setMessageCount(0);
         entity.setTokenCost(0L);
@@ -257,8 +298,8 @@ public class AgentChatService {
         sessionMapper.insert(entity);
     }
 
-    private void saveMessage(String sessionId, String role, String content) {
-        saveMessage(sessionId, role, content, 0, 0, 0, null);
+    private void saveMessage(String sessionId, String role, String content, AiTaskType taskType) {
+        saveMessage(sessionId, role, content, taskType, 0, 0, 0, null);
     }
 
     /**
@@ -268,7 +309,7 @@ public class AgentChatService {
      * <p>会话行此处按「读-改-写」更新（与 messageCount 同一处），用量日聚合表另由监听器原子累加，
      * 两者不双写同一列。
      */
-    private void saveMessage(String sessionId, String role, String content,
+    private void saveMessage(String sessionId, String role, String content, AiTaskType taskType,
                              int inputTokens, int outputTokens, int totalTokens, String attachments) {
         AiChatSessionEntity session = sessionMapper.selectOneByQuery(
                 QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
@@ -283,6 +324,7 @@ public class AgentChatService {
         entity.setContentType("text");
         entity.setContent(content);
         entity.setAttachments(attachments);
+        entity.setTaskType((taskType == null ? AiTaskType.CHAT : taskType).getCode());
         entity.setStatus(STATUS_MESSAGE_NORMAL);
         if (total > 0) {
             entity.setTokenUsage(buildTokenUsage(inputTokens, outputTokens, total));
@@ -296,19 +338,20 @@ public class AgentChatService {
     }
 
     /**
-     * 从工具结果事件提取产物：仅处理成功执行的 generateDocument，
+     * 从工具结果事件提取产物：仅处理成功执行且携带 {@code artifact} 的工具（如 generateDocument），
      * 结果 JSON 形如 {@code {"ok":true,"artifact":{...}}}；解析失败静默忽略（不影响主流程）。
      */
     private void collectArtifact(List<String> artifacts, AgentToolResultEvent event) {
-        if (!event.isOk() || !"generateDocument".equals(event.getName())
-                || event.getResult() == null || event.getResult().isBlank()) {
+        if (!event.isOk() || event.getResult() == null || event.getResult().isBlank()) {
             return;
         }
         try {
             JsonNode root = objectMapper.readTree(event.getResult());
             JsonNode artifact = root.path("artifact");
             if (root.path("ok").asBoolean(false) && artifact.isObject()) {
-                artifacts.add(artifact.toString());
+                synchronized (artifacts) {
+                    artifacts.add(artifact.toString());
+                }
             }
         } catch (JacksonException e) {
             log.debug("[collectArtifact] 工具结果非 JSON，忽略: {}", e.getMessage());
@@ -361,6 +404,34 @@ public class AgentChatService {
         return message.length() > 20 ? message.substring(0, 20) : message;
     }
 
+    /**
+     * 消息长度闸门（可配）：前端硬编码的 {@code @Size(max=8000)} 无法随运营策略调整，
+     * 此处按 {@code zhush.agentscope.chat.max-message-length} 再校一道，0 为不限制。
+     */
+    private void validateMessageLength(String message) {
+        int max = properties.getChat().getMaxMessageLength();
+        if (max > 0 && message.length() > max) {
+            throw ServiceExceptionUtil.exception(MESSAGE_TOO_LONG, max);
+        }
+    }
+
+    /**
+     * 单用户活跃会话上限：防止会话堆积占满 Redis 与会话列表不可用。0 为不限制。
+     */
+    private void assertSessionLimit(AgentContext ctx) {
+        int max = properties.getQuota().getMaxActiveSessions();
+        if (max <= 0 || ctx == null || ctx.getUserId() == null) {
+            return;
+        }
+        long active = sessionMapper.selectCountByQuery(QueryWrapper.create()
+                .where(AiChatSessionEntity::getUserId).eq(ctx.getUserId())
+                .and(AiChatSessionEntity::getUserType).eq(ctx.getUserType())
+                .and(AiChatSessionEntity::getStatus).eq(STATUS_ACTIVE));
+        if (active >= max) {
+            throw ServiceExceptionUtil.exception(CONVERSATION_LIMIT_EXCEED);
+        }
+    }
+
     private List<AiSessionVO> toSessionVOs(List<AiChatSessionEntity> entities) {
         List<AiSessionVO> result = new ArrayList<>(entities.size());
         for (AiChatSessionEntity entity : entities) {
@@ -394,6 +465,7 @@ public class AgentChatService {
         vo.setThinking(entity.getThinking());
         vo.setToolCalls(entity.getToolCalls());
         vo.setAttachments(entity.getAttachments());
+        vo.setTaskType(entity.getTaskType());
         vo.setTokenUsage(entity.getTokenUsage());
         vo.setStatus(entity.getStatus());
         vo.setCreateTime(entity.getCreateTime());

@@ -29,4 +29,11 @@ public class AgentChatParam implements Serializable {
     @NotBlank(message = "消息内容不能为空")
     @Size(max = 8000, message = "消息长度超出限制")
     private String message;
+
+    /**
+     * 任务类型（前端能力选项对应值）：chat / copywriting / docx / pdf / parse / image / video。
+     * 为空或非法值回落为 chat；用于消息归类、配额判定与用量统计。
+     */
+    @Size(max = 16, message = "任务类型长度超出限制")
+    private String taskType;
 }

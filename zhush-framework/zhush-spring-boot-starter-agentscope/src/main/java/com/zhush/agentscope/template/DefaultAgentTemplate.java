@@ -451,10 +451,17 @@ public class DefaultAgentTemplate implements AgentTemplate {
     }
 
     private RuntimeContext runtimeContext(AgentDefinition def, String sessionId, AgentContext ctx) {
-        return RuntimeContext.builder()
+        RuntimeContext rc = RuntimeContext.builder()
                 .sessionId(sessionId)
-                .userId(String.valueOf(ctx.getUserId() == null ? 0L : ctx.getUserId()))
+                .userId(String.valueOf(ctx == null || ctx.getUserId() == null ? 0L : ctx.getUserId()))
                 .build();
+        // 业务上下文经属性袋透传给工具方法：ReflectiveAgentTool 据此注入 AgentContext 型形参（LLM 不可见）
+        if (ctx != null) {
+            // 回填当前会话 ID：生成类工具据此把异步任务绑定到来源会话（产物回填/越权校验）
+            ctx.setSessionId(sessionId);
+            rc.put(AgentContext.class, ctx);
+        }
+        return rc;
     }
 
     private List<Msg> toMsgs(List<SessionMessage> history) {
