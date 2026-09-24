@@ -47,6 +47,9 @@
         <tianai-captcha.version>1.5.5</tianai-captcha.version>
         <rocketmq.version>5.5.0</rocketmq.version>
         <agentscope.version>2.0.2</agentscope.version>
+        <!-- DashScope 官方 SDK：图像/视频生成能力（asyncCall/fetch）。与 agentscope 2.0.2 传递版本显式对齐，
+             避免上游升级导致生成链路参数面漂移 -->
+        <dashscope-sdk.version>2.22.9</dashscope-sdk.version>
         <!-- 与 Tika 3.3.1 传递的 POI 版本对齐，避免文档解析/生成双版本冲突 -->
         <poi.version>5.5.1</poi.version>
         <!-- Word/PDF 确定性渲染（文档生成）：OpenPDF 为 iText 2.1.7 分支，LGPL/MPL 许可，内置 CJK 字体支持 -->
@@ -180,6 +183,22 @@
                 <groupId>com.github.librepdf</groupId>
                 <artifactId>openpdf</artifactId>
                 <version>${openpdf.version}</version>
+            </dependency>
+
+            <!-- DashScope 官方 SDK（图像/视频生成 asyncCall/fetch）：由 agentscope 模型扩展传递，
+                 此处 pin 住版本，生成链路直接依赖时不写版本号。
+                 必须排除 slf4j-simple：直接声明时会带出该件（agentscope 扩展自带排除），
+                 既不在离线仓库，也会与 spring-boot-starter-logging 形成 SLF4J 双绑定。 -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>dashscope-sdk-java</artifactId>
+                <version>${dashscope-sdk.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-simple</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- commons-compress/Tika 需要 2.16.1+ 的 ChecksumInputStream，

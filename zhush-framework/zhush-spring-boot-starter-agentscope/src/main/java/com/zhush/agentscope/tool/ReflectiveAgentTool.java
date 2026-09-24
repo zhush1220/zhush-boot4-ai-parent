@@ -1,5 +1,7 @@
 package com.zhush.agentscope.tool;
 
+import com.zhush.agentscope.context.AgentContext;
+import io.agentscope.core.agent.RuntimeContext;
 import tools.jackson.databind.ObjectMapper;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.tool.ToolCallParam;
@@ -62,7 +64,7 @@ public class ReflectiveAgentTool implements io.agentscope.core.tool.AgentTool {
             }
         }
         try {
-            Object result = invoke(param.getInput());
+            Object result = invoke(param);
             String text = result == null ? "null" : result.toString();
             return Mono.just(ToolResultBlock.text(text));
         } catch (Throwable t) {
@@ -72,14 +74,22 @@ public class ReflectiveAgentTool implements io.agentscope.core.tool.AgentTool {
 
     /**
      * 反射调用目标方法，入参按名匹配（优先 {@link ToolParam#name()}，缺省按形参位置 pN）。
+     *
+     * <p>{@link AgentContext} 型形参不来自 LLM 入参，而由 {@link RuntimeContext} 属性袋注入，
+     * 使工具能拿到可信归属（配额/审计/产物隔离）且不暴露给模型。
      */
-    private Object invoke(Map<String, Object> input) throws Exception {
+    private Object invoke(ToolCallParam param) throws Exception {
         Method method = registeredTool.getMethod();
         Object bean = registeredTool.getBean();
         Parameter[] params = method.getParameters();
+        Map<String, Object> input = param == null ? null : param.getInput();
         Object[] args = new Object[params.length];
         for (int i = 0; i < params.length; i++) {
             Parameter p = params[i];
+            if (AgentContext.class.equals(p.getType())) {
+                args[i] = resolveAgentContext(param);
+                continue;
+            }
             String key = paramKey(p, i);
             Object value = input == null ? null : input.get(key);
             if (value == null) {
@@ -88,6 +98,21 @@ public class ReflectiveAgentTool implements io.agentscope.core.tool.AgentTool {
             args[i] = convert(value, p.getType());
         }
         return method.invoke(bean, args);
+    }
+
+    /**
+     * 从 RuntimeContext 取业务上下文；无上下文（如本地直调、旧会话）时回退为匿名管理端身份，
+     * 保证工具不因缺少归属而 NPE，同时日志级错误码可由调用方自行判定。
+     */
+    private AgentContext resolveAgentContext(ToolCallParam param) {
+        RuntimeContext rc = param == null ? null : param.getRuntimeContext();
+        if (rc != null) {
+            AgentContext ctx = rc.get(AgentContext.class);
+            if (ctx != null) {
+                return ctx;
+            }
+        }
+        return AgentContext.builder().userId(0L).userType("admin").build();
     }
 
     private Object convert(Object value, Class<?> targetType) {
@@ -119,6 +144,10 @@ public class ReflectiveAgentTool implements io.agentscope.core.tool.AgentTool {
             Parameter[] params = method.getParameters();
             for (int i = 0; i < params.length; i++) {
                 Parameter p = params[i];
+                // 框架注入型形参不告知 LLM，否则模型会尝试自行填写用户身份
+                if (AgentContext.class.equals(p.getType())) {
+                    continue;
+                }
                 String key = paramKey(p, i);
                 Map<String, Object> field = new HashMap<>();
                 field.put("type", jsonType(p.getType()));

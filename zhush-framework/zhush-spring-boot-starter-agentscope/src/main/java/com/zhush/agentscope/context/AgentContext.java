@@ -41,4 +41,10 @@ public class AgentContext implements Serializable {
      * 用户名称
      */
     private String nickname;
+
+    /**
+     * 当前会话 ID（由 {@code DefaultAgentTemplate} 在构建 RuntimeContext 时回填）：
+     * 供生成类工具把异步任务绑定到来源会话（产物回填、越权校验），非登录上下文可为 {@code null}
+     */
+    private String sessionId;
 }

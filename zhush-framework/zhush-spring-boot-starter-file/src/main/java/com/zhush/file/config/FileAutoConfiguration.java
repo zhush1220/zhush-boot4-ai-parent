@@ -2,7 +2,9 @@ package com.zhush.file.config;
 
 import com.zhush.file.core.DocParseService;
 import com.zhush.file.core.FileClient;
+import com.zhush.file.core.FileRecordStore;
 import com.zhush.file.core.FileStorage;
+import com.zhush.file.core.NoopFileRecordStore;
 import com.zhush.file.storage.AliyunOssFileStorage;
 import com.zhush.file.storage.HuaweiObsFileStorage;
 import com.zhush.file.storage.LocalFileStorage;
@@ -77,6 +79,16 @@ public class FileAutoConfiguration {
     @ConditionalOnMissingBean
     public DocParseService docParseService(FileClient fileClient) {
         return new DocParseService(fileClient);
+    }
+
+    /**
+     * 文件记录存储兜底实现：仅上传不落库。业务模块（module-system）提供 {@code @Primary}
+     * 实现后自动覆盖，使 AI 产物等程序生成的文件也能落入 infra_file 便于管理与清理。
+     */
+    @Bean
+    @ConditionalOnMissingBean(FileRecordStore.class)
+    public FileRecordStore fileRecordStore(FileClient fileClient) {
+        return new NoopFileRecordStore(fileClient);
     }
 
     // ================ 本地存储静态资源映射 ================

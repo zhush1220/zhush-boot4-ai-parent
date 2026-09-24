@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 动态模型解析器：缓存启用态模型池（由 {@link ModelConfigProvider} 加载），
@@ -108,6 +109,30 @@ public class AgentModelResolver {
         }
         ModelConfig config = cache.get(modelCode);
         return config == null ? null : config.pricing();
+    }
+
+    /**
+     * 按能力类型解析启用态模型（图像/视频生成取凭证用）：同能力多模型时取 {@code priority} 最大者。
+     *
+     * <p>仅覆盖动态模型池（启用态），不回退 yaml——生成类能力必须由显式配置的供应商模型承担，
+     * 避免误用 yaml 里的对话模型凭证。无匹配时返回 {@link Optional#empty()}，调用方据此报「无可用模型」。
+     *
+     * @param capability 能力类型：image / video（对应 {@code ai_model.capability}）
+     * @return 命中的模型配置（含明文 apiKey），无则空
+     */
+    public Optional<ModelConfig> resolveByCapability(String capability) {
+        if (capability == null || capability.isEmpty()) {
+            return Optional.empty();
+        }
+        ModelConfig best = null;
+        for (ModelConfig config : cache.values()) {
+            if (capability.equalsIgnoreCase(config.getCapability())) {
+                if (best == null || config.getPriority() > best.getPriority()) {
+                    best = config;
+                }
+            }
+        }
+        return Optional.ofNullable(best);
     }
 
     private AgentScopeProperties.ModelProperties toProperties(ModelConfig config) {

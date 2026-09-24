@@ -7,7 +7,7 @@ import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
-import com.zhush.file.core.FileClient;
+import com.zhush.file.core.FileRecordStore;
 import com.zhush.file.core.FileUploadResult;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -30,7 +30,7 @@ import static com.zhush.common.exception.ServiceExceptionUtil.assertTrue;
 
 /**
  * 文档生成服务：Markdown → Word(docx) / PDF 确定性渲染（不消耗大模型），产物经
- * {@link FileClient} 上传文件服务后回下载链接。
+ * {@link FileRecordStore} 上传文件服务并落文件记录后回下载链接。
  *
  * <p>定位：对话多能力「文案/文档导出」的执行层，供 {@code generateDocument} 工具
  * 与管理端导出接口共用。渲染基于轻量块模型 {@link MarkdownLiteParser}，
@@ -57,14 +57,14 @@ public class AgentDocumentService {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String PDF_CONTENT_TYPE = "application/pdf";
 
-    private final FileClient fileClient;
+    private final FileRecordStore fileRecordStore;
 
-    public AgentDocumentService(FileClient fileClient) {
-        this.fileClient = fileClient;
+    public AgentDocumentService(FileRecordStore fileRecordStore) {
+        this.fileRecordStore = fileRecordStore;
     }
 
     /**
-     * 生成文档并上传文件服务。
+     * 生成文档并上传文件服务（无归属上下文，文件记录 userId 为空）。
      *
      * @param content  Markdown 内容（LLM 产出的结构化文本）
      * @param format   输出格式：docx / pdf（空默认 docx）
@@ -72,6 +72,17 @@ public class AgentDocumentService {
      * @return 产物附件（含下载 URL）
      */
     public FileArtifact generate(String content, String format, String fileName) {
+        return generate(content, format, fileName, null, null);
+    }
+
+    /**
+     * 生成文档并上传文件服务，产物落 {@code infra_file} 并写入归属。
+     *
+     * @param userType 归属用户类型（admin / member），可为空
+     * @param userId   归属用户 ID，可为空（异步线程必须显式传，否则无登录上下文）
+     */
+    public FileArtifact generate(String content, String format, String fileName,
+                                String userType, Long userId) {
         assertTrue(content != null && !content.isBlank(), DOCUMENT_CONTENT_EMPTY);
         String fmt = (format == null || format.isBlank()) ? FORMAT_DOCX : format.trim().toLowerCase();
         if (!FORMAT_DOCX.equals(fmt) && !FORMAT_PDF.equals(fmt)) {
@@ -83,8 +94,8 @@ public class AgentDocumentService {
         List<MarkdownBlock> blocks = MarkdownLiteParser.parse(markdown);
         byte[] bytes = FORMAT_PDF.equals(fmt) ? renderPdf(blocks) : renderDocx(blocks);
         String name = resolveName(fileName, fmt);
-        FileUploadResult uploaded = fileClient.upload(bytes, name,
-                FORMAT_PDF.equals(fmt) ? PDF_CONTENT_TYPE : DOCX_CONTENT_TYPE);
+        FileUploadResult uploaded = fileRecordStore.upload(bytes, name,
+                FORMAT_PDF.equals(fmt) ? PDF_CONTENT_TYPE : DOCX_CONTENT_TYPE, userType, userId);
         log.info("[AgentDocumentService] 文档生成完成, format={}, name={}, size={}", fmt, name, bytes.length);
         return FileArtifact.builder()
                 .type("file")
@@ -92,6 +103,7 @@ public class AgentDocumentService {
                 .name(name)
                 .url(uploaded.getUrl())
                 .size(uploaded.getSize())
+                .fileId(uploaded.getId())
                 .build();
     }
 

@@ -65,20 +65,18 @@ public class FileService {
     @Transactional(rollbackFor = Exception.class)
     public InfraFileVO uploadFile(MultipartFile file, String userType) {
         FileUploadResult result = fileClient.upload(file);
+        return converter.convert(persist(result, userType, null), InfraFileVO.class);
+    }
 
-        InfraFile infraFile = new InfraFile();
-        infraFile.setName(result.getOriginalName());
-        infraFile.setPath(result.getPath());
-        infraFile.setUrl(result.getUrl());
-        infraFile.setExt(cn.hutool.core.io.file.FileNameUtil.extName(
-                cn.hutool.core.util.StrUtil.blankToDefault(result.getOriginalName(), "")));
-        infraFile.setContentType(result.getContentType());
-        infraFile.setSize(result.getSize());
-        infraFile.setStorageType(result.getStorageType());
-        infraFile.setUserType(userType);
-        infraFile.setUserId(resolveUserId(userType));
-        fileMapper.insert(infraFile);
-        return converter.convert(infraFile, InfraFileVO.class);
+    /**
+     * 上传字节内容并落库（供 {@code FileRecordStore} 等程序生成产物场景调用）。
+     *
+     * @param userId 归属人；{@code null} 时从当前登录上下文解析（异步线程须显式传入）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public InfraFile uploadForRecord(byte[] content, String fileName, String contentType,
+                                    String userType, Long userId) {
+        return persist(fileClient.upload(content, fileName, contentType), userType, userId);
     }
 
     /**
@@ -157,6 +155,26 @@ public class FileService {
     }
 
     // ================ 内部方法 ================
+
+    /**
+     * 上传结果 → {@code infra_file} 记录（与 {@link #uploadFile} 共用一条 insert 路径，
+     * 避免字段口径漂移）。
+     */
+    private InfraFile persist(FileUploadResult result, String userType, Long userId) {
+        InfraFile infraFile = new InfraFile();
+        infraFile.setName(result.getOriginalName());
+        infraFile.setPath(result.getPath());
+        infraFile.setUrl(result.getUrl());
+        infraFile.setExt(cn.hutool.core.io.file.FileNameUtil.extName(
+                cn.hutool.core.util.StrUtil.blankToDefault(result.getOriginalName(), "")));
+        infraFile.setContentType(result.getContentType());
+        infraFile.setSize(result.getSize());
+        infraFile.setStorageType(result.getStorageType());
+        infraFile.setUserType(userType);
+        infraFile.setUserId(userId != null ? userId : resolveUserId(userType));
+        fileMapper.insert(infraFile);
+        return infraFile;
+    }
 
     /**
      * 会员端只能操作本人上传的文件；管理端可操作全部

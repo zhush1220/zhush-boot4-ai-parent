@@ -28,6 +28,12 @@
             <artifactId>zhush-spring-boot-starter-satoken</artifactId>
         </dependency>
 
+        <!-- 接口幂等（@Idempotent）：导出/生成提交防重复点击 -->
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-protection</artifactId>
+        </dependency>
+
         <!-- AgentScope 智能体框架：统一接入 zhush-module-ai -->
         <dependency>
             <groupId>com.zhush</groupId>
@@ -50,6 +56,13 @@
         <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
+        </dependency>
+
+        <!-- 图像/视频生成：DashScope SDK 的 ImageSynthesis/VideoSynthesis（asyncCall + fetch）。
+             版本由 zhush-dependencies 与 agentscope 传递依赖对齐，不写死 -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dashscope-sdk-java</artifactId>
         </dependency>
 
         <!-- 测试基础设施（JUnit5 + Mockito + AssertJ） -->

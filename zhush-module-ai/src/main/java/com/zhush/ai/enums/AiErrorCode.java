@@ -13,6 +13,8 @@ import lombok.Getter;
  *     <li>{@code 2003xxx} —— 服务端错误</li>
  * </ul>
  *
+ * <p>百位分段：0xx 会话、1xx 模型、2xx 知识库、3xx 敏感词、4xx 文档、5xx 配额限流、6xx 生成任务。
+ *
  * @author zhush
  */
 @Getter
@@ -42,11 +44,27 @@ public enum AiErrorCode implements IErrorCode {
     // ================ 敏感词 1003 3xx ================
     SENSITIVE_WORD_NOT_FOUND(1003301, "敏感词不存在：{0}"),
     SENSITIVE_WORD_DUPLICATE(1003302, "敏感词已存在：{0}"),
+    SENSITIVE_CONTENT_BLOCKED(1003303, "内容包含敏感信息，已拦截：{0}"),
 
     // ================ 文档生成/解析 1003 4xx ================
     DOCUMENT_CONTENT_EMPTY(1003401, "文档内容不能为空"),
     DOCUMENT_FORMAT_UNSUPPORTED(1003402, "不支持的文档格式：{0}"),
     DOCUMENT_PARSE_TARGET_EMPTY(1003403, "文件地址不能为空，请提供上传后返回的 URL"),
+
+    // ================ 配额与限流 1003 5xx ================
+    AI_QUOTA_DAILY_EXCEED(1003501, "今日调用次数已用尽，请明日再试"),
+    AI_QUOTA_MONTHLY_EXCEED(1003502, "本月调用次数已用尽"),
+    AI_RATE_LIMITED(1003503, "操作过于频繁，请稍后再试"),
+    SESSION_FORBIDDEN(1003504, "无权访问该会话"),
+    QUOTA_RULE_NOT_FOUND(1003505, "配额规则不存在：{0}"),
+    QUOTA_RULE_DUPLICATE(1003506, "该用户类型与任务类型的配额规则已存在：{0}"),
+    QUOTA_RULE_CONFIG_INVALID(1003507, "配额规则配置非法：{0}"),
+
+    // ================ 生成任务 1003 6xx ================
+    GENERATION_MODEL_UNAVAILABLE(1003601, "未配置可用的生成模型，请联系管理员"),
+    GENERATION_TASK_FORBIDDEN(1003602, "无权访问该生成任务"),
+    GENERATION_TASK_NOT_FOUND(1003603, "生成任务不存在：{0}"),
+    GENERATION_DISABLED(1003604, "生成能力未开启"),
 
     // ================ 上游调用 2003 0xx ================
     UPSTREAM_TIMEOUT(2003001, "AI 服务响应超时"),
@@ -54,6 +72,9 @@ public enum AiErrorCode implements IErrorCode {
     UPSTREAM_RATE_LIMITED(2003003, "AI 服务限流，请稍后再试"),
     DOCUMENT_RENDER_FAIL(2003005, "文档渲染失败：{0}"),
     DOCUMENT_FETCH_FAIL(2003006, "文件获取失败：{0}"),
+    GENERATION_SUBMIT_FAIL(2003601, "生成任务提交失败：{0}"),
+    GENERATION_FETCH_FAIL(2003602, "生成任务查询失败：{0}"),
+    GENERATION_TRANSFER_FAIL(2003603, "生成产物转存失败：{0}"),
     ;
 
     private final int code;
