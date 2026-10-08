@@ -30,6 +30,7 @@ import java.util.Map;
  *     chat: { max-message-length: 2000 }
  *     quota: { enabled: true, rate-per-minute: 10, max-active-sessions: 200 }
  *     generation: { enabled: false, image: { timeout-minutes: 5 }, video: { timeout-minutes: 30 } }
+ *     jev: { enabled: false, api-key: ${TYPESAFE_API_KEY:}, timeout: 2s, fail-open: true }  # Jev 判断模型
  * </pre>
  *
  * @author zhush
@@ -122,6 +123,12 @@ public class AgentScopeProperties {
      * 图像/视频生成
      */
     private Generation generation = new Generation();
+
+    /**
+     * Jev 判断模型（TypeSafe AI 结构化决策，agentscope-extensions-jev）。
+     * 总开关默认关：不装配 JevClient，所有依赖方经 ObjectProvider 缺席降级，行为与现状一致。
+     */
+    private Jev jev = new Jev();
 
     /**
      * 模型供应商配置项
@@ -405,5 +412,84 @@ public class AgentScopeProperties {
          * 时长上限（秒）：防成本失控
          */
         private int maxDuration = 10;
+    }
+
+    /**
+     * Jev 判断模型配置（前缀 {@code zhush.agentscope.jev}）。
+     *
+     * <p>关联方案《AgentScope2.0-Jev判断模型集成方案》第五章：判断处于用户中断链路上，
+     * 超时/重试均取保守值；失败一律走降级路径（failOpen），不得因 Jev 不可用阻断主流程。
+     */
+    @Data
+    public static class Jev {
+
+        /**
+         * 总开关（默认关）：关闭时不装配 JevClient，意图路由等能力自动降级
+         */
+        private boolean enabled = false;
+
+        /**
+         * API Key（建议环境变量 TYPESAFE_API_KEY 注入，禁止硬编码/落日志；
+         * 置空时 client 内置回退读 TYPESAFE_API_KEY / JEV_API_KEY 环境变量）
+         */
+        private String apiKey;
+
+        /**
+         * 服务地址（缺省 https://api.typesafe.ai）
+         */
+        private String baseUrl;
+
+        /**
+         * 判断模型名（缺省 jev-latest）
+         */
+        private String model;
+
+        /**
+         * 单请求超时（官方默认 5s；中断链路收紧到 2s）
+         */
+        private Duration timeout = Duration.ofSeconds(2);
+
+        /**
+         * 最大重试次数（429/5xx 指数退避；链路内保守配置）
+         */
+        private int maxRetries = 1;
+
+        /**
+         * 失败开放：Jev 异常/超时按降级路径继续（意图分类回 chat）， true；
+         * 预留配置，当前仅意图路由消费
+         */
+        private boolean failOpen = true;
+
+        /**
+         * 意图分类置信度阈值：低于阈值回落 chat（宁不分类不乱分类）
+         */
+        private double intentConfidenceThreshold = 0.6;
+
+        /**
+         * 决策记录采样率（0~1）：非降级记录按此概率落 ai_jev_decision_log；降级记录全量
+         */
+        private double logSampleRate = 0.1;
+
+        /**
+         * 粘滞策略：同会话短窗口内含指代词的跟进消息直接复用上轮分类结果，不再请求 Jev
+         */
+        private Sticky sticky = new Sticky();
+    }
+
+    /**
+     * 意图分类粘滞策略（方案 14.3）
+     */
+    @Data
+    public static class Sticky {
+
+        /**
+         * 粘滞窗口（会话级上轮分类结果的缓存时长）
+         */
+        private Duration ttl = Duration.ofMinutes(5);
+
+        /**
+         * 触发复用的最大消息长度（超长消息自身意图明确，不复用上轮）
+         */
+        private int maxMessageLength = 16;
     }
 }

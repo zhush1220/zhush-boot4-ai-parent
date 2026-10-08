@@ -48,6 +48,13 @@
             <artifactId>agentscope-extensions-redis</artifactId>
         </dependency>
 
+        <!-- Jev 判断模型（TypeSafe AI 结构化决策 client，仅随 agentscope 2.0.4+ 发布）：
+             默认引入，运行时由 zhush.agentscope.jev.enabled 开关控制装配 -->
+        <dependency>
+            <groupId>io.agentscope</groupId>
+            <artifactId>agentscope-extensions-jev</artifactId>
+        </dependency>
+
         <!-- 自动装配支持 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
