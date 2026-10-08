@@ -268,6 +268,19 @@ zhush:
     safety:
       approval-enabled: true
       sensitive-keywords: [删除, 转账, 下单, 退款]
+    jev: # Jev 判断模型（TypeSafe AI 结构化决策，方案《AgentScope2.0-Jev判断模型集成方案》）
+      enabled: ${JEV_ENABLED:false}  # 总开关：关闭/无 Key 时 JevClient 不装配，意图路由等能力自动降级（不报错）
+      api-key: ${TYPESAFE_API_KEY:}  # 获取：https://console.typesafe.ai/ 控制台创建；建议仅环境变量注入
+      base-url: https://api.typesafe.ai
+      model: jev-latest
+      timeout: 2s                 # 判断在用户中断链路上，较官方默认 5s 收紧
+      max-retries: 1              # 429/5xx 指数退避，链路内保守配置
+      fail-open: true             # Jev 失败一律降级（意图回 chat），不阻断主流程
+      intent-confidence-threshold: 0.6   # 低置信宁不分类不乱分类
+      log-sample-rate: 0.1        # 决策记录采样（degraded/sticky 全量）
+      sticky: # 同会话跟进消息复用上轮分类（降决策量）
+        ttl: 5m
+        max-message-length: 16
   # 统一支付底座（zhush-module-pay）：微信支付渠道
   # 默认全部关闭：未启用时不装配任何支付 Bean；启用 V3/V2 前必须配齐凭证，缺失将启动失败（fail-fast）
   # 凭证纪律：全部经环境变量外置，证书走挂载卷，禁止入库/入代码
