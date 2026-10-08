@@ -3,9 +3,12 @@ package com.zhush.ai.controller.admin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
 import com.zhush.ai.param.AgentChatParam;
+import com.zhush.ai.param.AgentIntentParam;
 import com.zhush.ai.param.AgentSessionRenameParam;
 import com.zhush.ai.query.AiSessionQuery;
 import com.zhush.ai.service.AgentChatService;
+import com.zhush.ai.service.AiIntentRouterService;
+import com.zhush.ai.vo.AgentIntentVO;
 import com.zhush.ai.vo.AgentVO;
 import com.zhush.ai.vo.AiChatMessageVO;
 import com.zhush.ai.vo.AiSessionVO;
@@ -45,10 +48,13 @@ public class AgentChatController {
 
     private final AgentChatService chatService;
     private final AgentRegistry agentRegistry;
+    private final AiIntentRouterService intentRouterService;
 
-    public AgentChatController(AgentChatService chatService, AgentRegistry agentRegistry) {
+    public AgentChatController(AgentChatService chatService, AgentRegistry agentRegistry,
+                               AiIntentRouterService intentRouterService) {
         this.chatService = chatService;
         this.agentRegistry = agentRegistry;
+        this.intentRouterService = intentRouterService;
     }
 
     /**
@@ -59,6 +65,19 @@ public class AgentChatController {
     @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Result<com.zhush.agentscope.agent.AgentReply> chat(@RequestBody @Valid AgentChatParam param) {
         return Result.success(chatService.chat(param));
+    }
+
+    /**
+     * 意图分类（B1：Jev 判断模型，能力选「自动」时前端先问再发）。
+     *
+     * <p>契约：任何异常路径均返回 200 + degraded=true 回落 chat（Jev 未启用/失败/低置信），
+     * 不阻断对话；不计 chat 配额，但受单用户限流保护（决策按次计费防刷）。
+     */
+    @PostMapping("/intent")
+    @Operation(summary = "意图分类（自动能力的任务类型判定）")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
+    public Result<AgentIntentVO> intent(@RequestBody @Valid AgentIntentParam param) {
+        return Result.success(intentRouterService.classify(param));
     }
 
     /**

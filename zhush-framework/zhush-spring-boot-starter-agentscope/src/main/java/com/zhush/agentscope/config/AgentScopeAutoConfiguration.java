@@ -10,6 +10,7 @@ import com.zhush.agentscope.event.AgentEventListener;
 import com.zhush.agentscope.event.AgentEventPublisher;
 import com.zhush.agentscope.event.AgentResumeChannels;
 import com.zhush.agentscope.event.AgentTraceIdSupplier;
+import com.zhush.agentscope.jev.JevClientFactory;
 import com.zhush.agentscope.model.AgentModelResolver;
 import com.zhush.agentscope.model.DefaultModelFactory;
 import com.zhush.agentscope.model.ModelConfigProvider;
@@ -30,6 +31,7 @@ import com.zhush.agentscope.tool.DefaultToolkitRegistry;
 import com.zhush.agentscope.tool.ToolkitRegistry;
 import com.zhush.redis.core.RedisCache;
 import io.agentscope.core.state.AgentStateStore;
+import io.agentscope.extensions.judge.jev.JevClient;
 import io.agentscope.extensions.redis.state.redisson.RedissonAgentStateStore;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.ObjectProvider;
@@ -40,6 +42,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -166,6 +169,18 @@ public class AgentScopeAutoConfiguration {
     public AgentResumeChannels agentResumeChannels() {
         // 路线 A/B 共用的会话续跑 SSE 通道（单实例内存；多实例需替换为 Redis pub/sub）
         return new AgentResumeChannels();
+    }
+
+    /**
+     * Jev 判断模型客户端（方案第四章 4.2）：总开关 + Key 可得性双守卫（见
+     * {@link JevEnabledCondition}）；不满足时 Bean 缺席，业务层经 ObjectProvider
+     * 注入并降级，行为与未集成一致。
+     */
+    @Bean
+    @Conditional(JevEnabledCondition.class)
+    @ConditionalOnMissingBean
+    public JevClient jevClient(AgentScopeProperties properties) {
+        return JevClientFactory.create(properties.getJev());
     }
 
     @Bean
