@@ -50,6 +50,10 @@
         <!-- DashScope 官方 SDK：图像/视频生成能力（asyncCall/fetch）。与 agentscope 传递版本显式对齐，
              避免上游升级导致生成链路参数面漂移 -->
         <dashscope-sdk.version>2.22.9</dashscope-sdk.version>
+        <!-- victools jsonschema：agentscope-core 2.0.4 需 4.38.0（含 AnnotationHelper），
+             而 dashscope-sdk-java 传递引入 4.31.1（无该类），IDE classpath 顺序会让旧版抢先导致
+             NoClassDefFoundError。此处 pin 4.38.0 强制全局一致 -->
+        <victools-jsonschema.version>4.38.0</victools-jsonschema.version>
         <!-- 与 Tika 3.3.1 传递的 POI 版本对齐，避免文档解析/生成双版本冲突 -->
         <poi.version>5.5.1</poi.version>
         <!-- Word/PDF 确定性渲染（文档生成）：OpenPDF 为 iText 2.1.7 分支，LGPL/MPL 许可，内置 CJK 字体支持 -->
@@ -198,7 +202,26 @@
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-simple</artifactId>
                     </exclusion>
+                    <!-- 排除 dashscope 传递的旧版 victools（4.31.1 无 AnnotationHelper），
+                         统一由下方 dependencyManagement pin 的 4.38.0 提供 -->
+                    <exclusion>
+                        <groupId>com.github.victools</groupId>
+                        <artifactId>jsonschema-generator</artifactId>
+                    </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- victools jsonschema 版本统一 pin：agentscope-core 工具 schema 生成需 4.38.0
+                 （generator 与 module-jackson 必须同版本），显式管理避免被 dashscope 传递的 4.31.1 污染 -->
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-generator</artifactId>
+                <version>${victools-jsonschema.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-module-jackson</artifactId>
+                <version>${victools-jsonschema.version}</version>
             </dependency>
 
             <!-- commons-compress/Tika 需要 2.16.1+ 的 ChecksumInputStream，

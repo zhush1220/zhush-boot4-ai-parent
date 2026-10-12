@@ -23,7 +23,7 @@ public class AgentDefinitionEntity extends BaseEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    /** 智能体唯一标识（如 union-selector、ai-chat） */
+    /** 智能体唯一标识（如 ai-chat、ai-translator） */
     private String name;
 
     /** 功能说明 */
