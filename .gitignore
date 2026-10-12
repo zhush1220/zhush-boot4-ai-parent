@@ -56,3 +56,9 @@ application-my.yaml
 .agentscope/
 
 .qoder/
+
+# 本地文档与部署目录（不入库）
+/analysis/
+/deploy/
+/docs/
+/sql/
