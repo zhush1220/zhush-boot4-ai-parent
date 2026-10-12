@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * 数据库智能体定义提供器：从 {@code agent_definition} 读取启用定义，向 AgentRegistry 注册。
  *
- * <p>支持管理端在线配置（source=2）生效；union 等代码声明（source=1）的智能体另由业务模块提供。
+ * <p>支持管理端在线配置（source=2）及历史代码声明（source=1）的智能体统一从 DB 加载。
  *
  * @author zhush
  */

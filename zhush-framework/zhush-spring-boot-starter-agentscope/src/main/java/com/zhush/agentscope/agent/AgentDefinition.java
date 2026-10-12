@@ -27,7 +27,7 @@ public class AgentDefinition implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 智能体唯一标识（如 union-selector、ai-chat），全局唯一
+     * 智能体唯一标识（如 ai-chat、ai-translator），全局唯一
      */
     private String name;
 
