@@ -14,12 +14,14 @@ import com.zhush.system.mapper.SysRoleMenuMapper;
 import com.zhush.system.param.AdminRoleAssignDataScopeParam;
 import com.zhush.system.param.AdminRoleParam;
 import com.zhush.system.query.AdminRoleQuery;
+import com.zhush.system.security.AdminDataScopeProvider;
 import com.zhush.system.vo.AdminRoleVO;
 import io.github.linpeilie.Converter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.zhush.common.exception.ServiceExceptionUtil.assertFalse;
 import static com.zhush.common.exception.ServiceExceptionUtil.assertNotNull;
@@ -35,22 +37,33 @@ public class AdminRoleService {
 
     private static final int STATUS_ENABLED = 1;
 
+    /**
+     * 自定义数据范围（与 sys_role.data_scope 对应，其余：1-全部 2-本部门 3-本部门及以下 4-仅本人）
+     */
+    private static final int DATA_SCOPE_CUSTOM = 5;
+
     private final SysRoleMapper roleMapper;
     private final SysRoleMenuMapper roleMenuMapper;
     private final SysMenuMapper menuMapper;
     private final SysAdminUserRoleMapper adminUserRoleMapper;
     private final Converter converter;
+    /**
+     * 数据范围缓存失效器：角色维度变更后主动失效，使调整对已登录用户立即生效，不必等缓存过期
+     */
+    private final AdminDataScopeProvider dataScopeProvider;
 
     public AdminRoleService(SysRoleMapper roleMapper,
                             SysRoleMenuMapper roleMenuMapper,
                             SysMenuMapper menuMapper,
                             SysAdminUserRoleMapper adminUserRoleMapper,
-                            Converter converter) {
+                            Converter converter,
+                            AdminDataScopeProvider dataScopeProvider) {
         this.roleMapper = roleMapper;
         this.roleMenuMapper = roleMenuMapper;
         this.menuMapper = menuMapper;
         this.adminUserRoleMapper = adminUserRoleMapper;
         this.converter = converter;
+        this.dataScopeProvider = dataScopeProvider;
     }
 
     /**
@@ -85,6 +98,8 @@ public class AdminRoleService {
             roleMenuMapper.deleteByRoleId(param.getId());
             saveRoleMenus(param.getId(), param.getMenuIds());
         }
+        // 角色名称/状态（禁用后不再参与数据范围计算）变更，全量失效数据范围缓存
+        dataScopeProvider.invalidateAll();
     }
 
     /**
@@ -99,6 +114,7 @@ public class AdminRoleService {
                 SystemErrorCode.ROLE_HAS_USER);
         roleMapper.deleteById(id);
         roleMenuMapper.deleteByRoleId(id);
+        dataScopeProvider.invalidateAll();
     }
 
     /**
@@ -160,21 +176,31 @@ public class AdminRoleService {
 
     /**
      * 分配数据范围
+     * <p>
+     * 仅自定义（5）需要部门ID集合，其余类型清空；部门ID去 null 去重后以逗号分隔落库，
+     * 由 {@link AdminDataScopeProvider} 解析时还原为集合。
      */
     public void assignDataScope(AdminRoleAssignDataScopeParam param) {
         SysRole existing = roleMapper.selectOneById(param.getRoleId());
         assertNotNull(existing, SystemErrorCode.ROLE_NOT_FOUND, param.getRoleId());
+
+        List<Long> deptIds = CollUtil.isEmpty(param.getDataScopeDeptIds())
+                ? List.of()
+                : param.getDataScopeDeptIds().stream().filter(Objects::nonNull).distinct().toList();
+        boolean custom = param.getDataScope() == DATA_SCOPE_CUSTOM;
+        // 自定义必须选定部门：空集合会使该角色可见范围退化为"仅本人"，与操作者预期不符
+        if (custom) {
+            assertTrue(!deptIds.isEmpty(), SystemErrorCode.ROLE_DATA_SCOPE_DEPT_EMPTY);
+        }
+
         SysRole update = new SysRole();
         update.setId(param.getRoleId());
         update.setDataScope(param.getDataScope());
-        // 仅自定义（5）时保存部门ID集合，其余类型清空
-        if (param.getDataScope() == 5) {
-            update.setDataScopeDeptIds(CollUtil.isEmpty(param.getDataScopeDeptIds())
-                    ? "" : CollUtil.join(param.getDataScopeDeptIds(), ","));
-        } else {
-            update.setDataScopeDeptIds("");
-        }
+        // 仅自定义保留部门ID串，其余类型清空以免残留旧配置影响后续切换
+        update.setDataScopeDeptIds(custom && !deptIds.isEmpty() ? CollUtil.join(deptIds, ",") : "");
         roleMapper.update(update);
+        // 数据范围变更需立即生效，避免 TTL 窗口期内仍按旧范围过滤
+        dataScopeProvider.invalidateAll();
     }
 
     // ================ 内部方法 ================

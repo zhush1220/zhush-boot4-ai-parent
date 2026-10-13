@@ -9,6 +9,7 @@ import com.zhush.system.mapper.SysAdminUserMapper;
 import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.param.AdminUserParam;
+import com.zhush.system.security.AdminDataScopeProvider;
 import com.zhush.system.vo.AdminUserVO;
 import io.github.linpeilie.Converter;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 管理员用户服务测试：用户名唯一性、BCrypt 加密、角色分配过滤、密码重置
+ * 管理员用户服务测试：用户名唯一性、BCrypt 加密、角色分配过滤、密码重置、数据范围缓存失效
  */
 @ExtendWith(MockitoExtension.class)
 class AdminUserServiceTest {
@@ -47,6 +48,8 @@ class AdminUserServiceTest {
     private SysRoleMapper roleMapper;
     @Mock
     private Converter converter;
+    @Mock
+    private AdminDataScopeProvider dataScopeProvider;
     @InjectMocks
     private AdminUserService adminUserService;
 
@@ -139,7 +142,7 @@ class AdminUserServiceTest {
     }
 
     @Test
-    void updateUserClearsUsernameAndPassword() {
+    void updateUserNeverChangesUsernameAndRehashesGivenPassword() {
         when(adminUserMapper.selectOneById(1L)).thenReturn(user(1L, "zhangsan"));
         SysAdminUser converted = new SysAdminUser();
         converted.setId(1L);
@@ -154,11 +157,30 @@ class AdminUserServiceTest {
 
         ArgumentCaptor<SysAdminUser> captor = ArgumentCaptor.forClass(SysAdminUser.class);
         verify(adminUserMapper).update(captor.capture());
-        // 账号与密码不可通过修改接口变更
+        // 账号不可通过修改接口变更
         assertNull(captor.getValue().getUsername());
-        assertNull(captor.getValue().getPassword());
+        // 传了新密码时加密后更新
+        assertTrue(BCrypt.checkpw("newpass", captor.getValue().getPassword()));
         // roleIds 为 null 时不触碰角色
         verify(adminUserRoleMapper, never()).deleteByUserId(any());
+        // 归属部门可能变更，失效该用户数据范围缓存
+        verify(dataScopeProvider).invalidate(1L);
+    }
+
+    @Test
+    void updateUserKeepsPasswordWhenBlank() {
+        when(adminUserMapper.selectOneById(1L)).thenReturn(user(1L, "zhangsan"));
+        SysAdminUser converted = new SysAdminUser();
+        converted.setId(1L);
+        converted.setPassword("plain-from-form");
+        doReturn(converted).when(converter).<Object, SysAdminUser>convert(ArgumentMatchers.<Object>any(), eq(SysAdminUser.class));
+
+        // 修改资料不填密码：置 null 使更新忽略该列，不覆盖原密码
+        adminUserService.updateUser(param(1L, "zhangsan", null));
+
+        ArgumentCaptor<SysAdminUser> captor = ArgumentCaptor.forClass(SysAdminUser.class);
+        verify(adminUserMapper).update(captor.capture());
+        assertNull(captor.getValue().getPassword());
     }
 
     @Test
@@ -179,6 +201,8 @@ class AdminUserServiceTest {
         ArgumentCaptor<List<SysAdminUserRole>> relCaptor = ArgumentCaptor.forClass(List.class);
         verify(adminUserRoleMapper).insertBatchWithDb(relCaptor.capture());
         assertEquals(9L, relCaptor.getValue().get(0).getRoleId());
+        // 角色变化后重算该用户数据范围
+        verify(dataScopeProvider).invalidate(1L);
     }
 
     @Test
@@ -189,6 +213,8 @@ class AdminUserServiceTest {
 
         verify(adminUserMapper).deleteById(1L);
         verify(adminUserRoleMapper).deleteByUserId(1L);
+        // 用户删除后清理其数据范围缓存条目
+        verify(dataScopeProvider).invalidate(1L);
     }
 
     @Test
@@ -214,6 +240,7 @@ class AdminUserServiceTest {
 
         verify(adminUserRoleMapper).deleteByUserId(1L);
         verify(adminUserRoleMapper).insertBatchWithDb(any());
+        verify(dataScopeProvider).invalidate(1L);
     }
 
     @Test

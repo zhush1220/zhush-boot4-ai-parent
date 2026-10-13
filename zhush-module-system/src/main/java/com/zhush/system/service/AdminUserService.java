@@ -5,6 +5,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.response.PageResult;
+import com.zhush.data.permission.annotation.DataPermission;
+import com.zhush.data.permission.util.DataPermissionHelper;
 import com.zhush.mybatis.core.query.QueryWrapperX;
 import com.zhush.system.entity.SysAdminUser;
 import com.zhush.system.entity.SysAdminUserRole;
@@ -14,6 +16,7 @@ import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.param.AdminUserParam;
 import com.zhush.system.query.AdminUserQuery;
+import com.zhush.system.security.AdminDataScopeProvider;
 import com.zhush.system.vo.AdminUserVO;
 import io.github.linpeilie.Converter;
 import org.springframework.stereotype.Service;
@@ -41,15 +44,21 @@ public class AdminUserService {
     private final SysAdminUserRoleMapper adminUserRoleMapper;
     private final SysRoleMapper roleMapper;
     private final Converter converter;
+    /**
+     * 数据范围缓存失效器：用户归属部门或所持角色变化后主动失效，使其数据范围立即重算
+     */
+    private final AdminDataScopeProvider dataScopeProvider;
 
     public AdminUserService(SysAdminUserMapper adminUserMapper,
                             SysAdminUserRoleMapper adminUserRoleMapper,
                             SysRoleMapper roleMapper,
-                            Converter converter) {
+                            Converter converter,
+                            AdminDataScopeProvider dataScopeProvider) {
         this.adminUserMapper = adminUserMapper;
         this.adminUserRoleMapper = adminUserRoleMapper;
         this.roleMapper = roleMapper;
         this.converter = converter;
+        this.dataScopeProvider = dataScopeProvider;
     }
 
     /**
@@ -93,6 +102,8 @@ public class AdminUserService {
             adminUserRoleMapper.deleteByUserId(param.getId());
             saveUserRoles(param.getId(), param.getRoleIds());
         }
+        // 归属部门与所持角色可能变化，重算该用户数据范围
+        dataScopeProvider.invalidate(param.getId());
     }
 
     /**
@@ -104,6 +115,7 @@ public class AdminUserService {
         assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, id);
         adminUserMapper.deleteById(id);
         adminUserRoleMapper.deleteByUserId(id);
+        dataScopeProvider.invalidate(id);
     }
 
     /**
@@ -130,7 +142,11 @@ public class AdminUserService {
 
     /**
      * 管理员分页
+     * <p>
+     * 行级数据权限：按当前登录用户数据范围追加过滤条件。sys_admin_user 用 dept_id 标识归属部门、
+     * 用主键 id 标识数据本人（该表 create_by 为 NULL，不能沿用默认的 create_by），因此“仅本人”语义为看到自己。
      */
+    @DataPermission(deptColumn = "dept_id", userColumn = "id")
     public PageResult<AdminUserVO> getUserPage(AdminUserQuery query) {
         QueryWrapperX queryWrapper = QueryWrapperX.create()
                 .like(SysAdminUser::getUsername, query.getUsername())
@@ -139,7 +155,8 @@ public class AdminUserService {
         queryWrapper.orderBy("id", false);
         Page<SysAdminUser> page = adminUserMapper.selectPageX(query, queryWrapper);
         List<AdminUserVO> list = converter.convert(page.getRecords(), AdminUserVO.class);
-        fillRoleIds(list);
+        // 角色关系表无部门/归属人列，需跳过行级过滤，否则会因 Unknown column 报错
+        DataPermissionHelper.ignore(() -> fillRoleIds(list));
         return PageResult.of(list, page.getTotalRow());
     }
 
@@ -152,6 +169,8 @@ public class AdminUserService {
         assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, userId);
         adminUserRoleMapper.deleteByUserId(userId);
         saveUserRoles(userId, roleIds);
+        // 角色变化直接影响数据范围，失效该用户缓存
+        dataScopeProvider.invalidate(userId);
     }
 
     /**

@@ -31,6 +31,7 @@ public enum SystemErrorCode implements IErrorCode {
     ROLE_NOT_FOUND(1001101, "角色不存在：{0}"),
     ROLE_HAS_USER(1001102, "角色下仍有用户，无法删除"),
     ROLE_CODE_DUPLICATE(1001103, "角色编码已存在：{0}"),
+    ROLE_DATA_SCOPE_DEPT_EMPTY(1001104, "自定义数据范围需至少选择一个部门"),
 
     // ================ 菜单 / 权限 1001 2xx ================
     MENU_NOT_FOUND(1001201, "菜单不存在：{0}"),

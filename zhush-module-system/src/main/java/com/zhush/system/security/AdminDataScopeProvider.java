@@ -29,7 +29,9 @@ import static com.zhush.system.service.AdminPermissionService.SUPER_ADMIN_CODE;
  *     <li>多角色取并集：2-本部门、3-本部门及以下、5-自定义 → 汇总部门ID集合</li>
  *     <li>全部角色均为 4-仅本人 → 仅本人数据</li>
  * </ul>
- * 每条走 QueryWrapper 的 SQL 都会触发解析，结果按用户缓存 60 秒（角色数据范围调整后最迟 1 分钟生效）。
+ * 每条走 QueryWrapper 的 SQL 都会触发解析，结果按用户缓存 60 秒（角色数据范围调整后最迟 1 分钟生效）；
+ * 角色数据范围、角色启停、用户角色分配等变更会调用 {@link #invalidateAll()} / {@link #invalidate(Long)}
+ * 主动失效，使调整立即生效。
  *
  * @author zhush
  */
@@ -49,6 +51,11 @@ public class AdminDataScopeProvider implements DataScopeProvider {
      * 解析结果缓存有效期（毫秒）
      */
     private static final long CACHE_TTL_MILLIS = 60_000L;
+
+    /**
+     * 缓存条数达到该阈值时清理已过期条目，避免长期运行下离线用户条目无限堆积
+     */
+    private static final int CACHE_PURGE_THRESHOLD = 512;
 
     private final AdminPermissionService permissionService;
     private final AdminDeptService deptService;
@@ -77,11 +84,40 @@ public class AdminDataScopeProvider implements DataScopeProvider {
             return entry.scope;
         }
         DataScope scope = resolve(userId);
+        purgeIfOversized(now);
         cache.put(userId, new CacheEntry(scope, now + CACHE_TTL_MILLIS));
         return scope;
     }
 
+    /**
+     * 失效全部用户的数据范围缓存
+     * <p>
+     * 用于角色维度变更（数据范围调整、角色启停、菜单与角色关系变化），
+     * 无法廉价定位受影响用户，整体清空后下一次请求重新计算。
+     */
+    public void invalidateAll() {
+        cache.clear();
+    }
+
+    /**
+     * 失效指定用户的数据范围缓存（用户归属部门、所持角色变化时使用）
+     */
+    public void invalidate(Long userId) {
+        if (userId != null) {
+            cache.remove(userId);
+        }
+    }
+
     // ================ 内部方法 ================
+
+    /**
+     * 缓存条目超阈值时顺带移除已过期条目
+     */
+    private void purgeIfOversized(long now) {
+        if (cache.size() >= CACHE_PURGE_THRESHOLD) {
+            cache.entrySet().removeIf(item -> item.getValue().expireAt() <= now);
+        }
+    }
 
     private DataScope resolve(Long userId) {
         List<SysRole> roles = permissionService.listEnabledRoles(userId);
