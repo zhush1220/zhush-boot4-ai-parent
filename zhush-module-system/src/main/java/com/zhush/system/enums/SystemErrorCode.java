@@ -32,12 +32,17 @@ public enum SystemErrorCode implements IErrorCode {
     ROLE_HAS_USER(1001102, "角色下仍有用户，无法删除"),
     ROLE_CODE_DUPLICATE(1001103, "角色编码已存在：{0}"),
     ROLE_DATA_SCOPE_DEPT_EMPTY(1001104, "自定义数据范围需至少选择一个部门"),
+    ROLE_DATA_CONDITION_INVALID(1001105, "自定义条件校验失败：{0}"),
 
     // ================ 菜单 / 权限 1001 2xx ================
     MENU_NOT_FOUND(1001201, "菜单不存在：{0}"),
     MENU_HAS_CHILDREN(1001202, "存在子菜单，无法删除"),
     PERMISSION_DENIED(1001203, "无权限操作"),
     MENU_PARENT_ERROR(1001204, "父菜单不能为自身"),
+
+    // ================ 数据权限资源 / 字段 1001 25x ================
+    DATA_RESOURCE_NOT_FOUND(1001251, "数据资源不存在：{0}"),
+    DATA_FIELD_NOT_FOUND(1001252, "受控字段不存在：{0}"),
 
     // ================ 部门 1001 3xx ================
     DEPT_NOT_FOUND(1001301, "部门不存在：{0}"),

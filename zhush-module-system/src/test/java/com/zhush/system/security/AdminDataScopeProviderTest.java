@@ -6,6 +6,8 @@ import com.zhush.satoken.core.StpAdminUtil;
 import com.zhush.system.entity.SysAdminUser;
 import com.zhush.system.entity.SysRole;
 import com.zhush.system.mapper.SysAdminUserMapper;
+import com.zhush.system.mapper.SysDataResourceMapper;
+import com.zhush.system.mapper.SysRoleDataResourceMapper;
 import com.zhush.system.service.AdminDeptService;
 import com.zhush.system.service.AdminPermissionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,12 +41,17 @@ class AdminDataScopeProviderTest {
     private AdminDeptService deptService;
     @Mock
     private SysAdminUserMapper adminUserMapper;
+    @Mock
+    private SysRoleDataResourceMapper roleDataResourceMapper;
+    @Mock
+    private SysDataResourceMapper dataResourceMapper;
 
     private AdminDataScopeProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new AdminDataScopeProvider(permissionService, deptService, adminUserMapper);
+        provider = new AdminDataScopeProvider(permissionService, deptService, adminUserMapper,
+                roleDataResourceMapper, dataResourceMapper);
     }
 
     private SysRole role(String code, Integer dataScope, String dataScopeDeptIds) {

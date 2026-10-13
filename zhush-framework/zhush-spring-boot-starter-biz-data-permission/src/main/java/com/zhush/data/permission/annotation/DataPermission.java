@@ -34,6 +34,14 @@ public @interface DataPermission {
     boolean enabled() default true;
 
     /**
+     * 业务对象资源编码（对应 {@code sys_data_resource.code}）。
+     * <p>
+     * 为空时按"角色全局数据范围"解析（向后兼容）；非空时业务侧可依据该资源加载
+     * "角色 × 资源"的行级覆盖规则，实现按业务对象分别设置数据范围。
+     */
+    String resource() default "";
+
+    /**
      * 部门归属列名（表中标记数据归属部门的字段）
      */
     String deptColumn() default "dept_id";

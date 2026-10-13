@@ -2,6 +2,7 @@ package com.zhush.system.service;
 
 import cn.hutool.crypto.digest.BCrypt;
 import com.zhush.common.exception.ServiceException;
+import com.zhush.system.enums.SystemErrorCode;
 import com.zhush.system.entity.SysAdminUser;
 import com.zhush.system.entity.SysAdminUserRole;
 import com.zhush.system.entity.SysRole;
@@ -9,6 +10,7 @@ import com.zhush.system.mapper.SysAdminUserMapper;
 import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.param.AdminUserParam;
+import com.zhush.system.security.AdminDataScopeGuard;
 import com.zhush.system.security.AdminDataScopeProvider;
 import com.zhush.system.vo.AdminUserVO;
 import io.github.linpeilie.Converter;
@@ -30,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,6 +53,8 @@ class AdminUserServiceTest {
     private Converter converter;
     @Mock
     private AdminDataScopeProvider dataScopeProvider;
+    @Mock
+    private AdminDataScopeGuard dataScopeGuard;
     @InjectMocks
     private AdminUserService adminUserService;
 
@@ -253,6 +258,20 @@ class AdminUserServiceTest {
         verify(adminUserMapper).update(captor.capture());
         assertEquals(1L, captor.getValue().getId());
         assertTrue(BCrypt.checkpw("new-pass-123", captor.getValue().getPassword()));
+    }
+
+    @Test
+    void updateUserDeniedByScopeGuardThrows() {
+        when(adminUserMapper.selectOneById(1L)).thenReturn(user(1L, "zhangsan"));
+        // 越权护栏判定目标行不可见→抛 USER_NOT_FOUND，不进入更新
+        doThrow(new ServiceException(SystemErrorCode.USER_NOT_FOUND, 1L))
+                .when(dataScopeGuard).assertVisible(any(), any(), any(), any());
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> adminUserService.updateUser(param(1L, "zhangsan", null)));
+
+        assertEquals(1001001, ex.getCode());
+        verify(adminUserMapper, never()).update(any());
     }
 
     private SysRole roleOf(Long id) {
