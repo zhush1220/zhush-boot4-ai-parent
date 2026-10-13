@@ -159,6 +159,17 @@ zhush:
   # 接口幂等（@Idempotent + Redis 去重）：默认开启，zhush.idempotent.enabled=false 可整体关闭
   idempotent:
     enabled: true
+  # SQL 审计（基于 MyBatis-Flex AuditManager，批量落库 sys_sql_audit_log）：生产默认降噪，可由环境变量覆盖
+  sql-audit:
+    enabled: ${SQL_AUDIT_ENABLED:true}
+    batch-size: ${SQL_AUDIT_BATCH_SIZE:100}          # 生产批量阈值调大，减少落库频次
+    sample-rate: ${SQL_AUDIT_SAMPLE_RATE:10}         # 生产采样 10%，降噪
+    only-write: ${SQL_AUDIT_ONLY_WRITE:true}         # 生产仅记写操作，跳过 SELECT
+    slow-sql-threshold: ${SQL_AUDIT_SLOW_SQL_THRESHOLD:0}
+    ignore-tables:                                   # SQL 命中这些表名即不落库（降噪/防递归）
+      - sys_sql_audit_log
+      - sys_operate_log
+      - sys_login_log
   # 行为验证码（tianai-captcha 封装，管理端/会员端登录共用）
   captcha:
     enabled: true                    # 总开关：false 不装配验证码，登录自动跳过校验
