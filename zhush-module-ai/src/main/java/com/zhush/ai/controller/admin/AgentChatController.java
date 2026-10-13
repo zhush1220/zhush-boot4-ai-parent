@@ -4,11 +4,14 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
 import com.zhush.ai.param.AgentChatParam;
 import com.zhush.ai.param.AgentIntentParam;
+import com.zhush.ai.param.AgentPolishParam;
 import com.zhush.ai.param.AgentSessionRenameParam;
 import com.zhush.ai.query.AiSessionQuery;
 import com.zhush.ai.service.AgentChatService;
 import com.zhush.ai.service.AiIntentRouterService;
+import com.zhush.ai.service.AiPolishService;
 import com.zhush.ai.vo.AgentIntentVO;
+import com.zhush.ai.vo.AgentPolishVO;
 import com.zhush.ai.vo.AgentVO;
 import com.zhush.ai.vo.AiChatMessageVO;
 import com.zhush.ai.vo.AiSessionVO;
@@ -49,12 +52,14 @@ public class AgentChatController {
     private final AgentChatService chatService;
     private final AgentRegistry agentRegistry;
     private final AiIntentRouterService intentRouterService;
+    private final AiPolishService polishService;
 
     public AgentChatController(AgentChatService chatService, AgentRegistry agentRegistry,
-                               AiIntentRouterService intentRouterService) {
+                               AiIntentRouterService intentRouterService, AiPolishService polishService) {
         this.chatService = chatService;
         this.agentRegistry = agentRegistry;
         this.intentRouterService = intentRouterService;
+        this.polishService = polishService;
     }
 
     /**
@@ -88,6 +93,16 @@ public class AgentChatController {
     @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
     public Flux<AgentEvent> stream(@RequestBody @Valid AgentChatParam param) {
         return chatService.stream(param);
+    }
+
+    /**
+     * 输入优化（润色）：对输入框草稿做一次一次性改写，不落会话、不计对话配额，仅复用限流与合规闸门。
+     */
+    @PostMapping("/polish")
+    @Operation(summary = "输入优化（润色）")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "ai:assistant")
+    public Result<AgentPolishVO> polish(@RequestBody @Valid AgentPolishParam param) {
+        return Result.success(polishService.polish(param));
     }
 
     /**
