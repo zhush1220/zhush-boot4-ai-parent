@@ -9,6 +9,7 @@ import com.zhush.system.entity.SysRoleMenu;
 import com.zhush.system.enums.SystemErrorCode;
 import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysMenuMapper;
+import com.zhush.system.mapper.SysRoleDataResourceMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.mapper.SysRoleMenuMapper;
 import com.zhush.system.param.AdminRoleAssignDataScopeParam;
@@ -46,6 +47,7 @@ public class AdminRoleService {
     private final SysRoleMenuMapper roleMenuMapper;
     private final SysMenuMapper menuMapper;
     private final SysAdminUserRoleMapper adminUserRoleMapper;
+    private final SysRoleDataResourceMapper roleDataResourceMapper;
     private final Converter converter;
     /**
      * 数据范围缓存失效器：角色维度变更后主动失效，使调整对已登录用户立即生效，不必等缓存过期
@@ -56,12 +58,14 @@ public class AdminRoleService {
                             SysRoleMenuMapper roleMenuMapper,
                             SysMenuMapper menuMapper,
                             SysAdminUserRoleMapper adminUserRoleMapper,
+                            SysRoleDataResourceMapper roleDataResourceMapper,
                             Converter converter,
                             AdminDataScopeProvider dataScopeProvider) {
         this.roleMapper = roleMapper;
         this.roleMenuMapper = roleMenuMapper;
         this.menuMapper = menuMapper;
         this.adminUserRoleMapper = adminUserRoleMapper;
+        this.roleDataResourceMapper = roleDataResourceMapper;
         this.converter = converter;
         this.dataScopeProvider = dataScopeProvider;
     }
@@ -114,6 +118,8 @@ public class AdminRoleService {
                 SystemErrorCode.ROLE_HAS_USER);
         roleMapper.deleteById(id);
         roleMenuMapper.deleteByRoleId(id);
+        // 级联清理该角色的按资源行级覆盖规则
+        roleDataResourceMapper.deleteByRoleId(id);
         dataScopeProvider.invalidateAll();
     }
 

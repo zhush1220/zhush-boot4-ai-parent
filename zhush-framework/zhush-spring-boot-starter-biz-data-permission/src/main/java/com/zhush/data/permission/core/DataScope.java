@@ -1,9 +1,12 @@
 package com.zhush.data.permission.core;
 
+import com.mybatisflex.core.query.QueryCondition;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,6 +36,14 @@ public class DataScope {
     private Set<Long> deptIds;
 
     /**
+     * 自定义行级条件（白名单编译产物，与部门/本人条件以 AND 叠加）。
+     * <p>
+     * 仅在业务侧开启了"自定义条件"型行级规则时由 {@link DataScopeProvider} 填充；
+     * 条件已在业务侧按字段/操作符白名单校验并参数化，方言只负责括号后 AND，不再解析原始字符串。
+     */
+    private List<QueryCondition> extraConditions;
+
+    /**
      * 全部数据（不过滤）
      */
     public static DataScope all() {
@@ -60,5 +71,26 @@ public class DataScope {
         scope.setDeptIds(deptIds == null ? Set.of() : new LinkedHashSet<>(deptIds));
         scope.setUserId(userId);
         return scope;
+    }
+
+    /**
+     * 追加一条自定义行级条件（业务侧编译白名单条件后调用）
+     */
+    public DataScope addExtraCondition(QueryCondition condition) {
+        if (condition == null) {
+            return this;
+        }
+        if (extraConditions == null) {
+            extraConditions = new ArrayList<>();
+        }
+        extraConditions.add(condition);
+        return this;
+    }
+
+    /**
+     * 是否存在自定义行级条件
+     */
+    public boolean hasExtraConditions() {
+        return extraConditions != null && !extraConditions.isEmpty();
     }
 }

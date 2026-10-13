@@ -71,16 +71,27 @@ public interface BaseMapperX<T> extends BaseMapper<T> {
     // ===================== 批量操作 =====================
 
     /**
-     * 获取当前 Mapper 的 Class（解决泛型擦除导致的转型问题）
+     * 获取当前 Mapper 的 Class（解决泛型擦除与动态代理导致的类型解析问题）
      * <p>
-     * this.getClass() 返回 Class&lt;? extends BaseMapperX&gt;，
-     * 无法直接转型为 Class&lt;BaseMapper&lt;T&gt;&gt;，通过 Class&lt;?&gt; 中间转型绕过。
+     * MyBatis 运行时 this 为 JDK 动态代理对象，this.getClass() 返回代理类
+     * （如 jdk.proxy2.$Proxy126）而非实际 Mapper 接口，须从代理接口的 interfaces
+     * 中定位真正的子接口（如 SysRoleMenuMapper）。
      *
      * @return 当前 Mapper 接口 Class
      */
     @SuppressWarnings("unchecked")
     private Class<BaseMapper<T>> selfMapperClass() {
-        return (Class<BaseMapper<T>>) (Class<?>) this.getClass();
+        Class<?> clazz = this.getClass();
+        if (java.lang.reflect.Proxy.isProxyClass(clazz)) {
+            for (Class<?> iface : clazz.getInterfaces()) {
+                if (BaseMapper.class.isAssignableFrom(iface)
+                        && iface != BaseMapper.class
+                        && iface != BaseMapperX.class) {
+                    return (Class<BaseMapper<T>>) (Class<?>) iface;
+                }
+            }
+        }
+        return (Class<BaseMapper<T>>) (Class<?>) clazz;
     }
 
     /**

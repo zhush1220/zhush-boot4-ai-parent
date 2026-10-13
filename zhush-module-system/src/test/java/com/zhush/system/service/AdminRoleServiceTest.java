@@ -7,6 +7,7 @@ import com.zhush.system.entity.SysRole;
 import com.zhush.system.entity.SysRoleMenu;
 import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysMenuMapper;
+import com.zhush.system.mapper.SysRoleDataResourceMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.mapper.SysRoleMenuMapper;
 import com.zhush.system.param.AdminRoleAssignDataScopeParam;
@@ -50,6 +51,8 @@ class AdminRoleServiceTest {
     private SysMenuMapper menuMapper;
     @Mock
     private SysAdminUserRoleMapper adminUserRoleMapper;
+    @Mock
+    private SysRoleDataResourceMapper roleDataResourceMapper;
     @Mock
     private Converter converter;
     @Mock
@@ -159,6 +162,7 @@ class AdminRoleServiceTest {
 
         verify(roleMapper).deleteById(1L);
         verify(roleMenuMapper).deleteByRoleId(1L);
+        verify(roleDataResourceMapper).deleteByRoleId(1L);
         verify(dataScopeProvider).invalidateAll();
     }
 
