@@ -198,11 +198,12 @@ zhush:
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false
-  # 数据权限：默认关闭；启用后可通过 row-enabled / field-enabled 单独控制行级、字段级
+  # 数据权限：与 dev 保持一致开启；部署前需先执行 sql/31_data_permission_activation.sql 建立字段权限点
+  # sys_role.data_scope 默认 1（全部数据），未调整数据范围的角色行为与开启前一致
   data-permission:
-    enabled: false
-    # row-enabled: true    # 行级权限（@DataPermission 自动拼接 SQL 过滤）
-    # field-enabled: true  # 字段级权限（@FieldPermission 响应置空/脱敏）
+    enabled: true
+    row-enabled: true    # 行级权限（@DataPermission 自动拼接 SQL 过滤）
+    field-enabled: true  # 字段级权限（@FieldPermission 响应置空/脱敏）
   # 监控（Spring Boot Admin）：默认关闭；启用时改为 true 并放开下方 management 配置
   monitor:
     enabled: false
