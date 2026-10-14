@@ -43,6 +43,11 @@ build/
 *.xml.versionsBackup
 *.swp
 
+# 环境变量敏感配置
+.env
+.env.*
+!.env.example
+
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
