@@ -20,4 +20,17 @@ public interface DataScopeProvider {
      * @return 数据范围；返回 null 等同于全部数据
      */
     DataScope getDataScope();
+
+    /**
+     * 获取当前登录用户在指定业务对象资源上的数据范围
+     * <p>
+     * 默认委派给无参版本（即不区分资源，保持向后兼容）；业务侧若支持"角色 × 资源"
+     * 行级覆盖，应重写本方法依据 {@code resourceCode} 读取 DB 配置后返回差异化范围。
+     *
+     * @param resourceCode 业务对象资源编码（{@code sys_data_resource.code}），非空
+     * @return 数据范围；返回 null 等同于全部数据
+     */
+    default DataScope getDataScope(String resourceCode) {
+        return getDataScope();
+    }
 }

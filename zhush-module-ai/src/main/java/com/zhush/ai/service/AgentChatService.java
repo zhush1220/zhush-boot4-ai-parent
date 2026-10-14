@@ -228,6 +228,7 @@ public class AgentChatService {
         }
         QueryWrapperX queryWrapper = QueryWrapperX.create()
                 .eq(AiChatSessionEntity::getAgentName, query.getAgentName())
+                .like(AiChatSessionEntity::getTitle, query.getTitle())
                 .eq(AiChatSessionEntity::getUserType, query.getUserType())
                 .eq(AiChatSessionEntity::getUserId, query.getUserId())
                 .eq(AiChatSessionEntity::getStatus, query.getStatus())

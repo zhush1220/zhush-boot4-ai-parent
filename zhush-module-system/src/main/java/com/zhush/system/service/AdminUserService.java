@@ -5,6 +5,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.mybatisflex.core.paginate.Page;
 import com.zhush.common.response.PageResult;
+import com.zhush.data.permission.annotation.DataPermission;
+import com.zhush.data.permission.util.DataPermissionHelper;
 import com.zhush.mybatis.core.query.QueryWrapperX;
 import com.zhush.system.entity.SysAdminUser;
 import com.zhush.system.entity.SysAdminUserRole;
@@ -14,6 +16,8 @@ import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.param.AdminUserParam;
 import com.zhush.system.query.AdminUserQuery;
+import com.zhush.system.security.AdminDataScopeGuard;
+import com.zhush.system.security.AdminDataScopeProvider;
 import com.zhush.system.vo.AdminUserVO;
 import io.github.linpeilie.Converter;
 import org.springframework.stereotype.Service;
@@ -41,15 +45,27 @@ public class AdminUserService {
     private final SysAdminUserRoleMapper adminUserRoleMapper;
     private final SysRoleMapper roleMapper;
     private final Converter converter;
+    /**
+     * 数据范围缓存失效器：用户归属部门或所持角色变化后主动失效，使其数据范围立即重算
+     */
+    private final AdminDataScopeProvider dataScopeProvider;
+    /**
+     * byId 越权护栏：详情/修改/删除/分配/重置等按主键取数的入口需校验目标行归属
+     */
+    private final AdminDataScopeGuard dataScopeGuard;
 
     public AdminUserService(SysAdminUserMapper adminUserMapper,
                             SysAdminUserRoleMapper adminUserRoleMapper,
                             SysRoleMapper roleMapper,
-                            Converter converter) {
+                            Converter converter,
+                            AdminDataScopeProvider dataScopeProvider,
+                            AdminDataScopeGuard dataScopeGuard) {
         this.adminUserMapper = adminUserMapper;
         this.adminUserRoleMapper = adminUserRoleMapper;
         this.roleMapper = roleMapper;
         this.converter = converter;
+        this.dataScopeProvider = dataScopeProvider;
+        this.dataScopeGuard = dataScopeGuard;
     }
 
     /**
@@ -76,6 +92,9 @@ public class AdminUserService {
     public void updateUser(AdminUserParam param) {
         SysAdminUser existing = adminUserMapper.selectOneById(param.getId());
         assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, param.getId());
+        // byId 越权护栏：目标用户须在当前用户数据范围内
+        dataScopeGuard.assertVisible(existing.getDeptId(), existing.getId(),
+                SystemErrorCode.USER_NOT_FOUND, param.getId());
 
         SysAdminUser update = converter.convert(param, SysAdminUser.class);
         // 账号不在此更新
@@ -93,6 +112,8 @@ public class AdminUserService {
             adminUserRoleMapper.deleteByUserId(param.getId());
             saveUserRoles(param.getId(), param.getRoleIds());
         }
+        // 归属部门与所持角色可能变化，重算该用户数据范围
+        dataScopeProvider.invalidate(param.getId());
     }
 
     /**
@@ -102,8 +123,11 @@ public class AdminUserService {
     public void deleteUser(Long id) {
         SysAdminUser existing = adminUserMapper.selectOneById(id);
         assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, id);
+        dataScopeGuard.assertVisible(existing.getDeptId(), existing.getId(),
+                SystemErrorCode.USER_NOT_FOUND, id);
         adminUserMapper.deleteById(id);
         adminUserRoleMapper.deleteByUserId(id);
+        dataScopeProvider.invalidate(id);
     }
 
     /**
@@ -123,6 +147,8 @@ public class AdminUserService {
     public AdminUserVO getUser(Long id) {
         SysAdminUser user = adminUserMapper.selectOneById(id);
         assertNotNull(user, SystemErrorCode.USER_NOT_FOUND, id);
+        dataScopeGuard.assertVisible(user.getDeptId(), user.getId(),
+                SystemErrorCode.USER_NOT_FOUND, id);
         AdminUserVO vo = converter.convert(user, AdminUserVO.class);
         vo.setRoleIds(listRoleIdsByUserId(id));
         return vo;
@@ -130,7 +156,11 @@ public class AdminUserService {
 
     /**
      * 管理员分页
+     * <p>
+     * 行级数据权限：按当前登录用户数据范围追加过滤条件。sys_admin_user 用 dept_id 标识归属部门、
+     * 用主键 id 标识数据本人（该表 create_by 为 NULL，不能沿用默认的 create_by），因此“仅本人”语义为看到自己。
      */
+    @DataPermission(resource = "system:user", deptColumn = "dept_id", userColumn = "id")
     public PageResult<AdminUserVO> getUserPage(AdminUserQuery query) {
         QueryWrapperX queryWrapper = QueryWrapperX.create()
                 .like(SysAdminUser::getUsername, query.getUsername())
@@ -139,7 +169,8 @@ public class AdminUserService {
         queryWrapper.orderBy("id", false);
         Page<SysAdminUser> page = adminUserMapper.selectPageX(query, queryWrapper);
         List<AdminUserVO> list = converter.convert(page.getRecords(), AdminUserVO.class);
-        fillRoleIds(list);
+        // 角色关系表无部门/归属人列，需跳过行级过滤，否则会因 Unknown column 报错
+        DataPermissionHelper.ignore(() -> fillRoleIds(list));
         return PageResult.of(list, page.getTotalRow());
     }
 
@@ -150,8 +181,12 @@ public class AdminUserService {
     public void assignRoles(Long userId, List<Long> roleIds) {
         SysAdminUser existing = adminUserMapper.selectOneById(userId);
         assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, userId);
+        dataScopeGuard.assertVisible(existing.getDeptId(), existing.getId(),
+                SystemErrorCode.USER_NOT_FOUND, userId);
         adminUserRoleMapper.deleteByUserId(userId);
         saveUserRoles(userId, roleIds);
+        // 角色变化直接影响数据范围，失效该用户缓存
+        dataScopeProvider.invalidate(userId);
     }
 
     /**
@@ -160,6 +195,8 @@ public class AdminUserService {
     public void resetPassword(Long id, String rawPassword) {
         SysAdminUser existing = adminUserMapper.selectOneById(id);
         assertNotNull(existing, SystemErrorCode.USER_NOT_FOUND, id);
+        dataScopeGuard.assertVisible(existing.getDeptId(), existing.getId(),
+                SystemErrorCode.USER_NOT_FOUND, id);
         SysAdminUser update = new SysAdminUser();
         update.setId(id);
         update.setPassword(BCrypt.hashpw(rawPassword));

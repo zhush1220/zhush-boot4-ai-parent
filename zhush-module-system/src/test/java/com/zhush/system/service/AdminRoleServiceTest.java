@@ -7,10 +7,12 @@ import com.zhush.system.entity.SysRole;
 import com.zhush.system.entity.SysRoleMenu;
 import com.zhush.system.mapper.SysAdminUserRoleMapper;
 import com.zhush.system.mapper.SysMenuMapper;
+import com.zhush.system.mapper.SysRoleDataResourceMapper;
 import com.zhush.system.mapper.SysRoleMapper;
 import com.zhush.system.mapper.SysRoleMenuMapper;
 import com.zhush.system.param.AdminRoleAssignDataScopeParam;
 import com.zhush.system.param.AdminRoleParam;
+import com.zhush.system.security.AdminDataScopeProvider;
 import com.zhush.system.vo.AdminRoleVO;
 import io.github.linpeilie.Converter;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,7 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 角色管理服务测试：编码唯一性、菜单授权过滤、删除保护、数据范围分配
+ * 角色管理服务测试：编码唯一性、菜单授权过滤、删除保护、数据范围分配与缓存失效
  */
 @ExtendWith(MockitoExtension.class)
 class AdminRoleServiceTest {
@@ -49,7 +52,11 @@ class AdminRoleServiceTest {
     @Mock
     private SysAdminUserRoleMapper adminUserRoleMapper;
     @Mock
+    private SysRoleDataResourceMapper roleDataResourceMapper;
+    @Mock
     private Converter converter;
+    @Mock
+    private AdminDataScopeProvider dataScopeProvider;
     @InjectMocks
     private AdminRoleService adminRoleService;
 
@@ -132,6 +139,8 @@ class AdminRoleServiceTest {
         assertNull(captor.getValue().getCode());
         // menuIds 为 null 时不触碰菜单授权
         verify(roleMenuMapper, never()).deleteByRoleId(any());
+        // 角色信息变更（含状态）后失效数据范围缓存
+        verify(dataScopeProvider).invalidateAll();
     }
 
     @Test
@@ -153,6 +162,8 @@ class AdminRoleServiceTest {
 
         verify(roleMapper).deleteById(1L);
         verify(roleMenuMapper).deleteByRoleId(1L);
+        verify(roleDataResourceMapper).deleteByRoleId(1L);
+        verify(dataScopeProvider).invalidateAll();
     }
 
     @Test
@@ -183,6 +194,41 @@ class AdminRoleServiceTest {
         verify(roleMapper).update(captor.capture());
         assertEquals(5, captor.getValue().getDataScope());
         assertEquals("1,2,3", captor.getValue().getDataScopeDeptIds());
+        // 数据范围调整后立即失效缓存，不等 TTL 过期
+        verify(dataScopeProvider).invalidateAll();
+    }
+
+    @Test
+    void assignDataScopeCustomWithoutDeptThrows() {
+        when(roleMapper.selectOneById(1L)).thenReturn(role(1L, "operator"));
+        AdminRoleAssignDataScopeParam param = new AdminRoleAssignDataScopeParam();
+        param.setRoleId(1L);
+        param.setDataScope(5);
+        param.setDataScopeDeptIds(List.of());
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> adminRoleService.assignDataScope(param));
+
+        assertEquals(1001104, ex.getCode());
+        // 校验失败不更新、不失效缓存
+        verify(roleMapper, never()).update(any());
+        verify(dataScopeProvider, never()).invalidateAll();
+    }
+
+    @Test
+    void assignDataScopeDropsNullAndDuplicatedDeptIds() {
+        when(roleMapper.selectOneById(1L)).thenReturn(role(1L, "operator"));
+        AdminRoleAssignDataScopeParam param = new AdminRoleAssignDataScopeParam();
+        param.setRoleId(1L);
+        param.setDataScope(5);
+        param.setDataScopeDeptIds(Arrays.asList(1L, 1L, null, 2L));
+
+        adminRoleService.assignDataScope(param);
+
+        ArgumentCaptor<SysRole> captor = ArgumentCaptor.forClass(SysRole.class);
+        verify(roleMapper).update(captor.capture());
+        // 落库为逗号分隔字符串：去 null、去重、保留提交顺序
+        assertEquals("1,2", captor.getValue().getDataScopeDeptIds());
     }
 
     @Test
