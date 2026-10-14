@@ -8,9 +8,14 @@ import com.zhush.protection.idempotent.annotation.Idempotent;
 import com.zhush.system.param.AdminRoleAssignDataScopeParam;
 import com.zhush.system.param.AdminRoleAssignMenuParam;
 import com.zhush.system.param.AdminRoleParam;
+import com.zhush.system.param.RoleDataResourceSaveParam;
+import com.zhush.system.param.RoleFieldPermissionParam;
 import com.zhush.system.query.AdminRoleQuery;
 import com.zhush.system.service.AdminRoleService;
+import com.zhush.system.service.RoleDataPermissionService;
 import com.zhush.system.vo.AdminRoleVO;
+import com.zhush.system.vo.RoleDataPermissionVO;
+import com.zhush.system.vo.RoleFieldPermissionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,9 +42,12 @@ import java.util.List;
 public class AdminRoleController {
 
     private final AdminRoleService roleService;
+    private final RoleDataPermissionService roleDataPermissionService;
 
-    public AdminRoleController(AdminRoleService roleService) {
+    public AdminRoleController(AdminRoleService roleService,
+                               RoleDataPermissionService roleDataPermissionService) {
         this.roleService = roleService;
+        this.roleDataPermissionService = roleDataPermissionService;
     }
 
     /**
@@ -140,6 +148,50 @@ public class AdminRoleController {
     @Operation(summary = "分配数据范围")
     public Result<Void> assignDataScope(@RequestBody @Valid AdminRoleAssignDataScopeParam param) {
         roleService.assignDataScope(param);
+        return Result.success();
+    }
+
+    /**
+     * 角色数据权限配置（默认范围 + 按业务对象的行级覆盖）
+     */
+    @GetMapping("/{roleId}/data-permission")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:query")
+    @Operation(summary = "角色数据权限配置")
+    public Result<RoleDataPermissionVO> dataPermission(@Parameter(description = "角色ID") @PathVariable Long roleId) {
+        return Result.success(roleDataPermissionService.getDataPermission(roleId));
+    }
+
+    /**
+     * 保存角色行级覆盖规则
+     */
+    @PutMapping("/data-permission/row")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:assign-data-scope")
+    @Idempotent
+    @Operation(summary = "保存角色行级覆盖规则")
+    public Result<Void> saveRowRules(@RequestBody @Valid RoleDataResourceSaveParam param) {
+        roleDataPermissionService.saveRowRules(param);
+        return Result.success();
+    }
+
+    /**
+     * 角色列级字段授权视图
+     */
+    @GetMapping("/{roleId}/data-permission/field")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:query")
+    @Operation(summary = "角色列级字段授权视图")
+    public Result<RoleFieldPermissionVO> fieldPermission(@Parameter(description = "角色ID") @PathVariable Long roleId) {
+        return Result.success(roleDataPermissionService.getFieldPermission(roleId));
+    }
+
+    /**
+     * 保存角色列级字段授权
+     */
+    @PutMapping("/data-permission/field")
+    @SaCheckPermission(type = CommonConstant.TYPE, value = "system:role:assign-menu")
+    @Idempotent
+    @Operation(summary = "保存角色列级字段授权")
+    public Result<Void> saveFieldPermission(@RequestBody @Valid RoleFieldPermissionParam param) {
+        roleDataPermissionService.saveFieldPermissions(param);
         return Result.success();
     }
 

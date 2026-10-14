@@ -23,4 +23,13 @@ public interface SysMenuMapper extends BaseMapperX<SysMenu> {
         queryWrapper.where(SysMenu::getParentId).eq(parentId);
         return selectListByQuery(queryWrapper);
     }
+
+    /**
+     * 按权限标识查询菜单（元数据同步幂等判断用）
+     */
+    default SysMenu selectByPermission(String permission) {
+        QueryWrapper queryWrapper = QueryWrapper.create();
+        queryWrapper.where(SysMenu::getPermission).eq(permission);
+        return selectOneByQuery(queryWrapper);
+    }
 }

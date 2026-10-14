@@ -20,6 +20,9 @@ public class AiSessionQuery extends BaseQuery {
 
     private String agentName;
 
+    /** 会话标题模糊搜索 */
+    private String title;
+
     /** 用户类型：无 query-all 时被服务端覆盖为当前登录人 */
     private String userType;
 

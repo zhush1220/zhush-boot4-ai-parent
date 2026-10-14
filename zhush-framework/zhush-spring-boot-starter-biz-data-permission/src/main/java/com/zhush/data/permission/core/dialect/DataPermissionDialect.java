@@ -6,6 +6,7 @@ import com.mybatisflex.core.dialect.OperateType;
 import com.mybatisflex.core.dialect.impl.CommonsDialectImpl;
 import com.mybatisflex.core.query.QueryColumn;
 import com.mybatisflex.core.query.QueryCondition;
+import com.mybatisflex.core.query.QueryMethods;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.zhush.data.permission.annotation.DataPermission;
 import com.zhush.data.permission.core.DataPermissionContextHolder;
@@ -52,28 +53,42 @@ public class DataPermissionDialect extends CommonsDialectImpl {
         if (provider == null) {
             return;
         }
-        // 解析数据范围期间设置忽略标记，防止 provider 内部查库（查角色/部门）时递归触发过滤
+        // 解析数据范围期间设置忽略标记，防止 provider 内部查库（查角色/部门/资源规则）时递归触发过滤
+        String resource = annotation.resource();
         DataScope scope;
         DataPermissionContextHolder.setIgnore(true);
         try {
-            scope = provider.getDataScope();
+            scope = (resource == null || resource.isEmpty())
+                    ? provider.getDataScope()
+                    : provider.getDataScope(resource);
         } finally {
             DataPermissionContextHolder.setIgnore(false);
         }
-        if (scope == null || scope.getType() == null || scope.getType() == DataScopeType.ALL) {
+        if (scope == null) {
             return;
         }
         QueryCondition condition = buildCondition(annotation, scope);
+        // 自定义条件（白名单编译产物）与部门/本人条件以 AND 叠加；ALL 且无自定义条件时 condition 仍为 null
+        if (scope.hasExtraConditions()) {
+            for (QueryCondition extra : scope.getExtraConditions()) {
+                condition = (condition == null) ? extra : condition.and(extra);
+            }
+        }
         if (condition != null) {
-            queryWrapper.and(condition);
+            // 红线：注入条件整体括号后再 AND，避免与业务侧已有 OR 条件结合时被短路（审计 R-1）
+            queryWrapper.and(QueryMethods.bracket(condition));
         }
     }
 
     /**
-     * 按数据范围类型构建过滤条件
+     * 按数据范围类型构建过滤条件（ALL 返回 null，由调用方结合自定义条件判断是否过滤）
      */
     private QueryCondition buildCondition(DataPermission annotation, DataScope scope) {
-        return switch (scope.getType()) {
+        DataScopeType type = scope.getType();
+        if (type == null) {
+            return null;
+        }
+        return switch (type) {
             case ALL -> null;
             case SELF -> selfCondition(annotation, scope);
             case DEPT, DEPT_AND_CHILD, CUSTOM -> deptCondition(annotation, scope);
