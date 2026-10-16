@@ -176,10 +176,10 @@ zhush-boot4-parent
 
 | | |
 | --- | --- |
-| ![image-20261016141732026](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141732026.png) | ![image-20261016141836600](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141836600.png) |
-| ![image-20261016141918313](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141918313.png) | ![image-20261016141947279](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141947279.png) |
-| ![image-20261016142035149](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142035149.png) | ![image-20261016142213661](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142213661.png) |
-| ![image-20261016142303242](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142303242.png) | ![image-20261016142357969](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142357969.png) |
+| ![输入图片说明](images/image-20261016141732026.png) | ![image-20261016141836600](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141836600.png) |
+| ![输入图片说明](images/image-20261016141918313.png) | ![image-20261016141947279](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141947279.png) |
+| ![输入图片说明](images/image-20261016142035149.png) | ![image-20261016142213661](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142213661.png) |
+| ![输入图片说明](images/image-20261016142303242.png) | ![image-20261016142357969](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142357969.png) |
 
 ## 快速开始
 
