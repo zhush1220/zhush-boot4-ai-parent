@@ -142,7 +142,6 @@ zhush:
       - /api/favicon.ico
       - /api/files/**                  # 本地存储文件访问（头像、上传文件预览）
       # --- 渠道回调（免登录，强制验签；业务层 @IgnoreAuth 已放行，此处双保险）---
-      - /api/union/callback/**
       # --- 接口文档 ---
       - /api/doc.html
       - /api/swagger-ui/**

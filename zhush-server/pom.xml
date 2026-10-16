@@ -23,12 +23,6 @@
             <version>${revision}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.zhush</groupId>
-            <artifactId>zhush-module-union</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
         <!-- 统一支付底座（微信 V2/V3 渠道适配） -->
         <dependency>
             <groupId>com.zhush</groupId>

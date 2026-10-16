@@ -28,7 +28,6 @@
         <module>zhush-module-system</module>
         <module>zhush-module-member</module>
         <module>zhush-module-ai</module>
-        <module>zhush-module-union</module>
         <module>zhush-module-pay</module>
         <module>zhush-server</module>
 
