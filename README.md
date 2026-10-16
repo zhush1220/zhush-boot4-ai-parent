@@ -87,7 +87,7 @@ zhush-boot4-parent
 本仓库为纯后端工程，配套管理后台前端项目另行维护：
 
 - **zhush-admin-ui-ai**：基于  Vue Vben Admin 5.7 的管理后台，对接本工程 `/api/admin/**` 接口
-- 前端仓库地址：`https://gitee.com/primay/zhush-vue3-admin-ui-ai.git`
+- 前端仓库地址：[`https://gitee.com/primay/zhush-vue3-admin-ui-ai.git`](https://gitee.com/primay/zhush-vue3-admin-ui-ai.git)
 
 启动后端后，可直接访问 Knife4j 接口文档（`http://localhost:9166/api/doc.html`）进行联调。
 
