@@ -76,17 +76,18 @@ zhush-boot4-parent
 - 微信小程序 / 公众号 / APP 前后端一体交付
 - 支付、OAuth2、第三方系统集成
 
+项目可以是数据工厂、企业内部管理系统、门户系统、微信公众号、小程序（微信/抖音/支付宝）、AI智能化系统等等。
 如有合作意向，请通过以下方式联系：
 
-- 邮箱：`<联系邮箱>`
-- 微信：`<微信号>`
+- 邮箱：`andycabbage@163.com`
+- 微信：`vue950120`
 
 ## 前端项目
 
 本仓库为纯后端工程，配套管理后台前端项目另行维护：
 
-- **zhush-admin-web**：基于 Vue 3 + Element Plus 的管理后台，对接本工程 `/api/admin/**` 接口
-- 前端仓库地址：`<前端仓库链接，待补充>`
+- **zhush-admin-ui-ai**：基于  Vue Vben Admin 5.7 的管理后台，对接本工程 `/api/admin/**` 接口
+- 前端仓库地址：`https://gitee.com/primay/zhush-vue3-admin-ui-ai.git`
 
 启动后端后，可直接访问 Knife4j 接口文档（`http://localhost:9166/api/doc.html`）进行联调。
 
@@ -130,10 +131,10 @@ zhush-boot4-parent
 
 | | |
 | --- | --- |
-| ![image-20261016141732026](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141732026.png) | ![image-20261016141836600](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141836600.png) |
-| ![image-20261016141918313](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141918313.png) | ![image-20261016141947279](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016141947279.png) |
-| ![image-20261016142035149](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142035149.png) | ![image-20261016142213661](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142213661.png) |
-| ![image-20261016142303242](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142303242.png) | ![image-20261016142357969](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20261016142357969.png) |
+| ![输入图片说明](images/image-20261016141732026.png) | ![输入图片说明](images/image-20261016141836600.png) |
+| ![输入图片说明](images/image-20261016141918313.png) | ![输入图片说明](images/image-20261016141947279.png) |
+| ![输入图片说明](images/image-20261016142035149.png) | ![输入图片说明](images/image-20261016142213661.png) |
+| ![输入图片说明](images/image-20261016142303242.png) | ![输入图片说明](images/image-20261016142357969.png) |
 
 ## 快速开始
 
