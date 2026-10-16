@@ -12,53 +12,7 @@
 
 ## 架构图
 
-```mermaid
-flowchart TB
-    subgraph Client["客户端"]
-        ADMIN["管理后台前端"]
-        MINI["小程序 / APP / 公众号"]
-    end
-
-    subgraph SERVER["zhush-server（唯一启动模块 :9166 /api）"]
-        direction TB
-        subgraph BIZ["业务模块层"]
-            AI["zhush-module-ai<br/>智能体对话 / 模型 / 用量 / 合规 / 生成"]
-            SYS["zhush-module-system<br/>用户·角色·菜单·任务·日志·监控·数据权限"]
-            MEM["zhush-module-member<br/>会员 / 微信登录"]
-            PAY["zhush-module-pay<br/>统一支付底座（微信 V2/V3）"]
-        end
-        subgraph FW["zhush-framework（18 个自研 Starter + zhush-common）"]
-            SEC["satoken / oauth2 / captcha<br/>protection / data-permission"]
-            DATA["mybatis / redis / file<br/>search / excel"]
-            TECH["web / job / mq / monitor<br/>websocket / agentscope / biz-ip"]
-        end
-    end
-
-    subgraph EXT["外部依赖"]
-        DB[("MySQL / PG / 达梦 / 金仓 / Oracle")]
-        RD[("Redis")]
-        LLM["模型服务<br/>DashScope / DeepSeek / Ollama"]
-        JEV["Typesafe AI Jev<br/>（结构化决策，可选）"]
-        ES[("Elasticsearch（可选）")]
-        MQS[("RocketMQ（可选）")]
-        WX["微信开放平台 / 微信支付"]
-    end
-
-    ADMIN -->|Authorization: Bearer| SERVER
-    MINI --> SERVER
-    BIZ --> FW
-    AI -->|SSE / 同步调用| LLM
-    AI -.-> JEV
-    DATA --> DB
-    SEC --> RD
-    TECH --> RD
-    search{{"search starter"}} -.-> ES
-    mq{{"mq starter"}} -.-> MQS
-    PAY --> WX
-    MEM --> WX
-```
-
-依赖方向：`zhush-server → 业务模块 → framework starters → zhush-common`，版本由 `zhush-dependencies` BOM 统一收敛。
+![系统架构图](images/architecture.png)依赖方向：`zhush-server → 业务模块 → framework starters → zhush-common`，版本由 `zhush-dependencies` BOM 统一收敛。
 
 ## 核心技术栈
 
