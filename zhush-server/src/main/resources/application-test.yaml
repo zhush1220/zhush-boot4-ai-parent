@@ -206,6 +206,14 @@ zhush:
       secret-key: your-secret-key
       bucket-name: your-bucket-name
       domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+  # 会话产物在线预览（详见 docs/AI智能助手文件预览功能方案.md §6.5、§15）
+  # office-converter：none=路线乙（纯前端渲染）；libreoffice=甲-1（服务端转 PDF，需装 LibreOffice 与中文字体）；kkfileview=甲-2（外部渲染服务出图，走 server-iframe，另需 deploy/kkfileview + nginx /preview）
+  preview:
+    enabled: true
+    office-converter: none
+    # base-url: /preview                    # 甲-2：对外预览前缀（与 nginx location /preview 一致）
+    # source-base-url:                      # 甲-2：容器回源用的绝对前缀，FILE_DOMAIN 为相对前缀时必填
+    # probe-url: http://172.17.0.1:8012/    # 甲-2：可达性探测，配了才会在服务挂掉时回落「仅下载」
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false

@@ -61,17 +61,17 @@ CREATE TABLE `sys_notice_record` (
 -- ------------------------------------------------------------
 INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `type`, `permission`, `path`, `component`, `icon`, `sort`, `visible`, `status`)
 VALUES
-    (106, 100, '通知公告', 2, '', 'notice', '/system/notice/index', 'lucide:bell', 6, 1, 1);
+    (109, 100, '通知公告', 2, '', 'notice', '/system/notice/index', 'lucide:bell', 6, 1, 1);
 
 INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `type`, `permission`, `path`, `component`, `icon`, `sort`, `visible`, `status`)
 VALUES
-    (160, 106, '通知公告查询', 3, 'system:notice:query',  '', '', '', 1, 1, 1),
-    (161, 106, '通知公告新增', 3, 'system:notice:create', '', '', '', 2, 1, 1),
-    (162, 106, '通知公告修改', 3, 'system:notice:update', '', '', '', 3, 1, 1),
-    (163, 106, '通知公告删除', 3, 'system:notice:delete', '', '', '', 4, 1, 1);
+    (190, 109, '通知公告查询', 3, 'system:notice:query',  '', '', '', 1, 1, 1),
+    (191, 109, '通知公告新增', 3, 'system:notice:create', '', '', '', 2, 1, 1),
+    (192, 109, '通知公告修改', 3, 'system:notice:update', '', '', '', 3, 1, 1),
+    (193, 109, '通知公告删除', 3, 'system:notice:delete', '', '', '', 4, 1, 1);
 
 -- 超级管理员（role_id=1）关联通知公告菜单与权限点
 INSERT INTO `sys_role_menu` (`id`, `role_id`, `menu_id`)
 VALUES
-    (106, 1, 106),
-    (160, 1, 160), (161, 1, 161), (162, 1, 162), (163, 1, 163);
+    (109, 1, 109),
+    (190, 1, 190), (191, 1, 191), (192, 1, 192), (193, 1, 193);

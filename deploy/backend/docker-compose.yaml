@@ -2,6 +2,9 @@ services:
   zhush-server:
     build:
       context: ./zhush-server
+      # 路线甲-1 需装 LibreOffice（镜像 +400～700MB）：改 true 并把下面 PREVIEW_OFFICE_CONVERTER 设为 libreoffice
+      args:
+        WITH_LIBREOFFICE: "false"
     container_name: zhush-server
     privileged: true
     restart: always
@@ -26,6 +29,18 @@ services:
       MYSQL_PASSWORD: zhusH@950120
       # Token有效期 2 小时（秒）
       SA_TOKEN_TIMEOUT: 7200
+      # 旧格式预览转换：none=纯前端路线乙；libreoffice=甲-1（需 WITH_LIBREOFFICE=true 构建）；kkfileview=甲-2（需另起 deploy/kkfileview）
+      PREVIEW_OFFICE_CONVERTER: none
+      PREVIEW_CACHE_PATH: /data/preview-cache
+      # office 进程上限，转换在独立进程里跑，但每个峰值约 300～500MB RSS，按主机余量取值
+      PREVIEW_MAX_CONCURRENT: 1
+      # 以下三项仅路线甲-2（PREVIEW_OFFICE_CONVERTER=kkfileview）需要，取值口径见 deploy/kkfileview/docker-compose.yaml
+      # 同源经 nginx 的预览前缀，需与 deploy/nginx/default.conf 的 location /preview 一致
+      # PREVIEW_BASE_URL: /preview
+      # 容器无法解析 FILE_DOMAIN 那个相对前缀，回源用的绝对前缀必须由这里给出
+      # PREVIEW_SOURCE_BASE_URL: http://172.17.0.1:9199/api/files/
+      # 可达性探测地址：配了才会在服务挂掉时回落「仅下载」，不配则只能由前端 iframe 自己报错
+      # PREVIEW_PROBE_URL: http://172.17.0.1:8012/
       # 本地存储根目录
       FILE_BASE_PATH: /data/upload
       # 文件访问 URL 前缀（后端 context-path=/api，静态资源实际暴露在 /api/files/）
@@ -42,5 +57,7 @@ services:
     volumes:
       - ./logs:/data/logs
       - ./upload:/data/upload
+      # 转换产物缓存：刻意与存储根分开，存储根经免鉴权的 /api/files/** 直出
+      - ./preview-cache:/data/preview-cache
       - /usr/share/fonts:/usr/share/fonts
       - /app/skywalking-agent/:/app/skywalking-agent/

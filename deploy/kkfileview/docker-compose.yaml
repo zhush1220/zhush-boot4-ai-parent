@@ -1,0 +1,48 @@
+# 路线甲-2：kkFileView 独立渲染服务（仅 A 档：空闲内存 ≥4GB 且 ≥4 vCPU，且确有 ofd/CAD/压缩包等广度需求）
+# 启用三步：① 起本容器 ② nginx 放开 /preview 反代（见 deploy/nginx/default.conf，仓库已配好）
+#          ③ zhush-server 侧 PREVIEW_OFFICE_CONVERTER=kkfileview + PREVIEW_SOURCE_BASE_URL + PREVIEW_PROBE_URL
+services:
+  kkfileview:
+    # 5.0.0 起要求 JDK21，镜像内含 LibreOffice；空载 RSS ≈1.5GB，别和 zhush-server 抢同一份余量
+    image: keking/kkfileview:5.0.3
+    container_name: kkfileview
+    restart: always
+    network_mode: "host"
+    environment:
+      TZ: Asia/Shanghai
+      # ---- 对外地址：必须是浏览器实际访问到的那个前缀（同源经 nginx），否则预览页里的子资源指向容器内网 ----
+      KK_BASE_URL: http://47.115.56.72:8086/preview/
+      # ---- 安全：只允许回源这些主机（防 SSRF）。4.4.0+ 默认拒绝未配置的来源 ----
+      # 这里只需列后端存储地址的主机（容器 host 网络下即 172.17.0.1 / localhost），不要图省事写 *
+      KK_TRUST_HOST: 172.17.0.1,localhost,127.0.0.1
+      # ---- 安全：关上传、关脚本执行；删除接口保持默认禁用，切勿设置删除密码 ----
+      KK_FILE_UPLOAD_DISABLE: "true"
+      KK_SCRIPTJS: "false"
+      # ---- 行为：Office 一律转 PDF 再渲染，别用它自己的 HTML 直排（方案 S10）----
+      KK_OFFICE_PREVIEW_TYPE: pdf
+      KK_CACHE_CLEAN_ENABLED: "true"
+      KK_CACHE_CLEAN_CRON: "0 0 3 * * ?"
+      # 源文件被覆盖后要重转（AI 产物按 fileId 唯一，正常不会变，留着以防手动替换存储）
+      KK_FORCE_UPDATED_CACHE: "true"
+    volumes:
+      # 转换缓存与临时文件持久化。镜像内 file.dir 的实际路径随版本变，起容器后用
+      # `docker inspect kkfileview | grep -i file` 或看启动日志确认，挂错等于写进容器层
+      - ./file:/opt/kkFileView/file
+      # 中文字体：缺字体时 Word/PPT 转出的 PDF 中文乱码（与 zhush-server 同一前提）
+      - /usr/share/fonts:/usr/share/fonts
+    # 独立配额，防一份大 PPT 把宿主机一起拖死（方案 §0.1 门禁原则 4）。需 Compose V2；
+    # 老版 docker-compose 不认 deploy.resources，改用 --memory/--cpus 或 docker run 参数
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+
+# 8012 在 host 网络下直接监听宿主机端口，只允许内网可达：对外一律走 nginx 的 /preview（已限 GET/HEAD）。
+# 云主机需在安全组/防火墙里关掉 8012 的公网入方向。
+#
+# 待实机确认项（本仓库环境拉不到镜像，以下键名按 kkFileView 官方 docker 文档写，需核对所用镜像）：
+#   1. 环境变量前缀：kkFileView 只认 application.properties 里 ${} 占位用的全大写 KEY，未识别的变量被 Spring 忽略、不报错；
+#      核对方式 `docker exec kkfileview sh -c 'cat /opt/kkFileView/config/application.properties'`
+#   2. file.dir 与挂载路径是否一致（见上方 volumes 注释）
+#   3. 首页上传是否已由镜像内置 file.upload.disable=true 关掉（该键在部分镜像里是字面量，环境变量盖不住——正好是我们要的）

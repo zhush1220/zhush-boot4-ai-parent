@@ -5,6 +5,7 @@ import com.zhush.file.core.FileClient;
 import com.zhush.file.core.FileRecordStore;
 import com.zhush.file.core.FileStorage;
 import com.zhush.file.core.NoopFileRecordStore;
+import com.zhush.file.filter.FileSecurityHeaderFilter;
 import com.zhush.file.storage.AliyunOssFileStorage;
 import com.zhush.file.storage.HuaweiObsFileStorage;
 import com.zhush.file.storage.LocalFileStorage;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -106,6 +108,20 @@ public class FileAutoConfiguration {
                         .addResourceLocations("file:" + localFileStorage.getBaseDir().getAbsolutePath() + "/");
             }
         };
+    }
+
+    /**
+     * 文件直链响应头加固（预览把「下载后本地打开」变成「站内打开」后的必要防线，见方案 S1）
+     *
+     * <p>Servlet 过滤器模式不支持 {@code **}，故把 {@code /files/**} 转为 {@code /files/*}。
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "zhush.file.local", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public FilterRegistrationBean<FileSecurityHeaderFilter> fileSecurityHeaderFilter(LocalFileStorage localFileStorage) {
+        FilterRegistrationBean<FileSecurityHeaderFilter> registration =
+                new FilterRegistrationBean<>(new FileSecurityHeaderFilter());
+        registration.addUrlPatterns(localFileStorage.getUrlPath().replace("/**", "/*"));
+        return registration;
     }
 
 }

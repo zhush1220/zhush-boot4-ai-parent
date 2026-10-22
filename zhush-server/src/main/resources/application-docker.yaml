@@ -205,6 +205,21 @@ zhush:
       secret-key: your-secret-key
       bucket-name: your-bucket-name
       domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+  # 会话产物在线预览（详见 docs/AI智能助手文件预览功能方案.md §6.5）
+  # 升档（乙→甲-1）只改 PREVIEW_OFFICE_CONVERTER 重启后端，前端不发版；镜像需用 --build-arg WITH_LIBREOFFICE=true 构建
+  # 转换器未就绪（未装 LibreOffice / 缺中文字体 / 排队超限 / 超时）时一律回落 unsupported，不阻断对话
+  preview:
+    enabled: ${PREVIEW_ENABLED:true}
+    office-converter: ${PREVIEW_OFFICE_CONVERTER:none}
+    convert:
+      soffice-path: ${PREVIEW_SOFFICE_PATH:soffice}
+      cache-path: ${PREVIEW_CACHE_PATH:/data/preview-cache}
+      max-concurrent: ${PREVIEW_MAX_CONCURRENT:1}
+      timeout-seconds: ${PREVIEW_CONVERT_TIMEOUT:60}
+    # 路线甲-2（office-converter=kkfileview）：外部渲染服务的对外前缀、容器回源用的绝对前缀、可达性探测地址
+    base-url: ${PREVIEW_BASE_URL:/preview}
+    source-base-url: ${PREVIEW_SOURCE_BASE_URL:}
+    probe-url: ${PREVIEW_PROBE_URL:}
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false

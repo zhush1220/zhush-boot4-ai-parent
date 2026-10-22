@@ -190,6 +190,22 @@ zhush:
       secret-key: your-secret-key
       bucket-name: your-bucket-name
       domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+  # 会话产物在线预览（详见 docs/AI智能助手文件预览功能方案.md §6.5）
+  # office-converter：none=路线乙（纯前端渲染）；libreoffice=甲-1（服务端转 PDF，本机需装 LibreOffice）；kkfileview=甲-2 未实现
+  preview:
+    enabled: true
+    office-converter: none
+    # allowed-extensions: png,jpg,jpeg,gif,webp,mp4,webm,md,txt,csv,html,htm,pdf,docx,xlsx   # 不配则用内置默认表；与 zhush.file.allowed-extensions 是两个口径
+    # prefer-pdf-extensions: docx,xlsx     # 前端本就能渲染的格式，显式列出才改走服务端转 PDF
+    convert:
+      # soffice-path: D:/Program Files/LibreOffice/program/soffice.exe   # Windows 需写完整路径；Linux 默认 soffice
+      # cache-path: D:/zhush/preview-cache  # 不配则取本地存储根的同级 preview-cache 目录（刻意在免鉴权的 /api/files/** 之外）
+      max-concurrent: 1                     # office 进程上限，防一份大 PPT 拖垮后端
+      timeout-seconds: 60                   # 单文档转换超时，超时即杀进程并降级 unsupported
+    # 路线甲-2（office-converter=kkfileview）才用到的三项；dev 的产物地址已是绝对地址，source-base-url 可留空
+    # base-url: /preview                    # 需 vite 把 /preview 代理到 kkFileView，且容器侧 KK_BASE_URL 指回 dev 源
+    # source-base-url:                      # 仅产物地址为相对前缀（docker 的 FILE_DOMAIN=/api/files/）时才需要
+    # probe-url: http://localhost:8012/     # 配了才会在服务不可达时回落「仅下载」，不配只能由前端 iframe 自己报错
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false
