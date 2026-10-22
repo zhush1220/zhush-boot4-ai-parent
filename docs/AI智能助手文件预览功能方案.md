@@ -16,6 +16,7 @@
 4. **OnlyOffice / Collabora 两条路线都排除**：官方系统要求 4GB 内存起（OnlyOffice Docs CE 10.0 Docker 最低 2GHz/4GB/40GB + 自带 Postgres/Redis/RabbitMQ），与 `zhush-server` 争抢同一台小云主机不现实；且 OnlyOffice 是 AGPLv3。
 5. **本方案带三条必须先补的安全前置项**（第八章）：预览把「下载后在本地打开」变成了「在我们自己的源里执行」，同源 HTML/SVG 存储型 XSS、免鉴权公开直链、扩展名白名单声明未生效这三件事，在预览上线前必须收口。**注意 S1 在路线甲-2 下更严重**（kkFileView 会直接把 Office 文档转成 HTML/PDF 对外渲染，多出一个可被 iframe 嵌入的服务面）。
 6. **既有的《kkFileView 在线预览整合方案.md》至今未落地**（全仓无 `com.zhush.file.preview` 包、无 `zhush.preview.*` 配置、nginx 无 `/preview` location），本方案把它从「主方案」调整为「路线甲-2 的实现蓝本」，并复用其接口形状（`{previewable, previewUrl}`）与安全清单。
+7. **附件之外还有一类「只在正文里以路径出现」的产物**（harness 工作区文件），已由第十六章的按需登记桥接进同一套预览链路——做法是**把路径升格成有 `fileId` 的产物**，而不是给预览接口开「按路径预览」的旁路（那会绕过 S6）。
 
 ### 0.1 资源门禁（决定走哪条路线，开工前唯一要做的判断题）
 
@@ -69,7 +70,7 @@ docker stats --no-stream     # zhush-server / nginx / redis / mysql 实际占用
 | **doc / xls / ppt** | 用户上传 | 无 | **仅下载**（`previewable=false`） | ✅ **转 PDF 后预览**（甲-1 或甲-2，这是路线甲的主要动机） |
 | pptx | 用户上传 | 无 | 次级，视保真度决定是否收录（D4） | ✅ LO/kkFileView 转 PDF，保真度明显优于 `@vue-office/pptx` |
 | ofd / wps / 压缩包 / CAD | — | 无 | 仅下载 | 仅 **甲-2（kkFileView）** 支持，甲-1 不覆盖 |
-| svg | 未在 `accept` 内，但可被 `generateImage` 之外的链路产出 | 无 | **禁止内联执行**（第八章 S1） | 同样禁止内联，一律下载 |
+| svg | 未在 `accept` 内，但可被 `generateImage` 之外的链路产出（如 Logo 类产物） | 无 | `<img>` 内联预览（**禁**内联进 `srcdoc`/`innerHTML`，见 S1 与第十六章） | 不交给服务端渲染路线，同样只走 `<img>` |
 
 ### 1.3 非目标（本期不做）
 
@@ -203,7 +204,7 @@ docker stats --no-stream     # zhush-server / nginx / redis / mysql 实际占用
 | **doc / xls / ppt** | — | 乙：`previewable=false`，文案「旧版格式请下载后用 Office 打开」 | ✅ **甲-1：`server-pdf`（LO 转 PDF）**；甲-2：`server-iframe`（它给不出 PDF 字节，见 §15.1） | 下载 |
 | pptx | Blob | `@vue-office/pptx@1.0.1`，**默认不收录**（保真度最差，D4） | ✅ 甲路线转 PDF 后保真度明显更好，建议随甲启用 | 下载 |
 | ofd / wps / 压缩包 / CAD | — | 乙：下载 | ✅ **仅甲-2（kkFileView）**支持 | 下载 |
-| svg | — | **不内联**（S1），两档路线一律 unsupported | 不覆盖 | 下载 |
+| svg | Blob / 直链 | `<img>`（`inline-image`）：浏览器按「图像文档」渲染，脚本与外链资源不执行。**禁**内联进 `srcdoc`/`innerHTML`（S1 修正，2026-10-22） | **不覆盖**（服务端渲染路线永不收 svg） | 下载 |
 
 ### 4.3 交互形态
 
@@ -411,7 +412,7 @@ zhush:
 
 | 编号 | 风险 | 现状证据 | 缓解（路线 × 期次） |
 |---|---|---|---|
-| **S1** | **同源 HTML/SVG 存储型 XSS**：上传或产物 `.html`/`.svg` 经 `/api/files/**` 与后台同域返回，`text/html` 直开即执行 JS，可拿管理端 token | nginx `/`、`/api`、`/files` 同源（deploy/nginx/default.conf）；无任何 `add_header`；前端无 CSP | **阶段一必做（已落地）**：预览一律 `sandbox="allow-scripts"`（禁 `allow-same-origin`）+ `srcdoc`；SVG 不做内联预览（`preview-meta` 直接判 unsupported）；响应头由 [FileSecurityHeaderFilter](file:///D:/zhush/project/back-boot/zhush-boot4-parent/zhush-framework/zhush-spring-boot-starter-file/src/main/java/com/zhush/file/filter/FileSecurityHeaderFilter.java) 在 `/files/**` 映射上落地——`.html/.htm/.svg` 加 `CSP: sandbox allow-scripts` + `X-Frame-Options: SAMEORIGIN`，`nosniff` 只给文本类扩展名（图片/视频不给，避免 Spring 无 MIME 映射时 `nosniff` 直接拦掉播放） |
+| **S1** | **同源 HTML/SVG 存储型 XSS**：上传或产物 `.html`/`.svg` 经 `/api/files/**` 与后台同域返回，`text/html` 直开即执行 JS，可拿管理端 token | nginx `/`、`/api`、`/files` 同源（deploy/nginx/default.conf）；无任何 `add_header`；前端无 CSP | **阶段一必做（已落地）**：预览一律 `sandbox="allow-scripts"`（禁 `allow-same-origin`）+ `srcdoc`；**SVG 口径修正（2026-10-22，见第十六章）**：允许 `inline-image`（`<img src>`），因为浏览器把 `<img>` 里的 SVG 当**无脚本的图像文档**渲染，`<script>`、外链资源、事件处理一律不执行；仍**禁止**把 SVG 内联进 `srcdoc`/`innerHTML`（那才是同源可执行内容），也禁止把它交给 LibreOffice / kkFileView（两档渲染器的白名单里都没有 svg，见 15.2）。`.html` 维持原样，只走沙箱 iframe。响应头由 [FileSecurityHeaderFilter](file:///D:/zhush/project/back-boot/zhush-boot4-parent/zhush-framework/zhush-spring-boot-starter-file/src/main/java/com/zhush/file/filter/FileSecurityHeaderFilter.java) 在 `/files/**` 映射上落地——`.html/.htm/.svg` 加 `CSP: sandbox allow-scripts` + `X-Frame-Options: SAMEORIGIN`，`nosniff` 只给文本类扩展名（图片/视频不给，避免 Spring 无 MIME 映射时 `nosniff` 直接拦掉播放）。注：`<img>` 加载不吃 CSP-frame/CORS，`.svg` 上的 `CSP: sandbox` 不影响这条渲染路径 |
 | **S2** | **免鉴权公开直链**：`/api/files/**` 全环境在白名单，路径含 UUID 不可枚举但可转发 | application-dev.yaml:130 等四环境 | 阶段一：预览入口收敛到鉴权接口 + `@OperateLog` 审计；**阶段三**：HMAC 签名直链或 Redis 一次性 token（60~300s），图片视频可按需豁免 |
 | **S3** | **扩展名白名单形同虚设**（表述修正）：校验代码在 `FileClient.validateSizeAndExtension`（:165）里是**生效**的，缺的是配置——四个环境 yaml 该项均注释，等价于不限制 | FileStorageProperties.java:34、FileClient.java:165 | 阶段一（已落地）：预览侧独立口径 `zhush.preview.allowed-extensions`（不配则用内置默认表，与上传白名单互不影响）；上传侧真正启用白名单前仍须先按 D6 统计 `infra_file.ext` 分布，避免反噬历史功能 |
 | **S4** | CORS `*` + `allowCredentials:true` 长期开放 | dev:207-215 / docker:223-231 | 生产按域名收敛（`CORS_ALLOWED_ORIGINS` 已支持 env 注入） |
@@ -458,7 +459,7 @@ zhush:
 
 - [ ] 会话内 png/jpg/mp4/pdf/docx/md/html/xlsx/csv 均可点击预览，历史消息回显后同样可预览（R4）。
 - [ ] AI 生成的中文 PDF 在 pdf.js 下**中文正常出字**（V2 通过的客观判据）。
-- [ ] `office-converter=none` 时 `doc`/`xls`/`ppt`/`svg` 返回 `previewable=false` 且前端提示「请下载查看」，无空白框、无控制台报错。
+- [ ] `office-converter=none` 时 `doc`/`xls`/`ppt` 返回 `previewable=false` 且前端提示「请下载查看」，无空白框、无控制台报错（`svg` 自第十六章起改判 `inline-image`，不在本条里）。
 - [ ] 预览一个含 `<script>` 的 `.html` 产物：脚本在沙箱内运行但**读不到 `parent`、拿不到 localStorage/token**（S1 回归用例）。
 - [ ] 未登录访问 `preview-meta` → 401；无 `ai:assistant` → 403；预览他人会话产物 → 拒绝（S5）。
 - [ ] 上传 `.exe`/非白名单扩展被拒（S3）。
@@ -658,5 +659,130 @@ V1（206 透传）、V3（docx 版式还原度）、V4（xlsx 合并单元格/�
 
 ---
 
-> 下一步：① 执行 V7 定档（四条命令）——**这是启用阶段二唯一的判断题**，两条甲路线的代码都已就绪，默认 `office-converter=none`；② 定档 B 走甲-1（按 §14.3 改配置 + `WITH_LIBREOFFICE=true` 重新构建镜像，勾 §14.4），定档 A 且确有 ofd/CAD/压缩包需求才走甲-2（起 `deploy/kkfileview` + 核对 §15.5，注意 S10 的原始口径在这条路线上做不到）；③ 阶段三（签名直链 S2、水印、门面复用到文件管理/公告）不依赖档位。
+## 第十六章 回答正文引用的文件可预览（2026-10-22）
+
+前面十五章处理的是「附件卡片」——产物有 `FileArtifact`、进了 `attachments`、有 `fileId`，预览门面按 fileId 取数即可。本章补的是另一类：**文件只以路径文本的形式出现在回复正文里**。
+
+触发场景（实测截图）：让智能体做一套 Logo，它用 harness 的内置文件能力把 `zhush-logo.svg` / `-icon.svg` / `-mono.svg` 直接写进工作区 `.agentscope/workspace/1/brand/`，回复正文则是一张 markdown 表格加上一串绝对路径。这些文件**既不在 `infra_file`、没有 URL、也不在 `attachments`**，所以气泡里点什么都没发生——用户看到的是一段抄都抄不完整的 Windows 路径。
+
+### 16.1 关键判断：不开「按路径预览」的旁路
+
+最省事的实现是给 `preview-meta` 加一个 `path` 入参。这条路被否掉了，理由是 **S6**：预览接口一旦接受路径，就等于在本机开了一个「读任意可读文件」的口子，前面为「只接受 `fileId`」投入的所有校验（会话归属、产物白名单、双路线不接单）全部绕过。
+
+落地做法反过来——**把路径升格成产物**：
+
+```
+正文里的路径 ──点击──▶ answer-file/resolve（校验 + 读字节）
+                          │
+                          ├─ FileRecordStore.upload → infra_file 一行 + 真 fileId + URL
+                          ├─ 追加进该条助手消息的 attachments 列
+                          └─ 返回 {fileId, type, format, name, url, size}
+                                    │
+                                    └──▶ preview-meta / preview-content 照旧按 fileId 走（零特例）
+```
+
+代价是多一次上传与一行库记录，换来的是：预览门面、归属守卫、`office-converter` 双路线裁决、前端五个渲染器**一个字节都不用改**，且这个文件此后在「文件管理 / 会话附件」里是个正常产物，不是二等公民。
+
+### 16.2 交付物
+
+| 层 | 文件 | 改动 |
+|---|---|---|
+| 后端 | `preview/AnswerFileArtifactService.java` | **新增**，登记主逻辑：清洗引用串 → 分区内定位 → 校验体积与扩展名 → 幂等复用 → 上传 → 回填 `attachments` |
+| 后端 | `param/AgentFileResolveParam.java`、`vo/AnswerFileVO.java` | **新增**。`fileId` 在 VO 里声明为 `String`，与全局 Long→String 序列化口径一致 |
+| 后端 | `controller/admin/AgentFilePreviewController.java` | 新增 `POST /answer-file/resolve`，权限点与 `preview-meta` 同一条（`ai:assistant` OR `ai:session:list`）+ `@OperateLog(type = CREATE, recordResult = false)` |
+| 后端 | `enums/AiErrorCode.java` | 新增 `1003406 ANSWER_FILE_DISABLED` / `1003407 ANSWER_FILE_NOT_FOUND` / `1003408 ANSWER_FILE_TOO_LARGE` |
+| 后端 | `preview/PreviewProperties.java` | 新增 `answer-file-enabled` / `answer-file-workspace-root` / `answer-file-max-size`（默认开、`.agentscope/workspace`、20MB） |
+| 后端 | `preview/AgentFilePreviewService.java` | `svg` 进 `DEFAULT_ALLOWED` 与 `CONTENT_TYPES`，switch 走 `INLINE_IMAGE`；原先的 svg→unsupported 分支删除；`contentTypeOf(ext)` 提为包内可见供登记服务复用 |
+| 前端 | `views/ai/assistant/modules/preview/body-files.ts` | **新增**：`linkifyBodyFiles(html)` 文本节点改写 + `matchAttachmentByHref()` 附件链接优先匹配 |
+| 前端 | `modules/message-bubble.vue` | 新增 `sessionId` prop、容器级 `@click` 事件委托、`openAnswerFilePreview()`、`rememberAttachment()`；`.file-ref` 虚线下划线样式 |
+| 前端 | `api/ai/agent.ts` | `resolveAnswerFile()`，返回值复用既有 `FileArtifactVO`（字段完全一致，不另开接口） |
+| 前端 | `hooks/use-chat-stream.ts`、`views/ai/assistant/index.vue`、`preview/preview-utils.ts` | `ChatMessage.seq`（仅历史回显有值，供精确回填）、`seq` 透传、`MODE_BY_EXT` 补 `svg` |
+
+### 16.3 三条安全规则（缺一不可）
+
+| 规则 | 实现 | 拦掉什么 |
+|---|---|---|
+| **只接受路径，不接受任何带协议的地址** | `normalize()` 见 `://` 或 NUL 直接判死，绝对残留（`/` 或 `D:` 开头）与任何 `..` 段同样判死 | 预览侧 SSRF（S6）与「把 URL 当路径传进来」的混淆入口 |
+| **分区段一律丢弃，只按调用者自己的 userId 重建** | 引用串在最后一个 `/workspace/` 处截断，剩余相对段拼到 `{配置的根}/{当前登录人 userId}` 下 | 别人贴 `workspace/2/…` 试图读他人分区——截断后 `2` 已经不在路径里，而他的路径落到自己分区里必然不存在 |
+| **软链全解析后再比前缀** | `Files.isSymbolicLink(target)` 先看末段，再 `toRealPath()` 全量解析、要求 `startsWith(base.toRealPath())`，并拒绝点文件 | 末段是「指向 `/etc` 的软链」这一类跳出——只比 `normalize()` 后的字符串前缀拦不住 |
+
+另两道闸：扩展名必须命中 `REGISTRABLE_EXTS`（预览默认白名单 + 旧格式），点文件（`.consolidation_state` 这类 harness 运行态）永不登记；**归属断言排在解析之前**——非本人会话连「这个工作区文件存不存在」都不该得到回答。
+
+### 16.4 四个非显然的设计选择
+
+1. **按需登记，不在回复结束时抢跑。** 抢跑需要改流式收尾链路（`AgentChatService.collectArtifact` 在 SSE 完成后跑），而 `index.vue` 在 `send()` 后并不重新拉消息，抢跑产物照样得再加一种 SSE 事件才看得见；同时会把「没人点的产物」也上传入库。点击才登记的代价只有第一次点击多一次上传往返。
+2. **幂等凭「本会话内同名」。** `findRegistered()` 扫该会话所有消息的 `attachments`，命中同名直接回它的 `fileId`/`url`，不重复上传。同一份 Logo 在正文里出现三次、用户点三次，`infra_file` 只有一行。回填失败（定位不到目标消息、DB 异常）只记日志不报错：文件已入库、URL 可用，前端仍能本地渲染——沿用门禁原则 2。
+3. **正文改写必须排在 sanitize 之后。** `linkifyBodyFiles()` 用 DOMParser + TreeWalker 只动文本节点，且跳过 `a / pre / button` 内的内容：附件卡片本身就是链接，代码块里的示例路径不该变成可点击项。改写产物只带 `data-ref` 与一个 class，不带任何 URL。
+4. **正文装饰永远不得吃掉正文。** `linkifyBodyFiles()` 在 `renderedContent` 里被 try/catch 包住，抛错就退回未改写的 sanitize 结果并 `console.warn`。理由不是防御性编程癖好：这个 computed 一抛，Vue 会把整个气泡渲染成空白，用户看到的是「AI 没回答」而不是「预览入口坏了」——而**这条已经真实发生过一次**（见 16.9）。可点击入口只是锦上添花，坏了顶多少一个入口。
+
+### 16.5 SVG 改判（S1 口径修正）
+
+本章的触发案例是三个 SVG，所以 SVG 的裁决必须给出结论而不是继续挂「不支持」。改判为 `inline-image`，理由要写清楚，因为与 S1 原文表面冲突：
+
+- `<img src>` 加载 SVG 时浏览器按**图像文档**渲染，其中 `<script>`、事件处理器、外链资源一律不执行——这是 SVG 与 `.html` 的关键差别。
+- 危险的是**内联**：把 SVG 字符串塞进 `srcdoc` 或 `innerHTML` 时它按普通文档解析，脚本会跑。这条禁令保留。
+- **服务端渲染路线永不收 SVG**：`LibreOfficeFileConverter.SUPPORTED` 与 `KkFileViewPreviewRenderer.RENDERABLE` 都不含 `svg`（见 15.2），所以「SVG 不交给外部服务渲染」这句话没变。
+- `FileSecurityHeaderFilter` 给 `.svg` 下发的 `CSP: sandbox allow-scripts` 对 `<img>` 路径无影响（图片加载不吃 frame CSP），无需改响应头。
+
+因此 S1 行的表述从「SVG 不做内联预览」修正为「SVG 允许 `<img>` 内联渲染，仍禁 `srcdoc`/`innerHTML` 与服务端渲染路线」。
+
+### 16.6 配置与部署
+
+| 键 | 默认 | 说明 |
+|---|---|---|
+| `zhush.preview.answer-file-enabled` | `true` | 关掉后接口抛 `1003406`，前端提示「请下载后查看」，正文改写照常（点击才报错） |
+| `zhush.preview.answer-file-workspace-root` | `.agentscope/workspace` | **相对值按进程 `user.dir` 解析**。这个默认值是取证来的：`WorkspaceConstants.DEFAULT_WORKSPACE_ROOT = ".agentscope/workspace"`，而 `DefaultAgentTemplate.buildHarness` 从未调用 `Builder.workspace(Path)`，所以根就是相对当前工作目录 |
+| `zhush.preview.answer-file-max-size` | `20971520`（20MB） | 登记前按 `Files.size` 判，超限抛 `1003408`；`<=0` 视为不限制 |
+
+四个环境 yaml 均已给出（dev/test/prod 注释形式、docker 走 `PREVIEW_ANSWER_FILE_*` env 占位，默认值不改变现网）。
+
+**容器部署必读**：`.agentscope/workspace` 落在镜像临时目录时，重启即丢、且 `zhush-server` 与执行写入的那层可能不是同一目录。要让用户点得开，需把工作区挂到持久卷并把 `answer-file-workspace-root` 指到挂载点。根目录不可用时不会报错，只在首次点击时打一条 warn 并返回「文件不存在」（`workspaceRoot()` 里 `toRealPath()` 失败分支）。
+
+按现有 [deploy/backend/zhush-server/Dockerfile](file:///D:/zhush/project/back-boot/zhush-boot4-parent/deploy/backend/zhush-server/Dockerfile) 的 `WORKDIR /zhush-server` 推断，容器里这个相对值会解析成 `/zhush-server/.agentscope/workspace`（**此路径本身尚未实机确认，见 §16.8 第一条**）。[deploy/backend/docker-compose.yaml](file:///D:/zhush/project/back-boot/zhush-boot4-parent/deploy/backend/docker-compose.yaml) 已按这个推断给出注释形态的挂载项 `./agentscope-workspace:/zhush-server/.agentscope/workspace` 与三个 `PREVIEW_ANSWER_FILE_*` env——放开挂载即可持久化，配置键不必改；不放开则容器重建后旧产物一律「文件不存在」。
+
+### 16.7 已知限制（不是 bug，写清楚免得下次重新发现）
+
+- **harness 只按 userId 分目录，不带 userType**：admin 的 id `1` 与 member 的 id `1` 共用 `workspace/1/`。本接口挂在管理端权限点下、且包含性校验用的是调用者自己的 id，所以「串号」的后果只是——要么正常，要么在自己分区里找不到而报「文件不存在」，不存在越权读取；但正文引用他人分区的文件同样点不开。
+- 登记后的产物是一次性快照：工作区里同名文件后续被覆盖，`infra_file` 里仍是点击那一刻的字节。
+- 正文匹配只认**带分隔符且带扩展名**的路径片段。裸文件名 `README.md`、以及 `example.com/a.png` 这类域名形态都不染成可点击项——宁可漏染，不可把正文里任何带点的词变成按钮。
+- 没有下载链接形态的兜底：登记失败即提示，不提供「把路径复制给我」之类替代动作。
+
+### 16.8 待实机验证清单
+
+本章代码只过了编译与静态检查，**没有跑过一次真实点击**。
+
+- [ ] **工作区存在性（本章最大未知）**：`workspaceRoot()` 打出的 warn 是否出现；dev 启动时进程 `user.dir` 是否就是 IDE 的工作目录。
+- [ ] **截图案例**：三个 Logo SVG 点击后是否真出图，`<img>` 渲染带 `CSP: sandbox` 响应头的 `.svg` 是否被浏览器拦（预期不拦，但这条要实测）。
+- [ ] **幂等**：同一文件点两次，`infra_file` 只多一行、`attachments` 只多一项。
+- [ ] **回填**：刷新会话后该产物以附件卡片形式出现在原消息上（说明 `appendAttachment` 生效），且第二次点击走复用分支不重复上传。
+- [ ] **越权**：拿他人 `sessionId` + 自己的合法路径调用 → `SESSION_FORBIDDEN`；拿自己的 `sessionId` + `workspace/<他人id>/x.png` → `ANSWER_FILE_NOT_FOUND`（不得泄露存在性）。
+- [ ] **SSRF/穿越**：`http://127.0.0.1:8080/x`、`../../../../etc/passwd`、`D:/windows/win.ini`、超长串，全部 `1003407`，且日志里不出现完整外部地址。
+- [ ] **旧格式**：正文引用 `.doc` 登记成功 → `office-converter=none` 时 `preview-meta` 判 `unsupported`（可下载），升甲-1/甲-2 后同一 fileId 直接可预览，**无需重新登记**。
+- [ ] **关闭开关**：`answer-file-enabled=false` → 前端提示文案正确，对话与既有附件预览不受影响。
+- [ ] **流式期间**：生成中不出现半截路径被染色的可点击项（`status === 'streaming'` 分支）。
+
+### 16.9 落地后修复记录（2026-10-22，同日）
+
+首版 `linkifyBodyFiles()` 有一个致命缺陷，症状是**历史会话打开后 AI 回复整条空白**、控制台报 `TypeError: Cannot read properties of undefined (reading 'matchAll')`：
+
+```js
+const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+let node = walker.currentNode;   // ← 错：起点是 root 这个 Element，不是第一个文本节点
+```
+
+`createTreeWalker` 的 `currentNode` 初始化为**根节点自身**，`whatToShow` 只过滤 `nextNode()` 的返回值、**不过滤起点**。于是第一次循环把包裹用的 `<div>` 当文本节点收进 `targets`，`div.data` 是 `undefined`，`wrapRefs(doc, undefined)` 在 `text.matchAll(...)` 处抛错。守卫 `!parent.closest('a,pre,button')` 对 div 恰好成立，所以**任何含 `.` 的回复都必崩**——不是偶发，是 100%。TS 没拦住是因为 `node as Text` 这个断言替运行时撒了谎。
+
+修法是把起点改成 `walker.nextNode()`（一行）。同时补了两个附带项：
+
+| 项 | 内容 |
+|---|---|
+| 域名误染 | `example.com/a.png` 这类「host/路径」形态原本会被当成工作区相对路径染成可点击，点了只能拿到「找不到」——正是 16.7 承诺要避免的。新增 `isDomainLike()`：非末段出现 `[^.]\.[A-Za-z]{2,}$` 即判为 host 跳过；点号必须在中间，所以工作区的 `.agentscope/` 隐藏目录不受影响 |
+| 装饰吃正文 | 见 16.4 第 4 条的 try/catch |
+| 回归用例 | 新增 `modules/preview/__tests__/body-files.test.ts`（8 例，`pnpm exec vitest run --dom <file>`），首版跑出与用户控制台**完全同名同点位**的报错，修后全绿。这是 `web-antdv-next` 下第一个单测 |
+
+**这次踩坑给「待实机」提了个醒**：本章的静态验证（编译 + typecheck + lint + build）一项都没能发现它——断言骗过了类型检查，构建不做运行时求值。**只有真点一次才会暴露**，16.8 的第一条不是走过场。
+
+---
+
+> 下一步：① 执行 V7 定档（四条命令）——**这是启用阶段二唯一的判断题**，两条甲路线的代码都已就绪，默认 `office-converter=none`；② 定档 B 走甲-1（按 §14.3 改配置 + `WITH_LIBREOFFICE=true` 重新构建镜像，勾 §14.4），定档 A 且确有 ofd/CAD/压缩包需求才走甲-2（起 `deploy/kkfileview` + 核对 §15.5，注意 S10 的原始口径在这条路线上做不到）；③ 阶段三（签名直链 S2、水印、门面复用到文件管理/公告）不依赖档位；④ 第十六章只做了静态验证，勾掉 §16.8 之前不要当作已交付能力对外说明。
 

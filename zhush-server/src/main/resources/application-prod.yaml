@@ -219,6 +219,10 @@ zhush:
     # base-url: /preview                    # 甲-2：对外预览前缀（与 nginx location /preview 一致）
     # source-base-url:                      # 甲-2：容器回源用的绝对前缀，FILE_DOMAIN 为相对前缀时必填
     # probe-url: http://172.17.0.1:8012/    # 甲-2：可达性探测，配了才会在服务挂掉时回落「仅下载」
+    # 回答正文引用文件登记：登记开关 / harness 工作区根（相对路径按进程工作目录解析）/ 单文件体积上限（字节）
+    # answer-file-enabled: true
+    # answer-file-workspace-root: .agentscope/workspace
+    # answer-file-max-size: 20971520
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false

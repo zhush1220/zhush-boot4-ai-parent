@@ -55,9 +55,9 @@ public class AgentFilePreviewService {
     /** 只有服务端才拿得动的格式（LibreOffice 覆盖面比前端渲染器宽） */
     private static final Set<String> SERVER_ONLY_EXTS = Set.of("pptx", "odt", "ods", "odp", "rtf");
 
-    /** 未配置 zhush.preview.allowed-extensions 时的默认可预览白名单（方案 §4.2 路线乙覆盖的九类） */
+    /** 未配置 zhush.preview.allowed-extensions 时的默认可预览白名单（方案 §4.2 路线乙覆盖的十类） */
     private static final Set<String> DEFAULT_ALLOWED = Set.of(
-            "png", "jpg", "jpeg", "gif", "webp", "bmp",
+            "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg",
             "mp4", "webm", "mov", "m4v",
             "md", "markdown", "txt", "html", "htm",
             "pdf", "docx", "xlsx", "csv");
@@ -72,6 +72,7 @@ public class AgentFilePreviewService {
             Map.entry("md", "text/markdown"), Map.entry("markdown", "text/markdown"),
             Map.entry("txt", "text/plain"), Map.entry("csv", "text/csv"),
             Map.entry("html", "text/html"), Map.entry("htm", "text/html"),
+            Map.entry("svg", "image/svg+xml"),
             Map.entry("pdf", "application/pdf"),
             Map.entry("doc", "application/msword"),
             Map.entry("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
@@ -79,6 +80,17 @@ public class AgentFilePreviewService {
             Map.entry("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
             Map.entry("ppt", "application/vnd.ms-powerpoint"),
             Map.entry("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"));
+
+    /**
+     * 扩展名 → MIME：预览元信息与「正文引用文件登记」共用这一张表，避免两处口径漂移。
+     *
+     * <p>登记链路拿它决定写进 {@code infra_file.content_type} 的值，下发时浏览器据此判定渲染方式，
+     * 因此 {@code svg} 必须是 {@code image/svg+xml}——否则 {@code <img>} 直链会被当成文本。
+     */
+    static String contentTypeOf(String ext) {
+        return ext == null ? "application/octet-stream"
+                : CONTENT_TYPES.getOrDefault(ext, "application/octet-stream");
+    }
 
     private final AiChatMessageMapper messageMapper;
     private final AiGenerationTaskMapper taskMapper;
@@ -254,8 +266,7 @@ public class AgentFilePreviewService {
         vo.setName(source.name());
         vo.setExt(ext);
         vo.setSize(source.size() == null || source.size() <= 0 ? null : source.size());
-        vo.setContentType(ext == null ? "application/octet-stream"
-                : CONTENT_TYPES.getOrDefault(ext, "application/octet-stream"));
+        vo.setContentType(contentTypeOf(ext));
         vo.setAccessUrl(source.url());
 
         if (!properties.isEnabled()) {
@@ -263,10 +274,6 @@ public class AgentFilePreviewService {
         }
         if (ext == null) {
             return markUnsupported(vo, "无法识别文件格式，请下载查看");
-        }
-        // SVG 可内嵌脚本且与后台同源，两档路线一律不内联（方案 S1）
-        if ("svg".equals(ext)) {
-            return markUnsupported(vo, "出于安全考虑，该格式不提供在线预览");
         }
         Set<String> allowed = properties.getAllowedExtensions() == null
                 ? DEFAULT_ALLOWED : properties.getAllowedExtensions();
@@ -278,7 +285,9 @@ public class AgentFilePreviewService {
         }
         PreviewMode mode = switch (ext) {
             // 图片/视频/文本/HTML/PDF 两档甲都不接管：前端零成本，交给服务端只会多一次回源与排队（§3.3）
-            case "png", "jpg", "jpeg", "gif", "webp", "bmp" -> PreviewMode.INLINE_IMAGE;
+            // SVG 在此只走 <img>：浏览器按「图像文档」渲染，脚本与外链资源一律不执行；
+            // 危险的是把 SVG 内联进 srcdoc/innerHTML（那才需要 S1 的禁令），而 iframe-sandbox 分支只收 html/htm
+            case "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg" -> PreviewMode.INLINE_IMAGE;
             case "mp4", "webm", "mov", "m4v" -> PreviewMode.INLINE_VIDEO;
             case "md", "markdown", "txt" -> PreviewMode.INLINE_TEXT;
             case "html", "htm" -> PreviewMode.IFRAME_SANDBOX;

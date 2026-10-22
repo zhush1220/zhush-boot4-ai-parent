@@ -79,5 +79,11 @@
             <artifactId>ojdbc11</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>com.zhush</groupId>
+            <artifactId>zhush-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

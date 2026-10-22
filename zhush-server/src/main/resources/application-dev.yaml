@@ -206,6 +206,10 @@ zhush:
     # base-url: /preview                    # 需 vite 把 /preview 代理到 kkFileView，且容器侧 KK_BASE_URL 指回 dev 源
     # source-base-url:                      # 仅产物地址为相对前缀（docker 的 FILE_DOMAIN=/api/files/）时才需要
     # probe-url: http://localhost:8012/     # 配了才会在服务不可达时回落「仅下载」，不配只能由前端 iframe 自己报错
+    # 回答正文引用文件登记（把 AI 写在正文里的本地路径升格为可预览产物）
+    # answer-file-enabled: true                        # 关掉后前端点击提示「请下载后查看」
+    # answer-file-workspace-root: .agentscope/workspace # harness 工作区根，相对路径按进程工作目录解析，需与 AgentScope 实际写入的根一致
+    # answer-file-max-size: 20971520                   # 单个源文件体积上限（字节），超出直接拒绝登记
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false

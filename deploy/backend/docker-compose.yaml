@@ -41,6 +41,12 @@ services:
       # PREVIEW_SOURCE_BASE_URL: http://172.17.0.1:9199/api/files/
       # 可达性探测地址：配了才会在服务挂掉时回落「仅下载」，不配则只能由前端 iframe 自己报错
       # PREVIEW_PROBE_URL: http://172.17.0.1:8012/
+      # 回答正文引用文件登记（方案第十六章）。默认相对路径按 WORKDIR /zhush-server 解析，
+      # 即容器里的 harness 工作区是 /zhush-server/.agentscope/workspace——它在镜像可写层，重建即丢。
+      # 要留存并在重启后仍可预览，放开下方 volumes 里的 agentscope-workspace 挂载即可，这个键无需改。
+      # PREVIEW_ANSWER_FILE_ENABLED: true
+      # PREVIEW_ANSWER_FILE_WORKSPACE_ROOT: .agentscope/workspace
+      # PREVIEW_ANSWER_FILE_MAX_SIZE: 20971520
       # 本地存储根目录
       FILE_BASE_PATH: /data/upload
       # 文件访问 URL 前缀（后端 context-path=/api，静态资源实际暴露在 /api/files/）
@@ -59,5 +65,7 @@ services:
       - ./upload:/data/upload
       # 转换产物缓存：刻意与存储根分开，存储根经免鉴权的 /api/files/** 直出
       - ./preview-cache:/data/preview-cache
+      # harness 工作区持久化（正文引用文件预览用，见方案第十六章）；不挂则容器重建后旧产物一律「文件不存在」
+      # - ./agentscope-workspace:/zhush-server/.agentscope/workspace
       - /usr/share/fonts:/usr/share/fonts
       - /app/skywalking-agent/:/app/skywalking-agent/

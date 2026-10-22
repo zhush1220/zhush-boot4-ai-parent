@@ -2,7 +2,10 @@ package com.zhush.ai.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
+import com.zhush.ai.param.AgentFileResolveParam;
 import com.zhush.ai.preview.AgentFilePreviewService;
+import com.zhush.ai.preview.AnswerFileArtifactService;
+import com.zhush.ai.vo.AnswerFileVO;
 import com.zhush.ai.vo.FilePreviewMetaVO;
 import com.zhush.common.constant.CommonConstant;
 import com.zhush.common.response.Result;
@@ -11,6 +14,7 @@ import com.zhush.web.operatelog.enums.OperateTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
@@ -21,6 +25,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,7 +44,10 @@ import static com.zhush.common.exception.ServiceExceptionUtil.exception;
  * 前端凭 {@code previewMode} 选渲染器。路线甲多一条 {@code preview-content}：转换产物落在
  * {@code /api/files/**} 之外，必须由本接口带归属校验下发。
  *
- * <p>两个接口都不接受任意 URL，只认 {@code fileId}，从根上堵住预览侧 SSRF（方案 S6）。
+ * <p>{@code preview-meta} 与 {@code preview-content} 都不接受任意 URL，只认 {@code fileId}，
+ * 从根上堵住预览侧 SSRF（方案 S6）。{@code answer-file/resolve} 是唯一的例外入口，但它也不收 URL：
+ * 只接受工作区相对路径，且强制解析到<b>调用者自己</b>的工作区分区内，见
+ * {@link AnswerFileArtifactService} 的三条安全口径。
  *
  * @author zhush
  */
@@ -48,9 +57,12 @@ import static com.zhush.common.exception.ServiceExceptionUtil.exception;
 public class AgentFilePreviewController {
 
     private final AgentFilePreviewService previewService;
+    private final AnswerFileArtifactService answerFileService;
 
-    public AgentFilePreviewController(AgentFilePreviewService previewService) {
+    public AgentFilePreviewController(AgentFilePreviewService previewService,
+                                      AnswerFileArtifactService answerFileService) {
         this.previewService = previewService;
+        this.answerFileService = answerFileService;
     }
 
     /**
@@ -98,5 +110,20 @@ public class AgentFilePreviewController {
         // 带归属校验的产物字节不做 HTTP 缓存：URL 只含 fileId+sessionId，命中缓存即跳过本接口的归属断言
         headers.setCacheControl(CacheControl.noStore());
         return new ResponseEntity<>(resource, headers, HttpStatus.OK);
+    }
+
+    /**
+     * 登记回答正文引用的文件为可预览产物：智能体工作区里的产物（harness 内置文件能力写的）
+     * 既无 {@code fileId} 也无 URL，凭正文路径按需读出来入库、补写会话附件，之后走同一套预览裁决。
+     *
+     * <p>用 POST 而非 GET：它有副作用（写 {@code infra_file} 与 {@code ai_chat_message.attachments}），
+     * 且引用串可能较长。
+     */
+    @PostMapping("/answer-file/resolve")
+    @Operation(summary = "登记回答正文引用的文件（工作区产物）")
+    @SaCheckPermission(type = CommonConstant.TYPE, mode = SaMode.OR, value = {"ai:assistant", "ai:session:list"})
+    @OperateLog(module = "AI助手", name = "登记回答引用文件", type = OperateTypeEnum.CREATE, recordResult = false)
+    public Result<AnswerFileVO> resolveAnswerFile(@RequestBody @Valid AgentFileResolveParam param) {
+        return Result.success(answerFileService.resolve(param));
     }
 }

@@ -220,6 +220,12 @@ zhush:
     base-url: ${PREVIEW_BASE_URL:/preview}
     source-base-url: ${PREVIEW_SOURCE_BASE_URL:}
     probe-url: ${PREVIEW_PROBE_URL:}
+    # 回答正文引用文件登记。默认与工作区别名相对路径一致（按进程工作目录解析）；
+    # 容器里 .agentscope/workspace 落在镜像临时目录时，需把 harness 工作区挂到持久卷并让这个键指到挂载点，
+    # 否则登记会因「文件不存在」降级为仅提示下载
+    answer-file-enabled: ${PREVIEW_ANSWER_FILE_ENABLED:true}
+    answer-file-workspace-root: ${PREVIEW_ANSWER_FILE_WORKSPACE_ROOT:.agentscope/workspace}
+    answer-file-max-size: ${PREVIEW_ANSWER_FILE_MAX_SIZE:20971520}
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false

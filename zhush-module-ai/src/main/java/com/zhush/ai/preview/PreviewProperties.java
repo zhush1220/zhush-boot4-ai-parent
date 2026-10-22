@@ -17,8 +17,10 @@ import java.util.Set;
  * {@code kkfileview}（甲-2）由外部服务渲染并走 {@code server-iframe}。改这一个值即完成升降档，
  * 前端与接口契约不变；两个实现的条件装配互斥，任何时刻只存在一个。
  *
- * <p>甲-2 的三个键保持扁平（{@code zhush.preview.base-url} / {@code source-base-url} / {@code probe-url}），
- * 与《kkFileView在线预览整合方案.md》§4.1 一致，便于那份蓝本照着改配置。
+ * <p>甲-2 的三个键与「正文文件登记」的三个键都保持扁平（{@code zhush.preview.base-url} /
+ * {@code source-base-url} / {@code probe-url} / {@code answer-file-*}），一是与
+ * 《kkFileView在线预览整合方案.md》§4.1 一致便于照着改配置，二是少一层嵌套就少一处
+ * 「键写错被静默忽略」的排查成本（只有需要成组默认值继承的 {@code convert} 才用嵌套对象）。
  *
  * @author zhush
  */
@@ -67,6 +69,25 @@ public class PreviewProperties {
      * {@code base-url} 写成同源相对前缀时，本进程并不知道浏览器解析出来的那个源，只能把不可达留给前端发现。
      */
     private String probeUrl;
+
+    // ================ 回答正文引用的文件（智能体工作区产物） ================
+
+    /**
+     * 是否允许把「回答正文里提到的工作区文件」就地登记为可预览产物。
+     *
+     * <p>AgentScope harness 的内置文件能力会把产物写进本地工作区（如 {@code brand/zhush-logo.svg}），
+     * 这类文件既不在 {@code infra_file} 也没有 URL，预览链路凭 {@code fileId} 无从下手，只能按需补一次登记。
+     */
+    private boolean answerFileEnabled = true;
+
+    /**
+     * harness 工作区根目录，默认值取自库内 {@code WorkspaceConstants.DEFAULT_WORKSPACE_ROOT}；
+     * 相对路径按进程工作目录解析。容器部署需把该目录挂载进来，否则正文文件一律「找不到」。
+     */
+    private String answerFileWorkspaceRoot = ".agentscope/workspace";
+
+    /** 单个正文文件登记体积上限（字节），默认 20MB：工作区里可能躺着几百 MB 的素材，不该为预览整份读进内存 */
+    private long answerFileMaxSize = 20_971_520L;
 
     /**
      * yaml 里只写 {@code convert:} 而把子项全注释掉时，binder 会把该属性绑成 null，
