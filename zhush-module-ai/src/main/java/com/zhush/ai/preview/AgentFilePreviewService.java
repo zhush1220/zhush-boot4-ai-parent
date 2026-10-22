@@ -57,7 +57,7 @@ public class AgentFilePreviewService {
 
     /** 未配置 zhush.preview.allowed-extensions 时的默认可预览白名单（方案 §4.2 路线乙覆盖的十类） */
     private static final Set<String> DEFAULT_ALLOWED = Set.of(
-            "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg",
+            "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico",
             "mp4", "webm", "mov", "m4v",
             "md", "markdown", "txt", "html", "htm",
             "pdf", "docx", "xlsx", "csv");
@@ -72,7 +72,7 @@ public class AgentFilePreviewService {
             Map.entry("md", "text/markdown"), Map.entry("markdown", "text/markdown"),
             Map.entry("txt", "text/plain"), Map.entry("csv", "text/csv"),
             Map.entry("html", "text/html"), Map.entry("htm", "text/html"),
-            Map.entry("svg", "image/svg+xml"),
+            Map.entry("svg", "image/svg+xml"), Map.entry("ico", "image/x-icon"),
             Map.entry("pdf", "application/pdf"),
             Map.entry("doc", "application/msword"),
             Map.entry("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
@@ -287,7 +287,7 @@ public class AgentFilePreviewService {
             // 图片/视频/文本/HTML/PDF 两档甲都不接管：前端零成本，交给服务端只会多一次回源与排队（§3.3）
             // SVG 在此只走 <img>：浏览器按「图像文档」渲染，脚本与外链资源一律不执行；
             // 危险的是把 SVG 内联进 srcdoc/innerHTML（那才需要 S1 的禁令），而 iframe-sandbox 分支只收 html/htm
-            case "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg" -> PreviewMode.INLINE_IMAGE;
+            case "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "ico" -> PreviewMode.INLINE_IMAGE;
             case "mp4", "webm", "mov", "m4v" -> PreviewMode.INLINE_VIDEO;
             case "md", "markdown", "txt" -> PreviewMode.INLINE_TEXT;
             case "html", "htm" -> PreviewMode.IFRAME_SANDBOX;
