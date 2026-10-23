@@ -756,7 +756,7 @@ V1（206 透传）、V3（docx 版式还原度）、V4（xlsx 合并单元格/�
 - [ ] **截图案例**：三个 Logo SVG 点击后是否真出图，`<img>` 渲染带 `CSP: sandbox` 响应头的 `.svg` 是否被浏览器拦（预期不拦，但这条要实测）。染与请求已证实可通（16.10 的报错就是点击产生的），差的只是渲染结果。
 - [ ] **省写路径**：正文写成 `…/brand/png/icon-16.png` 时点得开（16.11 的修法），刷新后仍能点开。
 - [ ] **幂等**：同一文件点两次，`infra_file` 只多一行、`attachments` 只多一项。
-- [ ] **回填**：刷新会话后该产物以附件卡片形式出现在原消息上（说明 `appendAttachment` 生效），且第二次点击走复用分支不重复上传。
+- [ ] **回填**：刷新会话后该产物以附件卡片形式出现在原消息上（说明 `appendAttachment` 生效），且第二次点击走复用分支不重复上传。另核一次「不刷新也立刻出现卡片」——这条走的是前端 `appendAttachment` 事件 → 页面改 `messages`（见 16.12），点一次就能同时验完两半。
 - [ ] **越权**：拿他人 `sessionId` + 自己的合法路径调用 → `SESSION_FORBIDDEN`；拿自己的 `sessionId` + `workspace/<他人id>/x.png` → `ANSWER_FILE_NOT_FOUND`（不得泄露存在性）。
 - [ ] **SSRF/穿越**：`http://127.0.0.1:8080/x`、`../../../../etc/passwd`、`…/../../etc/passwd`（借省略号绕过绝对路径判死）、`D:/windows/win.ini`、超长串，全部 `1003407`，且日志里不出现完整外部地址。
 - [ ] **旧格式**：正文引用 `.doc` 登记成功 → `office-converter=none` 时 `preview-meta` 判 `unsupported`（可下载），升甲-1/甲-2 后同一 fileId 直接可预览，**无需重新登记**。
@@ -821,7 +821,102 @@ let node = walker.currentNode;   // ← 错：起点是 root 这个 Element，�
 
 **这一轮的教训与上一轮同类**：前两轮的修复把「路径」当成要么绝对、要么相对来枚举，漏了**第三种：绝对路径的截断形态**。LLM 输出的路径写法不是有限集，判据应当是「剥掉一切不该参与定位的东西（盘符、工作区前缀、分区段、省略前缀），只留分区内相对尾巴」，而不是穷举见过的写法。
 
+### 16.12 提交门禁拦下的第四处：气泡直接写了 props.message
+
+`pnpm exec eslint` 在 pre-commit 上报了本章唯一一处**架构**违规（不是运行时 bug）：
+
+```
+message-bubble.vue:157  error  Unexpected mutation of "message" prop  vue/no-mutating-props
+```
+
+`rememberAttachment()` 为了让登记成功的产物立刻出现在气泡的附件区，直接写了 `props.message.attachments`。写不动的道理不必重申，但这里有两个容易看错的点：
+
+- **规则只报了赋值那一行，没报 `list.push(att)`**。同一函数里 `const list = props.message.attachments` 之后的 push 同样是改父级状态，只是经由局部别名，规则追踪不到。所以「把 157 行改掉」并不等于违规清除——必须整个函数搬走。
+- **两处 `v-html` 是 warning 且早已存在**（HEAD 里 `renderedContent` 就在用），而 hook 的命令是 `eslint --fix {staged_files}`、没有 `--max-warnings`，因此不阻塞提交。不要为了绿灯去加 `eslint-disable`：正文是 `DOMPurify.sanitize()` 之后的 markdown，这两处是有意为之。
+
+改法对齐仓库自己的写法：`use-chat-stream.ts` 里产物追加就是**由持有 `messages` 的一方**做的（`ai.attachments = ai.attachments ?? []` 再 push），气泡只上抛事件。于是新增 `appendAttachment` 事件 → `index.vue` 的 `onAppendAttachment(message, att)` 按文件名去重后补进列表；去重口径与后端 `findRegistered`（同会话同名即复用）一致，刷新历史时整列由后端 `attachments` 重建，不会重复。
+
+顺带被规则教育了一次事件命名：`vue/custom-event-name-casing` 要求**声明与 `$emit` 用 camelCase**，模板监听仍可写 kebab（`@append-attachment`）。这条不是风格洁癖——Vue 运行时先查 `toHandlerKey(event)`、再查 `toHandlerKey(camelize(event))`（runtime-core `emit()`），而模板编译器把 `@append-attachment` 编译成 `onAppendAttachment`，两边正好接上；反之若声明成 `'append-attachment'` 会直接报错。两半分别用装机包验过：`@vue/compiler-dom` 编译该模板产出的键就是 `onAppendAttachment`，runtime-core 源码里的查找顺序如上。
+
+验证：`eslint`（0 error，2 warning 同上）、`oxlint` 0/0、`vue-tsc` 通过、`body-files` 单测 8/8、`pnpm -F @vben/web-antdv-next build` 成功。**组件的点击-上抛-补列表链路仍未在浏览器里跑过**，这条进 16.8 的「回填」项。
+
+## 第十七章 回答正文不得暴露服务器绝对路径（2026-10-23）
+
+第十六章把「正文里提到的文件能点开」做通了，代价是把另一个问题摆到了明面上：为了让引用可点，正文里原样展示了 `D:\zhush\project\back-boot\zhush-boot4-parent\.agentscope\workspace\1\brand\png\`。截图里那张「交付文件（绝对路径）」表格，等于把**驱动器号、部署目录、工作区布局、userId 分区**一起发给了浏览器。本章收这个口。
+
+### 17.1 泄漏面取证：源头不在我们代码里
+
+绝对路径不是我们拼出来的，是 **harness 内置文件工具的返回值**：`io.agentscope.core.tool.file.WriteFileTool` 与 `FileToolUtils.validatePath` 都走 `Path.toAbsolutePath()`，并把绝对路径写进结果文本（jar 里可直接读到 `WriteFileTool initialized with base directory: {}`、`Access denied: The file path '%s' is outside the allowed base directory '%s'`）。模型看到工具返回绝对路径，就照抄进正文——它甚至老实标了列名叫「绝对路径」。
+
+第三方库的返回值改不了（改了就等于 fork 一份 AgentScope），所以只能在**我们拥有的出口**上收。逐个出口查下来的结果：
+
+| 出口 | 是否泄漏 | 处置 |
+|---|---|---|
+| 回答正文 `ai_chat_message.content` | 是，且**永久留存**：`saveMessage` 原文入库、`toMessageVO` 原文回读 | 落库前打码 + 读取时打码 |
+| SSE `TOOL_CALLED.arguments` / `TOOL_RESULT.result` | 是，`tool-call-card.vue` 把入参与结果整段 `<code>` 原样渲染，`write_file` 的 `path` 就在里面 | 事件对象下发前打码 |
+| SSE `FINISHED.reply` | 是（整段可读，打码安全） | 同上 |
+| SSE `TEXT_DELTA.delta` | 是，但**不能按片打码**（见 17.3） | 交给前端整段渲染时兜底 |
+| 前端 `data-ref` 与可见文本 | 是，`body-files.ts` 把匹配到的路径同时塞进属性和文本 | 打码在染链接**之前**，DOM 里不留明文 |
+| `AnswerFileVO` / 附件 `url` / 预览 meta | **否**（只有 fileId/name/type/format/size 与相对 `/files/…`） | 不动 |
+| 后端日志 | **否**（`[正文文件]` 系列只打 `relative=`，已是分区内相对路径） | 不动 |
+
+### 17.2 打码口径：只留「认得出文件、露不出目录」那一截
+
+实现是两份纯函数，同一套规则：后端 `com.zhush.ai.preview.PathMaskUtils`、前端 `preview/body-files.ts` 的 `maskLocalPaths`。先按字符类切出路径形态 token（中文句读也断句，句末点号剥下来判完再贴回去），再按优先级决定保留哪一截：
+
+| 命中 | 保留 | 例 |
+|---|---|---|
+| 段序列里出现 `agentscope` + `workspace` | 分区段之后的**完整相对尾段** | `D:\…\.agentscope\workspace\1\brand\png\icon-16.png` → `…/brand/png/icon-16.png` |
+| 以已知服务器根开头（`user.dir`、`java.io.tmpdir`） | 根之后的完整尾段 | `<user.dir>\sql\14_notice.sql` → `…/sql/14_notice.sql` |
+| Windows 绝对形态（盘符开头，或以两个反斜杠开头的 UNC）且不属上两类 | 末两级 | `C:\Users\alice\Desktop\报表.xlsx` → `…/Desktop/报表.xlsx` |
+| 其余（相对路径、POSIX 绝对路径、URL、域名） | **原样不动** | `/etc/passwd`、`example.com/brand/x.svg`、`/files/2026/a.png` |
+
+三条容易踩的实现细节，都写成了断言：
+
+- **Windows 形态必须在反斜杠归一化之前判**。归一之后 UNC（`\\server\share`）与「协议相对 URL」（`//cdn.example.com/a/b.png`）都长成 `//` 开头，只有反斜杠分得开；先归一再判就把 markdown 里的合法图片链接打成了 `…/a/b.png`。
+- **POSIX 绝对路径不打码**是选择不是遗漏：`/etc/passwd`、`/usr/lib/jvm` 是技术回答的真内容，误伤一条真回答比漏一条路径更糟。容器里真属于本机的 POSIX 路径由 `java.io.tmpdir`、`user.dir` 两条根兜住。
+- **分区段（`workspace/1` 里的 `1`）跟着前缀一起丢**。它与 16.10 那个「分区拼两次」的坑同源：定位时后端按调用者自己的 userId 重建，留着既没意义又等于让引用方指定分区。
+
+### 17.3 为什么打码点有四个，而增量流不在服务端打
+
+`AgentChatService` 三处 + 前端一处，各自解决不同的东西：
+
+| 位置 | 解决什么 | 少了它会怎样 |
+|---|---|---|
+| `saveMessage`（仅 `role=assistant`） | 新行不再入库明文 | 数据库、导出、以后任何新读接口都得各自记得打码 |
+| `toMessageVO`（读时） | 上线前落的历史行**无需数据迁移**即干净；打码幂等，重复打无副作用 | 老会话一打开照样满屏 `D:\` |
+| `maskForClient`（SSE 事件） | 工具卡片与 `FINISHED` 整段文本 | 正文干净了，点开「工具调用」折叠面板又漏一遍 |
+| `linkifyBodyFiles`（渲染期） | **流式增量**：分片会把一条路径劈成两半 | 边说边看时明文可见，说完刷新才变干净 |
+
+服务端**不**按 `TEXT_DELTA` 打码，是这章唯一一处「明知有明文却不收」的决定：增量按 token 切，`D:\zhush\proj` + `ect\…` 两片各自匹配，第一片打码成 `…/proj`、第二片匹配不出形态原样放行——结果既漏（拼回可读）又坏（正文变乱码）。整段文本才判得准，而整段文本只有前端渲染时拿得到。
+
+**残留风险，明确接受**：流式期间原始增量仍在网络响应里，用户开 devtools 能看到自己会话产生过的路径。这条路径的归属校验本来就按调用者 userId 重建分区（16.3），拿到明文也越不了权；要连这个都堵，得在服务端做「扣住尾部疑似半条路径」的缓冲状态机，代价是首字延迟与实现复杂度，不值。
+
+### 17.4 打码不能打断预览
+
+这是本章与第十六章的咬合点：`…/brand/png/icon-16.png` 恰好就是 16.11 里模型自己省写出来的那种形态，而 `normalize()` 的省略段规则认它。所以打码后的文本**仍然被前端染成可点击**、点击后**仍然还原成分区内相对路径**。顺序上打码排在 `wrapRefs` 之前，`data-ref` 与可见文本因此都是打码形态，DOM 里不存在第二个明文副本。
+
+单测把这条链直接钉住（`PathMaskUtilsTest.maskedReferenceStillResolvesThroughNormalize`）：拿打码结果喂 `AnswerFileArtifactService.normalize()`，断言得到 `brand/png/icon-16.png`。前端侧同样断言 `data-ref="…/brand/zhush-logo.svg"` 且整段 HTML `not.toContain('D:\zhush')`。
+
+只留末两级的兜底形态（别人机器上的路径）本来就定位不到，不存在回退损失。
+
+### 17.5 刻意不做的事
+
+| 不做 | 理由 |
+|---|---|
+| 改智能体 sysPrompt 命令模型「不要输出绝对路径」 | 提示词是数据不是代码（`agent_definition` 表，管理端可改），约束不可靠也测不出来；而且模型报路径给用户本来就是合理诉求，问题在**我们不该把服务器物理路径给它**。真要做，作为 17.2 之后的体验优化（少一层 `…/`）而不是安全手段 |
+| 一次性 SQL 洗历史 `content` | 破坏性写、不可回滚；读时打码已经让界面干净。要洗也得等实机确认口径无误再单独出脚本 |
+| 给用户消息打码 | 用户自己贴进来的路径是他的原话，改它等于篡改输入。落库与读取两处都按 `role=assistant` 判定 |
+| 给打码加配置开关 | 安全默认值不该可关（与预览沙箱不给 `allow-same-origin` 同一口径）；真要放宽等于把漏洞做成 feature |
+| 在 `FileArtifact` 里补 path 字段 | 产物一律走 `infra_file` + 相对 `/files/…`，本来就没有本机路径可露 |
+
+### 17.6 验证
+
+- 后端：`mvn -o -pl zhush-module-ai test` **60 例全绿**（新增 `PathMaskUtilsTest` 7 例，其中一例直接拿 `AnswerFileArtifactService.normalize()` 验打码结果仍可解析；原有 `AnswerFileArtifactServiceTest` 8 例未受影响）。
+- 前端：`vitest --dom body-files.test.ts` **12 例全绿**（原 8 例 + 打码 4 例，其中「工作区绝对路径照染」一例改成断言 `data-ref` 已是打码形态）；`oxlint` 0/0、`eslint` 静默、`vue-tsc` 通过、`pnpm -F @vben/web-antdv-next build` 成功。
+- **未在浏览器里核对**：流式过程中是否真的看不到明文、历史会话打开后打码是否生效、打码后点击预览是否仍能登记——这三条与 §16.8 的实机清单一起做，需要重启后端（16.11 的省略号修复与本章都改了服务端代码）。
+
 ---
 
-> 下一步：① 执行 V7 定档（四条命令）——**这是启用阶段二唯一的判断题**，两条甲路线的代码都已就绪，默认 `office-converter=none`；② 定档 B 走甲-1（按 §14.3 改配置 + `WITH_LIBREOFFICE=true` 重新构建镜像，勾 §14.4），定档 A 且确有 ofd/CAD/压缩包需求才走甲-2（起 `deploy/kkfileview` + 核对 §15.5，注意 S10 的原始口径在这条路线上做不到）；③ 阶段三（签名直链 S2、水印、门面复用到文件管理/公告）不依赖档位；④ 第十六章已在 dev 真机点过三次（三个缺口见 16.9–16.11），但**渲染效果与幂等/回填仍未核对**，勾掉 §16.8 剩余条目之前不要当作已交付能力对外说明。
+> 下一步：① 执行 V7 定档（四条命令）——**这是启用阶段二唯一的判断题**，两条甲路线的代码都已就绪，默认 `office-converter=none`；② 定档 B 走甲-1（按 §14.3 改配置 + `WITH_LIBREOFFICE=true` 重新构建镜像，勾 §14.4），定档 A 且确有 ofd/CAD/压缩包需求才走甲-2（起 `deploy/kkfileview` + 核对 §15.5，注意 S10 的原始口径在这条路线上做不到）；③ 阶段三（签名直链 S2、水印、门面复用到文件管理/公告）不依赖档位；④ 第十六章已在 dev 真机点过三次（三个缺口见 16.9–16.11），但**渲染效果与幂等/回填仍未核对**，勾掉 §16.8 剩余条目之前不要当作已交付能力对外说明；⑤ 第十七章的打码只过了单测与构建，**流式明文、历史回读、打码后点击登记**三条待实机（17.6），且需重启后端才生效——在此之前，「界面不暴露服务器路径」这条安全承诺按未验证处理。
 
