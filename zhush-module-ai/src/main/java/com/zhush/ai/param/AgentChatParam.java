@@ -36,4 +36,11 @@ public class AgentChatParam implements Serializable {
      */
     @Size(max = 16, message = "任务类型长度超出限制")
     private String taskType;
+
+    /**
+     * 本轮是否允许联网搜索（按轮次生效）：为空时取
+     * {@code zhush.agentscope.web-search.session-default-enabled}。
+     * 前端「联网搜索」开关显式传值，使关闭开关的用户能确定这一轮不出网。
+     */
+    private Boolean webSearchEnabled;
 }

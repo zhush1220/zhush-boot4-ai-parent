@@ -156,7 +156,8 @@ public class AgentChatService {
         final String quotaUserType = ctx.getUserType();
         // 产物收集：从生成类工具结果事件提取 artifact，随 assistant 消息落 attachments
         final List<String> artifacts = Collections.synchronizedList(new ArrayList<>());
-        return agentTemplate.stream(param.getAgentName(), finalSessionId, param.getMessage())
+        return agentTemplate.stream(param.getAgentName(), finalSessionId, param.getMessage(),
+                        param.getWebSearchEnabled())
                 .doOnNext(event -> {
                     if (event instanceof AgentToolResultEvent toolResult) {
                         collectArtifact(artifacts, toolResult);

@@ -31,6 +31,7 @@ import java.util.Map;
  *     quota: { enabled: true, rate-per-minute: 10, max-active-sessions: 200 }
  *     generation: { enabled: false, image: { timeout-minutes: 5 }, video: { timeout-minutes: 30 } }
  *     jev: { enabled: false, api-key: ${TYPESAFE_API_KEY:}, timeout: 2s, fail-open: true }  # Jev 判断模型
+ *     web-search: { enabled: false, provider: iqs, api-key: ${WEB_SEARCH_API_KEY:} }  # 联网搜索
  * </pre>
  *
  * @author zhush
@@ -129,6 +130,12 @@ public class AgentScopeProperties {
      * 总开关默认关：不装配 JevClient，所有依赖方经 ObjectProvider 缺席降级，行为与现状一致。
      */
     private Jev jev = new Jev();
+
+    /**
+     * 联网搜索（智能搜索）。总开关默认关：不装配 Provider，{@code web_search}/{@code web_fetch}
+     * 工具降级为「能力未开启」说明，与 {@link #jev} 同构。
+     */
+    private WebSearch webSearch = new WebSearch();
 
     /**
      * 模型供应商配置项
@@ -491,5 +498,190 @@ public class AgentScopeProperties {
          * 触发复用的最大消息长度（超长消息自身意图明确，不复用上轮）
          */
         private int maxMessageLength = 16;
+    }
+
+    /**
+     * 联网搜索配置（前缀 {@code zhush.agentscope.web-search}）。
+     *
+     * <p>关联方案《AI智能助手联网搜索方案》6.1：出网能力默认关闭，开启需同时满足
+     * {@code enabled=true} 与密钥可得（配置项或环境变量），与 {@link Jev} 的「无 Key 不装配、
+     * 能力自动降级」同构；失败一律 fail-open，不得因联网不可用阻断对话主链路。
+     */
+    @Data
+    public static class WebSearch {
+
+        /**
+         * 总开关（默认关）：关闭时不装配 Provider，搜索/抓取工具返回能力未开启说明
+         */
+        private boolean enabled = false;
+
+        /**
+         * 供应商标识：iqs / tavily / mock（生产默认 IQS，与既有阿里云账号体系统一）
+         */
+        private String provider = "iqs";
+
+        /**
+         * API Key（建议环境变量 WEB_SEARCH_API_KEY 注入，禁止硬编码/落日志）
+         */
+        private String apiKey;
+
+        /**
+         * 服务地址覆盖（缺省用供应商官方端点，联调或自建代理时改写）
+         */
+        private String baseUrl;
+
+        /**
+         * IQS 引擎模式（其他供应商忽略）：LiteAdvanced 为轻量检索档
+         */
+        private String engineType = "LiteAdvanced";
+
+        /**
+         * 请求未显式携带联网开关时的默认取值：true 表示智能体可自主联网
+         */
+        private boolean sessionDefaultEnabled = true;
+
+        /** 搜索（L1）参数 */
+        private Search search = new Search();
+
+        /** 抓取（L2）参数 */
+        private Fetch fetch = new Fetch();
+
+        /** 调用次数配额 */
+        private CallQuota quota = new CallQuota();
+
+        /**
+         * Harness 内置工具收敛开关
+         */
+        private BuiltinTools builtinTools = new BuiltinTools();
+
+        /**
+         * 内置工具收敛：{@code web_search}/{@code web_fetch}/{@code execute}/文件工具由
+         * {@code HarnessAgent.Builder} 追加，绕过项目的 {@code ReflectiveAgentTool} 审批门与用量口径，
+         * 故默认全部关闭，把「能出网、能执行命令」从隐式默认变成显式决策。
+         */
+        @Data
+        public static class BuiltinTools {
+
+            /**
+             * 关闭内置 web_search/web_fetch（默认关）
+             */
+            private boolean disableWeb = true;
+
+            /**
+             * 关闭内置 execute（shell 命令执行，默认关）
+             */
+            private boolean disableShell = true;
+
+            /**
+             * 关闭内置文件系统工具（默认关）
+             */
+            private boolean disableFilesystem = true;
+        }
+
+        /**
+         * 搜索参数：超时取保守值（内置实现 30s 卡在用户中断链路上等不起）
+         */
+        @Data
+        public static class Search {
+
+            /**
+             * 单次搜索请求超时
+             */
+            private Duration timeout = Duration.ofSeconds(8);
+
+            /**
+             * 默认返回条数
+             */
+            private int maxResults = 5;
+
+            /**
+             * 返回条数上限（成本与上下文体积夹紧）
+             */
+            private int maxResultsLimit = 10;
+
+            /**
+             * 同 query 结果缓存时长（命中不计配额，省供应商额度）
+             */
+            private Duration cacheTtl = Duration.ofMinutes(30);
+
+            /**
+             * 进程内缓存条数上限（超出按 LRU 淘汰；缓存只做成本去重，不追求跨实例一致）
+             */
+            private int cacheMaxEntries = 500;
+
+            /**
+             * 单条摘要回喂模型的字符上限（超出截断，防撑爆上下文）
+             */
+            private int snippetMaxChars = 500;
+        }
+
+        /**
+         * 抓取参数（SSRF 面所在，约束不可放松）
+         */
+        @Data
+        public static class Fetch {
+
+            /**
+             * 抓取子开关：可只保留搜索、关闭抓取
+             */
+            private boolean enabled = true;
+
+            /**
+             * 单次抓取超时（含全部重定向跳）
+             */
+            private Duration timeout = Duration.ofSeconds(10);
+
+            /**
+             * 响应体字节上限（超出即中断读取）
+             */
+            private int maxBytes = 1024 * 1024;
+
+            /**
+             * 正文回喂模型的字符上限（内置实现是 20000，偏大）
+             */
+            private int maxChars = 8000;
+
+            /**
+             * 是否跟随重定向（逐跳重新做 SSRF 校验，否则 302 到内网即绕过）
+             */
+            private boolean followRedirects = true;
+
+            /**
+             * 最大重定向跳数
+             */
+            private int maxRedirects = 3;
+
+            /**
+             * 是否允许访问内网/回环/链路本地地址（默认禁止；仅自建 SearXNG 等内网服务时开启）
+             */
+            private boolean allowPrivateNetwork = false;
+
+            /**
+             * 域名黑名单（后缀匹配，命中即拒）
+             */
+            private List<String> domainDenyList = List.of();
+
+            /**
+             * 域名白名单（非空时转为白名单模式，未列入即拒）
+             */
+            private List<String> domainAllowList = List.of();
+        }
+
+        /**
+         * 调用次数配额（供应商按次计费，ReAct 循环内 maxSteps 即为单轮上限，需外加闸门）
+         */
+        @Data
+        public static class CallQuota {
+
+            /**
+             * 单会话联网调用上限（0 为不限制）
+             */
+            private int callsPerSession = 20;
+
+            /**
+             * 单用户每日联网调用上限（0 为不限制）
+             */
+            private int callsPerDayPerUser = 200;
+        }
     }
 }

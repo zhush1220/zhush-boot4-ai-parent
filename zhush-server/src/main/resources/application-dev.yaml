@@ -291,6 +291,36 @@ zhush:
       sticky:                     # 同会话跟进消息复用上轮分类（降决策量）
         ttl: 5m
         max-message-length: 16
+    web-search: # 联网搜索（方案《AI智能助手联网搜索方案》6.1）：出网能力默认关闭，开启需 enabled=true 且密钥可得
+      enabled: ${WEB_SEARCH_ENABLED:false}
+      provider: ${WEB_SEARCH_PROVIDER:mock} # dev 默认 mock：本地无密钥即可验证工具注册、调用与回包形态
+      api-key: ${WEB_SEARCH_API_KEY:} # 仅环境变量注入，禁止写入仓库/落日志
+      engine-type: LiteAdvanced # IQS 引擎档位（provider=iqs 时生效）
+      session-default-enabled: true # 请求未带联网开关时的默认值：true 表示模型可按意图自主联网
+      search: # L1 检索
+        timeout: 8s # 官方内置实现默认 30s，卡在用户中断链路上等不起
+        max-results: 5
+        max-results-limit: 10 # 模型可请求的条数上限
+        cache-ttl: 30m
+        cache-max-entries: 500
+        snippet-max-chars: 500
+      fetch: # L2 抓取
+        enabled: true # 子开关：总开关 enabled=false 时不生效
+        timeout: 10s
+        max-bytes: 1048576 # 单次下载 1MB 封顶，防大文件/无限流打满堆
+        max-chars: 8000
+        follow-redirects: true # 重定向逐跳重过 SSRF 闸门，非盲跟
+        max-redirects: 3
+        allow-private-network: false # 容器 host 网络 + privileged，内网/元数据地址一律拒绝
+        domain-deny-list: []
+        domain-allow-list: [] # 非空即白名单模式，未列入域名一律拒绝
+      quota: # ReAct 单轮最多可打出 max-steps 次搜索，配额是必需的
+        calls-per-session: 20
+        calls-per-day-per-user: 200
+      builtin-tools: # Harness 内置出网/命令/文件工具收敛（P0）：改任一项即扩大攻击面
+        disable-web: true
+        disable-shell: true
+        disable-filesystem: true
   # 统一支付底座（zhush-module-pay）：微信支付渠道
   # 默认全部关闭：未启用时不装配任何支付 Bean；启用 V3/V2 前必须配齐凭证，缺失将启动失败（fail-fast）
   # 凭证纪律：全部经环境变量外置，证书走挂载卷，禁止入库/入代码

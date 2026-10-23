@@ -29,11 +29,20 @@ import com.zhush.agentscope.template.DefaultAgentTemplate;
 import com.zhush.agentscope.tool.AgentToolScanner;
 import com.zhush.agentscope.tool.DefaultToolkitRegistry;
 import com.zhush.agentscope.tool.ToolkitRegistry;
+import com.zhush.agentscope.websearch.IqsWebSearchProvider;
+import com.zhush.agentscope.websearch.MockWebSearchProvider;
+import com.zhush.agentscope.websearch.TavilyWebSearchProvider;
+import com.zhush.agentscope.websearch.WebFetchGuard;
+import com.zhush.agentscope.websearch.WebPageFetcher;
+import com.zhush.agentscope.websearch.WebSearchProvider;
+import com.zhush.agentscope.websearch.WebSearchService;
 import com.zhush.redis.core.RedisCache;
 import io.agentscope.core.state.AgentStateStore;
 import io.agentscope.extensions.judge.jev.JevClient;
 import io.agentscope.extensions.redis.state.redisson.RedissonAgentStateStore;
 import org.redisson.api.RedissonClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -47,6 +56,8 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -61,6 +72,8 @@ import java.util.List;
 @EnableConfigurationProperties(AgentScopeProperties.class)
 @ConditionalOnProperty(prefix = "zhush.agentscope", name = "enabled", havingValue = "true")
 public class AgentScopeAutoConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(AgentScopeAutoConfiguration.class);
 
     @Bean
     @ConditionalOnMissingBean
@@ -181,6 +194,70 @@ public class AgentScopeAutoConfiguration {
     @ConditionalOnMissingBean
     public JevClient jevClient(AgentScopeProperties properties) {
         return JevClientFactory.create(properties.getJev());
+    }
+
+    /**
+     * 联网搜索供应商（方案 5.1）：按 {@code provider} 选一个实现装配，未知标识告警后回落 IQS。
+     * 装配守卫见 {@link WebSearchEnabledCondition}——开关关闭或缺密钥时整条联网链路缺席。
+     */
+    @Bean
+    @Conditional(WebSearchEnabledCondition.class)
+    @ConditionalOnMissingBean
+    public WebSearchProvider webSearchProvider(AgentScopeProperties properties, ObjectMapper objectMapper) {
+        AgentScopeProperties.WebSearch web = properties.getWebSearch();
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
+        String code = web.getProvider() == null ? "" : web.getProvider().strip().toLowerCase();
+        if (TavilyWebSearchProvider.CODE.equals(code)) {
+            return new TavilyWebSearchProvider(web, objectMapper, client);
+        }
+        if (MockWebSearchProvider.CODE.equals(code)) {
+            return new MockWebSearchProvider();
+        }
+        if (!IqsWebSearchProvider.CODE.equals(code)) {
+            log.warn("[AgentScope] 未知联网搜索供应商 [{}]，按 IQS 装配", web.getProvider());
+        }
+        return new IqsWebSearchProvider(web, objectMapper, client);
+    }
+
+    /**
+     * 抓取安全闸门（SSRF 防线，方案 6.6）：协议 + 域名白/黑名单 + 解析后 IP 必须为公网地址。
+     */
+    @Bean
+    @Conditional(WebSearchEnabledCondition.class)
+    @ConditionalOnMissingBean
+    public WebFetchGuard webFetchGuard(AgentScopeProperties properties) {
+        return new WebFetchGuard(properties.getWebSearch().getFetch());
+    }
+
+    /**
+     * 网页抓取器（L2）：重定向逐跳重新过闸门，故 HTTP 客户端本身必须关断自动跟随。
+     */
+    @Bean
+    @Conditional(WebSearchEnabledCondition.class)
+    @ConditionalOnMissingBean
+    public WebPageFetcher webPageFetcher(AgentScopeProperties properties, WebFetchGuard webFetchGuard) {
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+        return new WebPageFetcher(properties.getWebSearch(), client, webFetchGuard);
+    }
+
+    /**
+     * 联网搜索门面：供应商选择 + 结果缓存 + 调用配额 + fail-open 降级。
+     * 无 Redis 时配额降级放行（与 {@code AiRateLimiter} 同口径），缓存为进程内 LRU。
+     */
+    @Bean
+    @Conditional(WebSearchEnabledCondition.class)
+    @ConditionalOnMissingBean
+    public WebSearchService webSearchService(AgentScopeProperties properties, List<WebSearchProvider> providers,
+                                             WebPageFetcher webPageFetcher, ObjectMapper objectMapper,
+                                             ObjectProvider<RedisCache> redisCacheProvider) {
+        return new WebSearchService(properties, providers, webPageFetcher, objectMapper,
+                redisCacheProvider.getIfAvailable());
     }
 
     @Bean

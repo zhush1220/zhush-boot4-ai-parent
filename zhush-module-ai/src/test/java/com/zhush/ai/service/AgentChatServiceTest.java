@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
@@ -143,5 +144,24 @@ class AgentChatServiceTest {
     private void verifyNoRateLimitOrModel() {
         verify(rateLimiter, never()).acquire(any(), any());
         verify(agentTemplate, never()).chat(anyString(), anyString(), anyString());
+    }
+
+    /**
+     * 本轮联网开关按原值透传：未显式指定时保持 null，由工具层按配置默认值判定
+     * （工具集按智能体缓存，摘不掉，只能把开关带到执行处）。
+     */
+    @Test
+    void streamShouldForwardTurnWebSearchSwitchAsGiven() {
+        stubContext();
+        when(sessionMapper.selectOneByQuery(any())).thenReturn(null);
+        when(agentTemplate.stream(anyString(), anyString(), anyString(), any())).thenReturn(Flux.empty());
+
+        AgentChatParam off = param("今天厦门天气", "s-1", null);
+        off.setWebSearchEnabled(false);
+        service.stream(off);
+        service.stream(param("今天厦门天气", "s-2", null));
+
+        verify(agentTemplate).stream("ai-chat", "s-1", "今天厦门天气", false);
+        verify(agentTemplate).stream("ai-chat", "s-2", "今天厦门天气", null);
     }
 }

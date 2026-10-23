@@ -172,10 +172,16 @@ public class DefaultAgentTemplate implements AgentTemplate {
 
     @Override
     public Flux<AgentEvent> stream(String agentName, String sessionId, String userText) {
+        return stream(agentName, sessionId, userText, null);
+    }
+
+    @Override
+    public Flux<AgentEvent> stream(String agentName, String sessionId, String userText, Boolean webSearchEnabled) {
         AgentDefinition def = requireDefinition(agentName);
         String sid = sessionId != null ? sessionId : sessionManager.newSession(agentName, properties.getNativeState().isEnabled());
         boolean nativeState = sessionManager.isNativeState(sid);
         AgentContext ctx = contextResolver.resolve();
+        ctx.setWebSearchEnabled(webSearchEnabled);
         sessionManager.appendMessage(sid, userMessage(userText));
         HarnessAgent agent = buildHarness(def, nativeState);
         RuntimeContext rc = runtimeContext(def, sid, ctx);
@@ -379,8 +385,28 @@ public class DefaultAgentTemplate implements AgentTemplate {
                     builder.permissionContext(buildPermissionContext(def)).stopOnReject(true);
                 }
             }
+            applyBuiltinToolPolicy(builder, properties.getWebSearch().getBuiltinTools());
             return builder.build();
         });
+    }
+
+    /**
+     * 内置工具收敛（方案 P0）：AgentScope 的 {@code web_search}/{@code web_fetch}/{@code execute}/文件工具
+     * 由 builder 无条件追加，既不经过 {@link ReflectiveAgentTool} 的审批门与敏感词检测，也不计入用量与审计；
+     * 其中 shell 与文件工具可读写宿主目录、{@code web_fetch} 无 SSRF 防护。故默认显式关闭，
+     * 出网能力统一由项目侧工具承担（见《AI智能助手联网搜索方案》），需要保留必须改配置显式放开。
+     */
+    static void applyBuiltinToolPolicy(HarnessAgent.Builder builder,
+                                       AgentScopeProperties.WebSearch.BuiltinTools policy) {
+        if (policy.isDisableWeb()) {
+            builder.disableWebTools();
+        }
+        if (policy.isDisableShell()) {
+            builder.disableShellTool();
+        }
+        if (policy.isDisableFilesystem()) {
+            builder.disableFilesystemTools();
+        }
     }
 
     /**
