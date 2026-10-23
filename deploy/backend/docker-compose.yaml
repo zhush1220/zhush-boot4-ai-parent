@@ -8,53 +8,12 @@ services:
     container_name: zhush-server
     privileged: true
     restart: always
-    environment:
-      TZ: Asia/Shanghai
-      # 端口
-      SERVER_PORT: 9199
-      # 文件上传大小限制
-      MAX_FILE_SIZE: 50MB
-      MAX_REQUEST_SIZE: 100MB
-      MAX_SIZE: 52428800 # MAX_FILE_SIZE保持一致 50 * 1024 * 1024L
-      # Redis
-      REDIS_HOST: 172.17.0.1
-      REDIS_PORT: 6379
-      REDIS_DATABASE: 8
-      REDIS_PASSWORD: zhush!735@6
-      # 数据库
-      MYSQL_HOST: 172.17.0.1
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: zhush_union
-      MYSQL_USERNAME: root
-      MYSQL_PASSWORD: zhusH@950120
-      # Token有效期 2 小时（秒）
-      SA_TOKEN_TIMEOUT: 7200
-      # 旧格式预览转换：none=纯前端路线乙；libreoffice=甲-1（需 WITH_LIBREOFFICE=true 构建）；kkfileview=甲-2（需另起 deploy/kkfileview）
-      PREVIEW_OFFICE_CONVERTER: none
-      PREVIEW_CACHE_PATH: /data/preview-cache
-      # office 进程上限，转换在独立进程里跑，但每个峰值约 300～500MB RSS，按主机余量取值
-      PREVIEW_MAX_CONCURRENT: 1
-      # 以下三项仅路线甲-2（PREVIEW_OFFICE_CONVERTER=kkfileview）需要，取值口径见 deploy/kkfileview/docker-compose.yaml
-      # 同源经 nginx 的预览前缀，需与 deploy/nginx/default.conf 的 location /preview 一致
-      # PREVIEW_BASE_URL: /preview
-      # 容器无法解析 FILE_DOMAIN 那个相对前缀，回源用的绝对前缀必须由这里给出
-      # PREVIEW_SOURCE_BASE_URL: http://172.17.0.1:9199/api/files/
-      # 可达性探测地址：配了才会在服务挂掉时回落「仅下载」，不配则只能由前端 iframe 自己报错
-      # PREVIEW_PROBE_URL: http://172.17.0.1:8012/
-      # 回答正文引用文件登记（方案第十六章）。默认相对路径按 WORKDIR /zhush-server 解析，
-      # 即容器里的 harness 工作区是 /zhush-server/.agentscope/workspace——它在镜像可写层，重建即丢。
-      # 要留存并在重启后仍可预览，放开下方 volumes 里的 agentscope-workspace 挂载即可，这个键无需改。
-      # PREVIEW_ANSWER_FILE_ENABLED: true
-      # PREVIEW_ANSWER_FILE_WORKSPACE_ROOT: .agentscope/workspace
-      # PREVIEW_ANSWER_FILE_MAX_SIZE: 20971520
-      # 本地存储根目录
-      FILE_BASE_PATH: /data/upload
-      # 文件访问 URL 前缀（后端 context-path=/api，静态资源实际暴露在 /api/files/）
-      FILE_DOMAIN: /api/files/
-      # 允许跨域配置
-      CORS_ALLOWED_ORIGINS: http://47.115.56.72:8086/
-      # 日志路径
-      LOG_DIR: /data/logs
+    # 环境变量全部外置到同目录 .env（键集与 application-docker.yaml 的 ${VAR:default} 占位一一对应）。
+    # .env 含真实口令、不入库：首次部署先 cp .env.example .env 再填值。
+    # 缺文件时 compose 不报错，会静默回落到 yaml 内置默认值（MYSQL_HOST=mysql、SERVER_PORT=9166 等），
+    # 那套默认值指向的是不存在的容器名——上线前用 `docker compose config` 确认取值已经进来。
+    env_file:
+      - .env
     hostname: zhush-server
     extra_hosts:
       - "zhush-server:127.0.0.1"

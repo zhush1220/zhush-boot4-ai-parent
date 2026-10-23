@@ -50,6 +50,9 @@ build/
 
 application-my.yaml
 
+# 容器部署环境变量：真实口令只留在机器上，入库的是 .env.example 模板
+deploy/**/.env
+
 /logs/
 
 # AgentScope 运行时工作区（会话 / 记忆 / 任务与日志，本地生成，不入库）
