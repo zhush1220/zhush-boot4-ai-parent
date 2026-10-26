@@ -139,7 +139,7 @@ DROP TABLE IF EXISTS `sys_sql_audit_log`;
 CREATE TABLE `sys_sql_audit_log` (
     `id`            BIGINT        NOT NULL COMMENT '主键ID（雪花算法）',
     `trace_id`      VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '链路追踪ID',
-    `platform`      VARCHAR(16)   NOT NULL DEFAULT '' COMMENT '平台：admin-管理端 member-会员端',
+    `platform`      VARCHAR(16)   NOT NULL DEFAULT '' COMMENT '平台：admin-管理端 member-会员端 system-系统任务(无请求上下文)',
     `module`        VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '所属模块',
     `url`           VARCHAR(256)  NOT NULL DEFAULT '' COMMENT '请求URL',
     `biz_id`        VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '业务ID（可选）',
@@ -269,17 +269,23 @@ public class SqlAuditMessageReporter implements MessageReporter {
 
 ### 6.2 业务上下文补全（关键）
 
-`AuditMessage` 由拦截器填充的是全局 SQL 信息，不包含当前登录用户/平台。在采集层（`MessageCollector`，或生产 `MessageFactory`）中，从 `StpAdminUtil` / `StpMemberUtil` / `LoginUserContextHolder` 补 `user`、`platform`（参考 `OperateLogService.fillOperator`）：
+MyBatis-Flex 1.11.8 的 `DefaultMessageFactory.create()` 只预置 `platform = "MyBatis-Flex"`（库标识常量）与 `hostIp`，`AuditManager.startAudit()` 只补 `stmtId / dsName / queryTime / queryCount / elapsedTime / query / params`。也就是说 `platform`（业务语义）、`module`、`url`、`user_ip`、`user`、`biz_id` **框架一律不赋值**，必须由 `SqlAuditMessageFactory` 在采集时补齐：
 
 ```java
-message.setUser(String.valueOf(StpAdminUtil.getLoginIdDefaultNull() != null
-        ? StpAdminUtil.getLoginIdDefaultNull()
-        : StpMemberUtil.getLoginIdDefaultNull()));
-message.setPlatform(...); // admin / member / anonymous
-message.setTraceId(...);  // 若有 SkyWalking/自定义上下文可补
+message.setPlatform(PLATFORM_SYSTEM);   // 先归一为 system，覆盖 Flex 的库标识
+fillRequestContext(message);            // 有请求：url / userIp / platform / module
+fillOperator(message);                  // user：管理端优先，其次会员端（两端各自 try/catch）
+message.addMeta("traceId", currentTraceId());
 ```
 
-> 注意：采集发生在 SQL 执行前（`startAudit` 包裹），此时请求线程的 Sa-Token 上下文可用；异步落库线程则不再可用，因此需在采集/构建阶段完成补全，而不是落库阶段。
+取值口径：
+
+- **platform**：按请求路径段判定（`/admin/**` → `admin`，`/member/**` → `member`），比登录态可靠——未登录的管理端接口（如登录本身）仍属管理端；路径无约定端段（如 `/open/**`）留空；无请求上下文的定时任务与异步事件线程记为 `system`（前端展示为「系统任务」）。
+- **module**：请求线程取端段后的第一段（`/api/admin/system/sql-audit` → `system`）；后台线程取不到请求，由落库层按 `stmtId` 的 `mapper` 段前一级反推（`com.zhush.ai.mapper.XxxMapper.method` → `ai`）。注意 `stmtId` 在 `create()` 之后才被 Flex 赋值，因此该兜底只能放在 reporter。
+- **user**：`StpAdminUtil` / `StpMemberUtil` 的 `getLoginIdDefaultNull()`，无 Web 上下文时 Sa-Token 抛异常，按未登录处理。
+- **trace_id**：`TraceContext.traceId()` 在无 agent 时返回空串、有 agent 但无链路时返回 `N/A`，两者都归一为空，避免落库占位值。要真正拿到该列，需挂载 SkyWalking agent 或自建 requestId（本期未做）。
+
+> 注意：采集发生在 SQL 执行前（`startAudit` 包裹），此时请求线程的 Sa-Token 与 `RequestContextHolder` 上下文可用；异步落库线程、以及 AI 对话的 `agent-event-*` 等自建线程池已脱离请求上下文，因此业务字段只能在采集阶段读取，脱线程的部分由 `stmtId` 兜底。
 
 ### 6.3 异步线程池（对齐 `OperateLogService`）
 

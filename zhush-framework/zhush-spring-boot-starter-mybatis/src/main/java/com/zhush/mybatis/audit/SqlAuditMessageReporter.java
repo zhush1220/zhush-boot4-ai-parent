@@ -127,7 +127,7 @@ public class SqlAuditMessageReporter implements MessageReporter {
                 IdUtil.getSnowflakeNextId(),
                 traceIdFrom(message),
                 truncate(message.getPlatform(), 16),
-                truncate(message.getModule(), 64),
+                truncate(moduleOf(message), 64),
                 truncate(message.getUrl(), 256),
                 truncate(message.getBizId(), 64),
                 truncate(message.getUser(), 64),
@@ -148,6 +148,30 @@ public class SqlAuditMessageReporter implements MessageReporter {
                 null,
                 0
         };
+    }
+
+    /**
+     * 所属模块：采集层未从请求路径取到时，按 Mapper 语句ID 的包名反推
+     * <p>
+     * {@code com.zhush.ai.mapper.AiXxxMapper.selectList} → {@code ai}。后台线程（定时任务、异步事件）
+     * 没有请求上下文，而 stmtId 又在 {@code MessageFactory.create()} 之后才被 Flex 赋值，只能在落库时兜底。
+     */
+    private static String moduleOf(AuditMessage message) {
+        String module = StrUtil.trimToEmpty(message.getModule());
+        if (StrUtil.isNotBlank(module)) {
+            return module;
+        }
+        String stmtId = StrUtil.trimToEmpty(message.getStmtId());
+        if (stmtId.isEmpty()) {
+            return "";
+        }
+        String[] segments = stmtId.split("\\.");
+        for (int i = 1; i < segments.length; i++) {
+            if ("mapper".equals(segments[i])) {
+                return segments[i - 1];
+            }
+        }
+        return "";
     }
 
     /**

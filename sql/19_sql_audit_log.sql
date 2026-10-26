@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS `sys_sql_audit_log`;
     CREATE TABLE `sys_sql_audit_log` (
     `id`            BIGINT        NOT NULL COMMENT '主键ID（雪花算法）',
     `trace_id`      VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '链路追踪ID',
-    `platform`      VARCHAR(16)   NOT NULL DEFAULT '' COMMENT '平台：admin-管理端 member-会员端',
+    `platform`      VARCHAR(16)   NOT NULL DEFAULT '' COMMENT '平台：admin-管理端 member-会员端 system-系统任务(无请求上下文)',
     `module`        VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '所属模块',
     `url`           VARCHAR(256)  NOT NULL DEFAULT '' COMMENT '请求URL',
     `biz_id`        VARCHAR(64)   NOT NULL DEFAULT '' COMMENT '业务ID（可选）',

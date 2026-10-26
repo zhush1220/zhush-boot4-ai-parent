@@ -21,7 +21,7 @@ public class SqlAuditLogQuery extends BaseQuery {
     @Schema(description = "链路追踪ID")
     private String traceId;
 
-    @Schema(description = "平台：admin-管理端 member-会员端")
+    @Schema(description = "平台：admin-管理端 member-会员端 system-系统任务（无请求上下文）")
     private String platform;
 
     @Schema(description = "操作人（模糊匹配）")

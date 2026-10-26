@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * SQL 审计落库语句单测。
@@ -68,6 +69,17 @@ class SqlAuditMessageReporterTest {
         assertThat(captured.rowByColumn().get("create_time")).isNotNull();
     }
 
+    /**
+     * 后台线程（定时任务、异步事件）没有请求上下文，采集层取不到所属模块，只能由 stmtId 的 mapper 段反推
+     */
+    @Test
+    void moduleShouldFallBackToMapperPackageWhenRequestContextMissing() {
+        AuditMessage message = mock(AuditMessage.class);
+        when(message.getStmtId()).thenReturn("com.zhush.ai.mapper.AiGenerationTaskMapper.selectListByQuery");
+
+        assertThat(capture(message).rowByColumn().get("module")).isEqualTo("ai");
+    }
+
     // ================ 内部 ================
 
     /** 一次落库调用捕获到的语句与行数据 */
@@ -77,11 +89,18 @@ class SqlAuditMessageReporterTest {
     /**
      * 用一条不带任何业务上下文的审计消息触发落库，捕获语句与行参数
      */
-    @SuppressWarnings("unchecked")
     private Captured capture() {
+        return capture(mock(AuditMessage.class));
+    }
+
+    /**
+     * 触发一次落库并捕获语句与行参数
+     */
+    @SuppressWarnings("unchecked")
+    private Captured capture(AuditMessage message) {
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         new SqlAuditMessageReporter(jdbcTemplate, new SqlAuditProperties())
-                .sendMessages(List.of(mock(AuditMessage.class)));
+                .sendMessages(List.of(message));
 
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<List<Object[]>> argsCaptor = ArgumentCaptor.forClass(List.class);
