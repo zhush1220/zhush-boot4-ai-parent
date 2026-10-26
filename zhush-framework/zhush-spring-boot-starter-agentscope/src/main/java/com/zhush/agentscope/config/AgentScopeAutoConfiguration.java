@@ -44,7 +44,6 @@ import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -325,14 +324,5 @@ public class AgentScopeAutoConfiguration {
         container.addMessageListener((message, pattern) -> refreshCoordinator.refreshAll(),
                 new ChannelTopic(DynamicConfigRefreshCoordinator.REFRESH_CHANNEL));
         return container;
-    }
-
-    /**
-     * 容器单例全部就绪后执行工具扫描（业务 Bean 均已实例化）。
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    public SmartInitializingSingleton agentToolScannerInitializer(AgentToolScanner agentToolScanner) {
-        return agentToolScanner::scan;
     }
 }

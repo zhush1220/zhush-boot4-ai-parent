@@ -310,11 +310,11 @@ P0 建议单独先做、单独提交（不要混进功能提交），它是纯�
 | P2 | 已交付（来源卡片除外） | `WebFetchGuard`（协议/域名/内网地址三道判断，逐跳重查）+ `WebPageFetcher`（手工推进重定向、字节与字符双上限、正文抽取）；开关 `AgentChatParam.webSearchEnabled` → `AgentTemplate.stream(…, Boolean)` → `AgentContext.webSearchEnabled`，前端 🌐 联网按钮在 `views/ai/assistant/index.vue` 输入区 |
 | P3 | 未开始 | L3 天气结构化源、管理页「联网搜索配置」——密钥当前只走 yaml/环境变量，无 DB 落点 |
 
-单测（全部离线可跑，不依赖 DNS 与外网）：starter 新增 52 例——策略 4 / SSRF 闸门 12 / 抓取 11 / 门面 18 / IQS 4 / Tavily 3，模块合计 68 例通过；`zhush-module-ai` 新增 13 例（`AgentWebSearchToolsTest` 3 + `AgentChatServiceTest` 5，含透传开关的断言 + `AgentAuditEventListenerTest` 5 例正文摘除守卫），模块全量 69 例通过。前端 `vue-tsc --noEmit` + `oxlint` + `oxfmt` 通过。
+单测（全部离线可跑，不依赖 DNS 与外网）：starter 新增 52 例——策略 4 / SSRF 闸门 12 / 抓取 11 / 门面 18 / IQS 4 / Tavily 3，另有工具注册装配回归 2 例（`AgentToolAutoRegistrationTest`、`AgentToolScannerTest`），模块合计 70 例通过；`zhush-module-ai` 新增 13 例（`AgentWebSearchToolsTest` 3 + `AgentChatServiceTest` 5，含透传开关的断言 + `AgentAuditEventListenerTest` 5 例正文摘除守卫），模块全量 69 例通过。前端 `vue-tsc --noEmit` + `oxlint` + `oxfmt` 通过。
 
 除代码外的交付物：`sql/33_ai_web_search.sql`（工具注册 + 提示词 + `max_steps` 10→12，幂等）、`application-{dev,test,docker,prod}.yaml` 的 `zhush.agentscope.web-search` 块（默认 `enabled=false`，生产 provider=iqs、dev=mock）、前端 3 个文件（`api/ai/stream.ts`、`hooks/use-chat-stream.ts`、`views/ai/assistant/index.vue`）。
 
-**上线三步（当前默认全关，不执行即零影响）**：① 执行 `33_ai_web_search.sql` 注册工具；② 注入环境变量 `WEB_SEARCH_ENABLED=true`、`WEB_SEARCH_API_KEY=...`（test/docker/prod 还需 `WEB_SEARCH_PROVIDER=iqs`，dev 可留 mock）；③ 重启后问一句需要实时信息的问题，确认工具卡片出现 `web_search` 且回答文末带来源链接。关停同理——去掉环境变量即回到"能力未开启"降级，无需回滚脚本。
+**上线三步（当前默认全关，不执行即零影响）**：① 执行 `33_ai_web_search.sql` 注册工具；② 注入环境变量 `WEB_SEARCH_ENABLED=true`、`WEB_SEARCH_API_KEY=...`（test/docker/prod 还需 `WEB_SEARCH_PROVIDER=iqs`，dev 可留 mock）；③ 用修复工具注册后的构建重启，问一句需要实时信息的问题，确认启动日志出现 `[AgentTool] 工具扫描完成，注册 N 个`、工具卡片出现 `web_search` 且回答文末带来源链接。关停同理——去掉环境变量即回到"能力未开启"降级，无需回滚脚本。
 
 **与方案原文的偏差（已确认按实现口径）**：
 - `builtin-tools` 用布尔 `disable-web`/`disable-shell`/`disable-filesystem`（默认 true），不写成 `disable|keep` 字符串枚举——布尔直接对应 builder 的三个开关，少一层解析。
@@ -323,7 +323,9 @@ P0 建议单独先做、单独提交（不要混进功能提交），它是纯�
 - 结果缓存为**进程内 LRU**、非分布式：多实例各自独立，命中省配额但跨实例可能重复计费。
 - 供应商失败**不做应用层重试**，直接降级回包——优先保证不打断对话，重试与成本计量一起在 P3 补。
 
-**已修复缺口（同日复查发现并处理）**：`web_fetch` 抓到的外部正文原本会以最多 4000 字符落 `agent_audit_log.tool_result`，与 6.5 原文"不得记录完整抓取正文"不符；现由 `AgentAuditEventListener.auditResult()` 落库前摘除 `text` 只留规模，`AgentAuditEventListenerTest` 5 例守卫。详见 6.5 与 10 节第 7 条。
+**已修复缺口（同日复查发现并处理）**：
+- `web_fetch` 抓到的外部正文原本会以最多 4000 字符落 `agent_audit_log.tool_result`，与 6.5 原文"不得记录完整抓取正文"不符；现由 `AgentAuditEventListener.auditResult()` 落库前摘除 `text` 只留规模，`AgentAuditEventListenerTest` 5 例守卫。详见 6.5 与 10 节第 7 条。
+- **项目工具从未真正注册过**：`AgentScopeAutoConfiguration` 用 `@Bean @ConditionalOnMissingBean` 的 `SmartInitializingSingleton` 触发 `AgentToolScanner.scan()`，而该条件按**方法返回类型**匹配——容器在解析自动配置前就已注册了基础设施 Bean `internalEventListenerProcessor`（它自身就是 `SmartInitializingSingleton`），条件恒不成立，扫描器从未执行。结果 `ToolkitRegistry` 全程为空，`ai-chat` 声明的 `generateDocument`/`parseDocument`/`generateImage`/`generateVideo` 一律被 `未注册（忽略）` 丢弃，联网工具即使配置齐全也无从调用；日志里表现为"声明的工具未注册"WARN 但没有任何注册记录。现改为扫描器自身实现 `SmartInitializingSingleton`（删掉那个脆弱的类型条件），顺带用 `AopUtils.getTargetClass` + `AnnotationUtils.findAnnotation` 取注解（CGLIB 代理覆写的方法不带注解）并打一条注册汇总 INFO。由 `AgentToolAutoRegistrationTest`（装配回归）与 `AgentToolScannerTest`（代理兼容）守卫。
 
 ## 10. 待确认决策
 
