@@ -210,6 +210,19 @@ zhush:
       secret-key: your-secret-key
       bucket-name: your-bucket-name
       domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+  # 会话产物在线预览（详见 docs/AI智能助手文件预览功能方案.md §6.5、§15）
+  # office-converter：none=路线乙（纯前端渲染）；libreoffice=甲-1（服务端转 PDF）；kkfileview=甲-2（外部渲染服务出图，走 server-iframe）
+  # 甲档任一路线都需按 §0.1 资源门禁（V7）实测余量后再开；甲-2 另需起 deploy/kkfileview 并放开 nginx /preview
+  preview:
+    enabled: true
+    office-converter: none
+    # base-url: /preview                    # 甲-2：对外预览前缀（与 nginx location /preview 一致）
+    # source-base-url:                      # 甲-2：容器回源用的绝对前缀，FILE_DOMAIN 为相对前缀时必填
+    # probe-url: http://172.17.0.1:8012/    # 甲-2：可达性探测，配了才会在服务挂掉时回落「仅下载」
+    # 回答正文引用文件登记：登记开关 / harness 工作区根（相对路径按进程工作目录解析）/ 单文件体积上限（字节）
+    # answer-file-enabled: true
+    # answer-file-workspace-root: .agentscope/workspace
+    # answer-file-max-size: 20971520
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false
@@ -292,6 +305,36 @@ zhush:
       sticky: # 同会话跟进消息复用上轮分类（降决策量）
         ttl: 5m
         max-message-length: 16
+    web-search: # 联网搜索（方案《AI智能助手联网搜索方案》6.1）：出网能力默认关闭，开启需 enabled=true 且密钥可得
+      enabled: ${WEB_SEARCH_ENABLED:false}
+      provider: ${WEB_SEARCH_PROVIDER:iqs} # iqs（与阿里云账号体系统一）/ tavily / mock（仅联调，生产禁用）
+      api-key: ${WEB_SEARCH_API_KEY:} # 仅环境变量/密钥管理注入，禁止写入仓库与日志
+      engine-type: LiteAdvanced # IQS 引擎档位（provider=iqs 时生效）
+      session-default-enabled: true # 请求未带联网开关时的默认值：true 表示模型可按意图自主联网
+      search: # L1 检索
+        timeout: 8s
+        max-results: 5
+        max-results-limit: 10
+        cache-ttl: 30m
+        cache-max-entries: 500
+        snippet-max-chars: 500
+      fetch: # L2 抓取
+        enabled: true # 子开关：总开关 enabled=false 时不生效
+        timeout: 10s
+        max-bytes: 1048576
+        max-chars: 8000
+        follow-redirects: true # 重定向逐跳重过 SSRF 闸门，非盲跟
+        max-redirects: 3
+        allow-private-network: false # 生产容器 host 网络 + privileged，内网/元数据地址一律拒绝
+        domain-deny-list: []
+        domain-allow-list: [] # 收紧出网时改为白名单：非空即未列入域名一律拒绝
+      quota: # ReAct 单轮最多可打出 max-steps 次搜索，按外部调用成本必须设上限
+        calls-per-session: 20
+        calls-per-day-per-user: 200
+      builtin-tools: # Harness 内置出网/命令/文件工具收敛（P0）：生产保持全关
+        disable-web: true
+        disable-shell: true
+        disable-filesystem: true
   # 统一支付底座（zhush-module-pay）：微信支付渠道
   # 默认全部关闭：未启用时不装配任何支付 Bean；启用 V3/V2 前必须配齐凭证，缺失将启动失败（fail-fast）
   # 凭证纪律：全部经环境变量外置，证书走挂载卷，禁止入库/入代码

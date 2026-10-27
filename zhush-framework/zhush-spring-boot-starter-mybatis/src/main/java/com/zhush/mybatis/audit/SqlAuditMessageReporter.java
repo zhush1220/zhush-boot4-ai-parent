@@ -40,12 +40,15 @@ public class SqlAuditMessageReporter implements MessageReporter {
 
     /**
      * 写入审计表的 INSERT 语句（23 列占位符）
+     * <p>
+     * 标识符全部反引号包裹：本语句由 JdbcTemplate 直发 MySQL，不经过 MyBatis-Flex 方言的关键字包装，
+     * 而 {@code sql} 等是 MySQL 保留字，裸写会报 1064 语法错误。
      */
     private static final String INSERT_SQL = """
-            INSERT INTO sys_sql_audit_log
-            (id, trace_id, platform, module, url, biz_id, user, user_ip, host_ip,
-             ds_name, stmt_id, sql, sql_params, full_sql, query_count, query_time,
-             elapsed_time, metas, create_by, create_time, update_by, update_time, is_delete)
+            INSERT INTO `sys_sql_audit_log`
+            (`id`, `trace_id`, `platform`, `module`, `url`, `biz_id`, `user`, `user_ip`, `host_ip`,
+             `ds_name`, `stmt_id`, `sql`, `sql_params`, `full_sql`, `query_count`, `query_time`,
+             `elapsed_time`, `metas`, `create_by`, `create_time`, `update_by`, `update_time`, `is_delete`)
             VALUES
             (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
@@ -123,15 +126,15 @@ public class SqlAuditMessageReporter implements MessageReporter {
         return new Object[]{
                 IdUtil.getSnowflakeNextId(),
                 traceIdFrom(message),
-                StrUtil.maxLength(message.getPlatform(), 16),
-                StrUtil.maxLength(message.getModule(), 64),
-                StrUtil.maxLength(message.getUrl(), 256),
-                StrUtil.maxLength(message.getBizId(), 64),
-                StrUtil.maxLength(message.getUser(), 64),
-                StrUtil.maxLength(message.getUserIp(), 64),
-                StrUtil.maxLength(message.getHostIp(), 64),
-                StrUtil.maxLength(message.getDsName(), 64),
-                StrUtil.maxLength(message.getStmtId(), 256),
+                truncate(message.getPlatform(), 16),
+                truncate(moduleOf(message), 64),
+                truncate(message.getUrl(), 256),
+                truncate(message.getBizId(), 64),
+                truncate(message.getUser(), 64),
+                truncate(message.getUserIp(), 64),
+                truncate(message.getHostIp(), 64),
+                truncate(message.getDsName(), 64),
+                truncate(message.getStmtId(), 256),
                 truncate(message.getQuery(), properties.getSqlMaxLength()),
                 truncate(maskSensitive(paramsJson(message)), properties.getSqlParamsMaxLength()),
                 truncate(maskSensitive(message.getFullSql()), properties.getFullSqlMaxLength()),
@@ -145,6 +148,30 @@ public class SqlAuditMessageReporter implements MessageReporter {
                 null,
                 0
         };
+    }
+
+    /**
+     * 所属模块：采集层未从请求路径取到时，按 Mapper 语句ID 的包名反推
+     * <p>
+     * {@code com.zhush.ai.mapper.AiXxxMapper.selectList} → {@code ai}。后台线程（定时任务、异步事件）
+     * 没有请求上下文，而 stmtId 又在 {@code MessageFactory.create()} 之后才被 Flex 赋值，只能在落库时兜底。
+     */
+    private static String moduleOf(AuditMessage message) {
+        String module = StrUtil.trimToEmpty(message.getModule());
+        if (StrUtil.isNotBlank(module)) {
+            return module;
+        }
+        String stmtId = StrUtil.trimToEmpty(message.getStmtId());
+        if (stmtId.isEmpty()) {
+            return "";
+        }
+        String[] segments = stmtId.split("\\.");
+        for (int i = 1; i < segments.length; i++) {
+            if ("mapper".equals(segments[i])) {
+                return segments[i - 1];
+            }
+        }
+        return "";
     }
 
     /**
@@ -181,6 +208,9 @@ public class SqlAuditMessageReporter implements MessageReporter {
 
     /**
      * 字符串截断（null 转空）
+     * <p>
+     * 审计表字符串列的 DDL 为 {@code NOT NULL DEFAULT ''}，而无登录上下文时 {@code platform}/{@code module}/
+     * {@code url}/{@code user} 等字段本身就是 null，直写会触发 MySQL 1048。
      */
     private static String truncate(String value, int maxLength) {
         if (value == null) {

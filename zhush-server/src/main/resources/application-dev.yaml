@@ -190,6 +190,26 @@ zhush:
       secret-key: your-secret-key
       bucket-name: your-bucket-name
       domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+  # 会话产物在线预览（详见 docs/AI智能助手文件预览功能方案.md §6.5）
+  # office-converter：none=路线乙（纯前端渲染）；libreoffice=甲-1（服务端转 PDF，本机需装 LibreOffice）；kkfileview=甲-2 未实现
+  preview:
+    enabled: true
+    office-converter: none # none/ libreoffice/ kkfileview
+    # allowed-extensions: png,jpg,jpeg,gif,webp,mp4,webm,md,txt,csv,html,htm,pdf,docx,xlsx   # 不配则用内置默认表；与 zhush.file.allowed-extensions 是两个口径
+    # prefer-pdf-extensions: docx,xlsx     # 前端本就能渲染的格式，显式列出才改走服务端转 PDF
+    convert:
+      # soffice-path: D:/Program Files/LibreOffice/program/soffice.exe   # Windows 需写完整路径；Linux 默认 soffice
+      # cache-path: D:/zhush/preview-cache  # 不配则取本地存储根的同级 preview-cache 目录（刻意在免鉴权的 /api/files/** 之外）
+      max-concurrent: 1                     # office 进程上限，防一份大 PPT 拖垮后端
+      timeout-seconds: 60                   # 单文档转换超时，超时即杀进程并降级 unsupported
+    # 路线甲-2（office-converter=kkfileview）才用到的三项；dev 的产物地址已是绝对地址，source-base-url 可留空
+    # base-url: /preview                    # 需 vite 把 /preview 代理到 kkFileView，且容器侧 KK_BASE_URL 指回 dev 源
+    # source-base-url:                      # 仅产物地址为相对前缀（docker 的 FILE_DOMAIN=/api/files/）时才需要
+    # probe-url: http://localhost:8012/     # 配了才会在服务不可达时回落「仅下载」，不配只能由前端 iframe 自己报错
+    # 回答正文引用文件登记（把 AI 写在正文里的本地路径升格为可预览产物）
+    # answer-file-enabled: true                        # 关掉后前端点击提示「请下载后查看」
+    # answer-file-workspace-root: .agentscope/workspace # harness 工作区根，相对路径按进程工作目录解析，需与 AgentScope 实际写入的根一致
+    # answer-file-max-size: 20971520                   # 单个源文件体积上限（字节），超出直接拒绝登记
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false
@@ -271,6 +291,36 @@ zhush:
       sticky:                     # 同会话跟进消息复用上轮分类（降决策量）
         ttl: 5m
         max-message-length: 16
+    web-search: # 联网搜索（方案《AI智能助手联网搜索方案》6.1）：出网能力默认关闭，开启需 enabled=true 且密钥可得
+      enabled: ${WEB_SEARCH_ENABLED:false}
+      provider: ${WEB_SEARCH_PROVIDER:mock} # dev 默认 mock：本地无密钥即可验证工具注册、调用与回包形态
+      api-key: ${WEB_SEARCH_API_KEY:} # 仅环境变量注入，禁止写入仓库/落日志
+      engine-type: LiteAdvanced # IQS 引擎档位（provider=iqs 时生效）
+      session-default-enabled: true # 请求未带联网开关时的默认值：true 表示模型可按意图自主联网
+      search: # L1 检索
+        timeout: 8s # 官方内置实现默认 30s，卡在用户中断链路上等不起
+        max-results: 5
+        max-results-limit: 10 # 模型可请求的条数上限
+        cache-ttl: 30m
+        cache-max-entries: 500
+        snippet-max-chars: 500
+      fetch: # L2 抓取
+        enabled: true # 子开关：总开关 enabled=false 时不生效
+        timeout: 10s
+        max-bytes: 1048576 # 单次下载 1MB 封顶，防大文件/无限流打满堆
+        max-chars: 8000
+        follow-redirects: true # 重定向逐跳重过 SSRF 闸门，非盲跟
+        max-redirects: 3
+        allow-private-network: false # 容器 host 网络 + privileged，内网/元数据地址一律拒绝
+        domain-deny-list: []
+        domain-allow-list: [] # 非空即白名单模式，未列入域名一律拒绝
+      quota: # ReAct 单轮最多可打出 max-steps 次搜索，配额是必需的
+        calls-per-session: 20
+        calls-per-day-per-user: 200
+      builtin-tools: # Harness 内置出网/命令/文件工具收敛（P0）：改任一项即扩大攻击面
+        disable-web: true
+        disable-shell: true
+        disable-filesystem: true
   # 统一支付底座（zhush-module-pay）：微信支付渠道
   # 默认全部关闭：未启用时不装配任何支付 Bean；启用 V3/V2 前必须配齐凭证，缺失将启动失败（fail-fast）
   # 凭证纪律：全部经环境变量外置，证书走挂载卷，禁止入库/入代码

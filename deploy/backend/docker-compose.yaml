@@ -1,0 +1,30 @@
+services:
+  zhush-server:
+    build:
+      context: ./zhush-server
+      # 路线甲-1 需装 LibreOffice（镜像 +400～700MB）：改 true 并把下面 PREVIEW_OFFICE_CONVERTER 设为 libreoffice
+      args:
+        WITH_LIBREOFFICE: "false"
+    container_name: zhush-server
+    privileged: true
+    restart: always
+    # 环境变量全部外置到同目录 .env（键集与 application-docker.yaml 的 ${VAR:default} 占位一一对应）。
+    # .env 含真实口令、不入库：首次部署先 cp .env.example .env 再填值。
+    # 缺文件时 compose 不报错，会静默回落到 yaml 内置默认值（MYSQL_HOST=mysql、SERVER_PORT=9166 等），
+    # 那套默认值指向的是不存在的容器名——上线前用 `docker compose config` 确认取值已经进来。
+    env_file:
+      - .env
+    hostname: zhush-server
+    extra_hosts:
+      - "zhush-server:127.0.0.1"
+    image: zhush-server
+    network_mode: "host"
+    volumes:
+      - ./logs:/data/logs
+      - ./upload:/data/upload
+      # 转换产物缓存：刻意与存储根分开，存储根经免鉴权的 /api/files/** 直出
+      - ./preview-cache:/data/preview-cache
+      # harness 工作区持久化（正文引用文件预览用，见方案第十六章）；不挂则容器重建后旧产物一律「文件不存在」
+      # - ./agentscope-workspace:/zhush-server/.agentscope/workspace
+      - /usr/share/fonts:/usr/share/fonts
+      - /app/skywalking-agent/:/app/skywalking-agent/

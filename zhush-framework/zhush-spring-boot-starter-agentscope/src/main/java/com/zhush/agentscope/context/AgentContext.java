@@ -47,4 +47,10 @@ public class AgentContext implements Serializable {
      * 供生成类工具把异步任务绑定到来源会话（产物回填、越权校验），非登录上下文可为 {@code null}
      */
     private String sessionId;
+
+    /**
+     * 本轮是否允许联网（由对话入参按轮次写入）：{@code null} 表示调用方未指定，
+     * 由联网工具按 {@code zhush.agentscope.web-search.session-default-enabled} 判定
+     */
+    private Boolean webSearchEnabled;
 }

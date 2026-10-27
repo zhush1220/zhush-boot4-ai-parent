@@ -205,6 +205,27 @@ zhush:
       secret-key: your-secret-key
       bucket-name: your-bucket-name
       domain: ""                         # 为空时按 https://{bucket}.{endpoint}/ 拼接
+  # 会话产物在线预览（详见 docs/AI智能助手文件预览功能方案.md §6.5）
+  # 升档（乙→甲-1）只改 PREVIEW_OFFICE_CONVERTER 重启后端，前端不发版；镜像需用 --build-arg WITH_LIBREOFFICE=true 构建
+  # 转换器未就绪（未装 LibreOffice / 缺中文字体 / 排队超限 / 超时）时一律回落 unsupported，不阻断对话
+  preview:
+    enabled: ${PREVIEW_ENABLED:true}
+    office-converter: ${PREVIEW_OFFICE_CONVERTER:none}
+    convert:
+      soffice-path: ${PREVIEW_SOFFICE_PATH:soffice}
+      cache-path: ${PREVIEW_CACHE_PATH:/data/preview-cache}
+      max-concurrent: ${PREVIEW_MAX_CONCURRENT:1}
+      timeout-seconds: ${PREVIEW_CONVERT_TIMEOUT:60}
+    # 路线甲-2（office-converter=kkfileview）：外部渲染服务的对外前缀、容器回源用的绝对前缀、可达性探测地址
+    base-url: ${PREVIEW_BASE_URL:/preview}
+    source-base-url: ${PREVIEW_SOURCE_BASE_URL:}
+    probe-url: ${PREVIEW_PROBE_URL:}
+    # 回答正文引用文件登记。默认与工作区别名相对路径一致（按进程工作目录解析）；
+    # 容器里 .agentscope/workspace 落在镜像临时目录时，需把 harness 工作区挂到持久卷并让这个键指到挂载点，
+    # 否则登记会因「文件不存在」降级为仅提示下载
+    answer-file-enabled: ${PREVIEW_ANSWER_FILE_ENABLED:true}
+    answer-file-workspace-root: ${PREVIEW_ANSWER_FILE_WORKSPACE_ROOT:.agentscope/workspace}
+    answer-file-max-size: ${PREVIEW_ANSWER_FILE_MAX_SIZE:20971520}
   # 全文搜索（Elasticsearch）：默认关闭；启用时改为 true 并确认 spring.elasticsearch.uris 指向实际地址
   search:
     enabled: false
@@ -285,6 +306,36 @@ zhush:
       sticky: # 同会话跟进消息复用上轮分类（降决策量）
         ttl: 5m
         max-message-length: 16
+    web-search: # 联网搜索（方案《AI智能助手联网搜索方案》6.1）：出网能力默认关闭，开启需 enabled=true 且密钥可得
+      enabled: ${WEB_SEARCH_ENABLED:false}
+      provider: ${WEB_SEARCH_PROVIDER:iqs} # iqs（与阿里云账号体系统一）/ tavily / mock（仅联调）
+      api-key: ${WEB_SEARCH_API_KEY:} # 仅环境变量注入，禁止写入仓库/落日志
+      engine-type: LiteAdvanced # IQS 引擎档位（provider=iqs 时生效）
+      session-default-enabled: true # 请求未带联网开关时的默认值：true 表示模型可按意图自主联网
+      search: # L1 检索
+        timeout: 8s
+        max-results: 5
+        max-results-limit: 10
+        cache-ttl: 30m
+        cache-max-entries: 500
+        snippet-max-chars: 500
+      fetch: # L2 抓取
+        enabled: true # 子开关：总开关 enabled=false 时不生效
+        timeout: 10s
+        max-bytes: 1048576
+        max-chars: 8000
+        follow-redirects: true # 重定向逐跳重过 SSRF 闸门，非盲跟
+        max-redirects: 3
+        allow-private-network: false # 容器 host 网络 + privileged，内网/元数据地址一律拒绝
+        domain-deny-list: []
+        domain-allow-list: [] # 非空即白名单模式，未列入域名一律拒绝
+      quota: # ReAct 单轮最多可打出 max-steps 次搜索，配额是必需的
+        calls-per-session: 20
+        calls-per-day-per-user: 200
+      builtin-tools: # Harness 内置出网/命令/文件工具收敛（P0）：改任一项即扩大攻击面
+        disable-web: true
+        disable-shell: true
+        disable-filesystem: true
   # 统一支付底座（zhush-module-pay）：微信支付渠道
   # 默认全部关闭：未启用时不装配任何支付 Bean；启用 V3/V2 前必须配齐凭证，缺失将启动失败（fail-fast）
   # 凭证纪律：全部经环境变量外置，证书走挂载卷，禁止入库/入代码

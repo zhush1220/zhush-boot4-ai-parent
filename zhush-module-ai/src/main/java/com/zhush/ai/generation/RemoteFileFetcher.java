@@ -63,6 +63,16 @@ public class RemoteFileFetcher {
     }
 
     /**
+     * 地址是否属于本项目文件存储（各启用平台的域名前缀），不取字节、只做判断。
+     *
+     * <p>供「把产物地址交给外部服务」的链路复用同一份白名单——例如预览的外置渲染路线，
+     * 交给外部一个任意 URL 等于替自己开一个 SSRF 出口。
+     */
+    public boolean isFromStorage(String url) {
+        return url != null && isHttp(url.trim()) && matchedStorageDomain(url.trim()) != null;
+    }
+
+    /**
      * 下载第三方供应商产物：仅允许 {@code zhush.agentscope.generation.allowed-hosts} 中的主机
      * （含其子域），其余一律拒绝。
      */

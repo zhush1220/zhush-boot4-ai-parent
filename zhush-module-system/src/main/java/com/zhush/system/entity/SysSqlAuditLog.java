@@ -27,7 +27,7 @@ public class SysSqlAuditLog extends BaseEntity implements Serializable {
     /** 链路追踪ID */
     private String traceId;
 
-    /** 平台：admin-管理端 member-会员端 */
+    /** 平台：admin-管理端 member-会员端 system-系统任务（无请求上下文） */
     private String platform;
 
     /** 所属模块 */

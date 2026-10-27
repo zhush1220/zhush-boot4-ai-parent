@@ -41,4 +41,16 @@ public interface AiChatMessageMapper extends BaseMapperX<AiChatMessageEntity> {
             </script>
             """)
     java.util.List<SessionTaskStatVO> selectTaskStatsBySessionIds(@Param("sessionIds") java.util.Collection<String> sessionIds);
+
+    /**
+     * 按产物 fileId 反查携带该附件的消息：预览接口的归属反查用。
+     *
+     * <p>LIKE 只是粗筛（{@code %} 会误命中前缀相同的 fileId），命中后必须由调用方
+     * 解析 JSON 精确核验字段值，不能直接当作结果使用。
+     */
+    @Select("""
+            SELECT * FROM ai_chat_message
+             WHERE attachments LIKE CONCAT('%"fileId"%', #{fileId}, '%')
+            """)
+    java.util.List<AiChatMessageEntity> selectByAttachmentFileId(@Param("fileId") Long fileId);
 }

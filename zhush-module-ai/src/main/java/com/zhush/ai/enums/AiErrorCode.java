@@ -50,6 +50,11 @@ public enum AiErrorCode implements IErrorCode {
     DOCUMENT_CONTENT_EMPTY(1003401, "文档内容不能为空"),
     DOCUMENT_FORMAT_UNSUPPORTED(1003402, "不支持的文档格式：{0}"),
     DOCUMENT_PARSE_TARGET_EMPTY(1003403, "文件地址不能为空，请提供上传后返回的 URL"),
+    FILE_PREVIEW_DENIED(1003404, "文件不存在或不属于当前用户的会话产物：{0}"),
+    FILE_CONVERT_FAILED(1003405, "该文件暂时无法转换预览，请稍后重试或下载后查看：{0}"),
+    ANSWER_FILE_DISABLED(1003406, "回答正文文件预览登记已关闭，请下载后查看"),
+    ANSWER_FILE_NOT_FOUND(1003407, "回答中引用的文件不存在、不可读或格式不支持：{0}"),
+    ANSWER_FILE_TOO_LARGE(1003408, "回答中引用的文件超过预览体积上限：{0}"),
 
     // ================ 配额与限流 1003 5xx ================
     AI_QUOTA_DAILY_EXCEED(1003501, "今日调用次数已用尽，请明日再试"),

@@ -35,6 +35,23 @@ public interface AgentTemplate {
     Flux<AgentEvent> stream(String agentName, String sessionId, String userText);
 
     /**
+     * 流式对话（带本轮联网开关）。
+     *
+     * <p>联网开关按轮次生效并落在 {@link com.zhush.agentscope.context.AgentContext} 上：工具与
+     * {@code HarnessAgent} 实例按智能体缓存，不能按轮次重建工具集，故由工具自身在执行时读取该标志并
+     * 降级为「本轮未开启联网」，而不是把工具从 Toolkit 里摘掉。
+     *
+     * @param agentName        智能体名
+     * @param sessionId        会话 ID
+     * @param userText         用户输入
+     * @param webSearchEnabled 本轮是否允许联网（null 取配置默认值）
+     * @return 事件流
+     */
+    default Flux<AgentEvent> stream(String agentName, String sessionId, String userText, Boolean webSearchEnabled) {
+        return stream(agentName, sessionId, userText);
+    }
+
+    /**
      * 异步对话（内部线程池，提交即返回）。
      *
      * @param agentName 智能体名

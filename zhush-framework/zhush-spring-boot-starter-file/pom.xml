@@ -38,6 +38,13 @@
             <artifactId>spring-webmvc</artifactId>
         </dependency>
 
+        <!-- Servlet API：文件直链响应头加固过滤器（zhush-common 中为 provided，需显式声明） -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- 本地存储：本地磁盘 -->
         <!-- 无需额外依赖 -->
 

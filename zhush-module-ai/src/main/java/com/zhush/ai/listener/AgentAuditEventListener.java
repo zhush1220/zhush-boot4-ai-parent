@@ -18,11 +18,20 @@ import org.apache.skywalking.apm.toolkit.trace.TraceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
+
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * 审计事件监听器：将会话生命周期事件落库到 {@code agent_audit_log}。
  *
  * <p>跳过高频的文本增量事件（{@link com.zhush.agentscope.event.AgentTextDeltaEvent}），保留关键事件留痕。
+ *
+ * <p>工具结果只按长度截断落库，唯一例外是 {@link #BODY_OMITTED_TOOLS}：其结果含外部网页原文，
+ * 可能带版权或敏感内容，落库前摘除正文、仅保留元数据与规模（方案 6.5）。
  *
  * @author zhush
  */
@@ -31,12 +40,25 @@ public class AgentAuditEventListener implements AgentEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(AgentAuditEventListener.class);
 
+    /** 工具结果字符上限（原为硬编码 4000，抽出供正文摘除后复用同一口径） */
+    private static final int RESULT_MAX_CHARS = 4000;
+
+    /**
+     * 结果含外部原文、不得整段落库的工具。
+     *
+     * <p>按工具名而非"所有工具"摘除：搜索摘要等回包本身就是给模型看的内容，摘掉等于丢审计。
+     */
+    private static final Set<String> BODY_OMITTED_TOOLS = Set.of("web_fetch");
+
     private final AgentAuditLogMapper auditLogMapper;
     private final AiChatSessionMapper sessionMapper;
+    private final ObjectMapper objectMapper;
 
-    public AgentAuditEventListener(AgentAuditLogMapper auditLogMapper, AiChatSessionMapper sessionMapper) {
+    public AgentAuditEventListener(AgentAuditLogMapper auditLogMapper, AiChatSessionMapper sessionMapper,
+                                   ObjectMapper objectMapper) {
         this.auditLogMapper = auditLogMapper;
         this.sessionMapper = sessionMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -59,11 +81,11 @@ public class AgentAuditEventListener implements AgentEventListener {
             entity.setEventType("TOOL_CALLED");
             entity.setToolName(toolEvent.getToolName());
             entity.setToolArgs(truncate(toolEvent.getArguments(), 4000));
-            entity.setToolResult(truncate(toolEvent.getResult(), 4000));
+            entity.setToolResult(auditResult(toolEvent.getToolName(), toolEvent.getResult()));
         } else if (event instanceof AgentToolResultEvent resultEvent) {
             entity.setEventType("TOOL_RESULT");
             entity.setToolName(resultEvent.getName());
-            entity.setToolResult(truncate(resultEvent.getResult(), 4000));
+            entity.setToolResult(auditResult(resultEvent.getName(), resultEvent.getResult()));
             entity.setResultCode(resultEvent.isOk() ? 0 : 1);
             entity.setResultMsg(resultEvent.isOk() ? "" : "工具执行失败");
         } else if (event instanceof AgentErrorEvent errorEvent) {
@@ -116,6 +138,41 @@ public class AgentAuditEventListener implements AgentEventListener {
 
     private String firstNonBlank(String first, String second) {
         return first != null && !first.isBlank() ? first : second;
+    }
+
+    /**
+     * 工具结果的落库形态：默认按长度截断；对含外部原文的工具先摘正文再截断。
+     *
+     * <p>判不出来就不留：解析失败或结果不是对象（纯文本正文、JSON 字符串等）时无法证明其中没有原文，
+     * 一律整体省略——审计宁可少信息，也不能把外部网页正文写进库。
+     */
+    private String auditResult(String toolName, String result) {
+        if (result == null) {
+            return "";
+        }
+        if (toolName == null || !BODY_OMITTED_TOOLS.contains(toolName.toLowerCase(Locale.ROOT))) {
+            return truncate(result, RESULT_MAX_CHARS);
+        }
+        JsonNode node;
+        try {
+            node = objectMapper.readTree(result);
+        } catch (RuntimeException e) {
+            node = null;
+        }
+        if (node instanceof ObjectNode object) {
+            JsonNode body = object.get("text");
+            if (body == null || body.isNull()) {
+                // 降级/错误回包没有正文，reason 等业务信息必须保住
+                return truncate(result, RESULT_MAX_CHARS);
+            }
+            object.put("text", "<正文已省略 " + body.asString("").length() + " 字符>");
+            try {
+                return truncate(objectMapper.writeValueAsString(object), RESULT_MAX_CHARS);
+            } catch (RuntimeException e) {
+                return "<" + toolName + " 正文已省略（原文 " + result.length() + " 字符）>";
+            }
+        }
+        return "<" + toolName + " 结果非结构化，正文已省略（原文 " + result.length() + " 字符）>";
     }
 
     private String truncate(String text, int max) {

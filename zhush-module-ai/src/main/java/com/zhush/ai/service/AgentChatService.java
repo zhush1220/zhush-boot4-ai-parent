@@ -12,6 +12,7 @@ import com.zhush.ai.enums.AiTaskType;
 import com.zhush.ai.mapper.AiChatMessageMapper;
 import com.zhush.ai.mapper.AiChatSessionMapper;
 import com.zhush.ai.param.AgentChatParam;
+import com.zhush.ai.preview.PathMaskUtils;
 import com.zhush.ai.query.AiSessionQuery;
 import com.zhush.ai.vo.AiChatMessageVO;
 import com.zhush.ai.vo.AiSessionVO;
@@ -23,6 +24,7 @@ import com.zhush.agentscope.event.AgentEvent;
 import com.zhush.agentscope.event.AgentEventType;
 import com.zhush.agentscope.event.AgentFinishedEvent;
 import com.zhush.agentscope.event.AgentResumeChannels;
+import com.zhush.agentscope.event.AgentToolCalledEvent;
 import com.zhush.agentscope.event.AgentToolResultEvent;
 import com.zhush.agentscope.template.AgentTemplate;
 import com.zhush.agentscope.config.AgentScopeProperties;
@@ -123,6 +125,8 @@ public class AgentChatService {
                 reply.getInputTokens(), reply.getOutputTokens(), reply.getTotalTokens(), null);
         quotaService.record(ctx.getUserId(), ctx.getUserType(), taskType,
                 reply.getInputTokens(), reply.getOutputTokens());
+        // 同步出口同样要脱敏：落库那份已在 saveMessage 里处理，这里管的是回给调用方的这一份
+        reply.setReply(PathMaskUtils.mask(reply.getReply()));
         return reply;
     }
 
@@ -152,7 +156,8 @@ public class AgentChatService {
         final String quotaUserType = ctx.getUserType();
         // 产物收集：从生成类工具结果事件提取 artifact，随 assistant 消息落 attachments
         final List<String> artifacts = Collections.synchronizedList(new ArrayList<>());
-        return agentTemplate.stream(param.getAgentName(), finalSessionId, param.getMessage())
+        return agentTemplate.stream(param.getAgentName(), finalSessionId, param.getMessage(),
+                        param.getWebSearchEnabled())
                 .doOnNext(event -> {
                     if (event instanceof AgentToolResultEvent toolResult) {
                         collectArtifact(artifacts, toolResult);
@@ -167,6 +172,8 @@ public class AgentChatService {
                     } else if (event.getEventType() == AgentEventType.ERROR) {
                         updateSessionStatus(finalSessionId, 4);
                     }
+                    // 出口脱敏放在最后：产物提取要用原始结果，不能让打码先改了 JSON 里的路径
+                    maskForClient(event);
                 });
     }
 
@@ -174,7 +181,7 @@ public class AgentChatService {
      * 订阅会话续跑 SSE 通道（路线 B）：审批跨请求完成后，续跑增量经此通道流回前端。
      */
     public Flux<AgentEvent> resumeChannel(String sessionId) {
-        return resumeChannels.subscribe(sessionId);
+        return resumeChannels.subscribe(sessionId).map(this::maskForClient);
     }
 
     /**
@@ -304,6 +311,34 @@ public class AgentChatService {
 
     // ================ 内部方法 ================
 
+    /**
+     * SSE 出口脱敏：harness 的内置文件工具（{@code WriteFileTool} 走 {@code toAbsolutePath()}）把本机
+     * 绝对路径写进入参与结果文本，前端工具卡片原样渲染就等于把服务器目录结构发给浏览器。
+     *
+     * <p>只处理「整段可读」的事件。文本增量（TEXT_DELTA）按 token 切分，半条路径既匹配不出形态、
+     * 拼回去还会是乱码，所以留给前端在渲染整段正文时打码（{@code preview/body-files.ts}）。
+     */
+    private AgentEvent maskForClient(AgentEvent event) {
+        if (event instanceof AgentToolCalledEvent called) {
+            called.setArguments(PathMaskUtils.mask(called.getArguments()));
+            called.setResult(PathMaskUtils.mask(called.getResult()));
+        } else if (event instanceof AgentToolResultEvent result) {
+            result.setResult(PathMaskUtils.mask(result.getResult()));
+        } else if (event instanceof AgentFinishedEvent finished) {
+            finished.setReply(PathMaskUtils.mask(finished.getReply()));
+        }
+        return event;
+    }
+
+    /**
+     * 消息文本脱敏，落库与读取同一口径。
+     *
+     * <p>只管模型输出：用户自己贴进来的路径是他的原话，改它等于篡改输入。
+     */
+    private static String maskAssistant(String role, String content) {
+        return "assistant".equals(role) ? PathMaskUtils.mask(content) : content;
+    }
+
     private void ensureSessionRow(String sessionId, String agentName, String firstMessage, AgentContext ctx) {
         AiChatSessionEntity existing = sessionMapper.selectOneByQuery(
                 QueryWrapper.create().where(AiChatSessionEntity::getSessionId).eq(sessionId));
@@ -354,7 +389,7 @@ public class AgentChatService {
         entity.setSeq(session.getMessageCount() == null ? 1 : session.getMessageCount() + 1);
         entity.setRole(role);
         entity.setContentType("text");
-        entity.setContent(content);
+        entity.setContent(maskAssistant(role, content));
         entity.setAttachments(attachments);
         entity.setTaskType((taskType == null ? AiTaskType.CHAT : taskType).getCode());
         entity.setStatus(STATUS_MESSAGE_NORMAL);
@@ -500,7 +535,8 @@ public class AgentChatService {
         vo.setSeq(entity.getSeq());
         vo.setRole(entity.getRole());
         vo.setContentType(entity.getContentType());
-        vo.setContent(entity.getContent());
+        // 读时再打一遍：脱敏上线前落的历史行里存着明文路径，幂等所以新行不受影响，免去数据迁移
+        vo.setContent(maskAssistant(entity.getRole(), entity.getContent()));
         vo.setThinking(entity.getThinking());
         vo.setToolCalls(entity.getToolCalls());
         vo.setAttachments(entity.getAttachments());
